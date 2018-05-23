@@ -128,28 +128,31 @@ Navigate to your example implementation to test, and if you use the `./dist/apn_
 ##### Sample Test Pages
 There are several test pages that are provided with the plugin which uses the plugin in a variety of ways. These test pages are provided in the repository at: `./tests/e2e/testPages/`
 You may select whichever style you want to test. See `http://prebid.org/dev-docs/plugins/brightcove-prebid-plugin/BC-Prebid-Plugin-Options.html` for details on all the options that can be passed to the plugin.
+- `prebid-main.html`
+    - This page can be used to launch any of the test pages listed below.
+    - If you launch the pages directly from this page, an additional query string parameter will be added to the page url that enables additional browser console logging that may be useful in debugging.
 - `prebid-header.html`
--- this test page invokes the prebid process in the header of the page
--- the results of prebid are then rendered by plugin once the Brightcove Player is loaded.
--- you can configure the prebid options to either use DFP as the primary ad server or to use no ad server.
+    - this test page invokes the prebid process in the header of the page
+    - the results of prebid are then rendered by plugin once the Brightcove Player is loaded.
+    - you can configure the prebid options to either use DFP as the primary ad server or to use no ad server.
 - `prebid-header-ad-server.html`
--- this test page invokes the prebid process in the header of the page
--- the results of prebid are then passed to a preferred ad server, via the `adServerCallback` option, so that the preferred ad server can make the final decision about which ad to play.
--- the selected creative is then passed back to plugin so that the plugin can render the selected ad
+    - this test page invokes the prebid process in the header of the page
+    - the results of prebid are then passed to a preferred ad server, via the `adServerCallback` option, so that the preferred ad server can make the final decision about which ad to play.
+    - the selected creative is then passed back to plugin so that the plugin can render the selected ad
 - `prebid-body.html`
--- this test page invokes the prebid process in the body of the page, after the Brightcove Player has been loaded.
--- the results of prebid are then rendered by plugin once the Brightcove Player is loaded.
--- you can configure the prebid options to either use DFP as the primary ad server or to use no ad server.
+    - this test page invokes the prebid process in the body of the page, after the Brightcove Player has been loaded.
+    - the results of prebid are then rendered by plugin once the Brightcove Player is loaded.
+    - you can configure the prebid options to either use DFP as the primary ad server or to use no ad server.
 - `prebid-body-ad-server.html`
--- this test page invokes the prebid process in the body of the page, after the Brightcove Player has been loaded.
--- the results of prebid are then passed to a preferred ad server, via the `adServerCallback` option, so that the preferred ad server can make the final decision about which ad to play.
--- the selected creative is then passed back to plugin so that the plugin can render the selected ad
+    - this test page invokes the prebid process in the body of the page, after the Brightcove Player has been loaded.
+    - the results of prebid are then passed to a preferred ad server, via the `adServerCallback` option, so that the preferred ad server can make the final decision about which ad to play.
+    - the selected creative is then passed back to plugin so that the plugin can render the selected ad
 - `prebid-studio-config.html`
--- this page can be used to test using the plugin if you choose to configure the plugin in the Brightcove Studio.
--- you will have to replace the player embed code with the embed code for your own player instance.
--- you will need to make sure that all the paths to the plugin, CSS files and prebid.js are configured correctly in the Studio
--- this page invokes the prebid process as the Brightcove Player is loading
--- you can configure the prebid options to either use DFP as the primary ad server or to use no ad server in the options that are specified in the Studio.
+    - this page can be used to test using the plugin if you choose to configure the plugin in the Brightcove Studio.
+    - you will have to replace the player embed code with the embed code for your own player instance.
+    - you will need to make sure that all the paths to the plugin, CSS files and prebid.js are configured correctly in the Studio
+    - this page invokes the prebid process as the Brightcove Player is loading
+    - you can configure the prebid options to either use DFP as the primary ad server or to use no ad server in the options that are specified in the Studio.
 
 
 #### Test Page Modifications
