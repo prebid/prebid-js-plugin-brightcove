@@ -12,13 +12,8 @@
 		var _popUpOptions = getOptions('plugin_prebid_vast');
 	    
 		var opts; 
-		//if (typeof Object.assign === 'function') {
-		//	opts = Object.assign({}, _popUpOptions); 
-		//}
-		//else {
 			var tmp = JSON.stringify(_popUpOptions);
 			opts = JSON.parse(tmp);
-		//}
 		window.apn_plugin_prebid_options = opts;
 		opts.bidderSettings = 
 	       {
