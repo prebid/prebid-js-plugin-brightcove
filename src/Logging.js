@@ -15,7 +15,7 @@ var TRACE_LEVEL_LOG = 5;
 var TRACE_LEVEL_DEBUG = 6;
 var TRACE_LEVEL_VERBOSE = 6;
 
-var LOCAL_STORAGE_KEY_NAME = 'AppNexus_Page_Debug_Log_Level';
+var LOCAL_STORAGE_KEY_NAME = 'Page_Debug_Log_Level';
 
 // not an actual debug level, but used as a shortcut so we always
 // know what the max debug level is
@@ -71,7 +71,7 @@ function traceMessageAtLevel(messageLogLevel, args) {
         // if method has been defined, and the correct debug level has been set, log it
         if (typeof messageLogLevel !== 'undefined' && okToLogMessage(messageLogLevel)) {
             if (console) {
-                var messagePrefix = '[APN';
+                var messagePrefix = '[Prebid-Plugin';
                 var methodToUse = getTraceMethodName(messageLogLevel);
 
                 // if console message doesn't exist, use 'log' and
@@ -197,7 +197,7 @@ function okToLogMessage(level) {
 // DEPRECATED
 function tryLogMessageLegacy(level, message, source) {
     try {
-        var messageToLog = '[APN-' + level + '-' + new Date().toISOString() + '] ';
+        var messageToLog = '[Prebid-Plugin-' + level + '-' + new Date().toISOString() + '] ';
         if (source !== null && source && source.length > 0) {
             messageToLog += source + '>';
         }
@@ -231,86 +231,72 @@ module.exports = {
 
     /**
      * If the logging level for type "always" or higher is set, output message to browser's console log
-     * With the [APN] prefix and styled with the browser's console "log" level trace style
+     * With the [Prebid-Plugin] prefix and styled with the browser's console "log" level trace style
      * @see https://developer.mozilla.org/en-US/docs/Web/API/console#Outputting_text_to_the_console
      * for more details about how to use console.log style logging.
      */
     always: function() {
-        try {
-            traceMessageAtLevel.call(this, TRACE_LEVEL_ALWAYS, Array.prototype.slice.call(arguments));
-        } catch (e) {}
+        traceMessageAtLevel.call(this, TRACE_LEVEL_ALWAYS, Array.prototype.slice.call(arguments));
     },
 
     /**
      * If the logging level for type "error" or higher is set, output message to browser's console log
-     * With the [APN] prefix and styled with the browser's console "error" level trace style
+     * With the [Prebid-Plugin] prefix and styled with the browser's console "error" level trace style
      * @see https://developer.mozilla.org/en-US/docs/Web/API/console#Outputting_text_to_the_console
      * for more details about how to use console.error style logging.
      */
     error: function() {
-        try {
-            traceMessageAtLevel.call(this, TRACE_LEVEL_ERROR, Array.prototype.slice.call(arguments));
-        } catch (e) {}
+        traceMessageAtLevel.call(this, TRACE_LEVEL_ERROR, Array.prototype.slice.call(arguments));
     },
 
     /**
      * If the logging level for type "log" or higher is set, output message to browser's console log
-     * With the [APN] prefix and styled with the browser's console "log" level trace style
+     * With the [Prebid-Plugin] prefix and styled with the browser's console "log" level trace style
      * @see https://developer.mozilla.org/en-US/docs/Web/API/console#Outputting_text_to_the_console
      * for more details about how to use console.log style logging.
      */
     log: function() {
-        try {
-            traceMessageAtLevel.call(this, TRACE_LEVEL_LOG, Array.prototype.slice.call(arguments));
-        } catch (e) {}
+        traceMessageAtLevel.call(this, TRACE_LEVEL_LOG, Array.prototype.slice.call(arguments));
     },
 
     /**
      * If the logging level for type "warn" or higher is set, output message to browser's console log
-     * With the [APN] prefix and styled with the browser's console "warn" level trace style
+     * With the [Prebid-Plugin] prefix and styled with the browser's console "warn" level trace style
      * @see https://developer.mozilla.org/en-US/docs/Web/API/console#Outputting_text_to_the_console
      * for more details about how to use console.warn style logging.
      */
     warn: function() {
-        try {
-            traceMessageAtLevel.call(this, TRACE_LEVEL_WARN, Array.prototype.slice.call(arguments));
-        } catch (e) {}
+        traceMessageAtLevel.call(this, TRACE_LEVEL_WARN, Array.prototype.slice.call(arguments));
     },
 
     /**
      * If the logging level for type "info" or higher is set, output message to browser's console log
-     * With the [APN] prefix and styled with the browser's console "info" level trace style
+     * With the [Prebid-Plugin] prefix and styled with the browser's console "info" level trace style
      * @see https://developer.mozilla.org/en-US/docs/Web/API/console#Outputting_text_to_the_console
      * for more details about how to use console.info style logging.
      */
     info: function() {
-        try {
-            traceMessageAtLevel.call(this, TRACE_LEVEL_INFO, Array.prototype.slice.call(arguments));
-        } catch (e) {}
+        traceMessageAtLevel.call(this, TRACE_LEVEL_INFO, Array.prototype.slice.call(arguments));
     },
 
     /**
      * If the logging level for type "debug" or higher is set, output message to browser's console log
-     * With the [APN] prefix and styled with the browser's console "debug" level trace style
+     * With the [Prebid-Plugin] prefix and styled with the browser's console "debug" level trace style
      * @see https://developer.mozilla.org/en-US/docs/Web/API/console#Outputting_text_to_the_console
      * for more details about how to use console.debug style logging.
      */
     debug: function() {
-        try {
-            traceMessageAtLevel.call(this, TRACE_LEVEL_DEBUG, Array.prototype.slice.call(arguments));
-        } catch (e) {}
-    },
+        traceMessageAtLevel.call(this, TRACE_LEVEL_DEBUG, Array.prototype.slice.call(arguments));
+     },
 
     /**
      * If the logging level for type "verbose" or higher is set, output message to browser's console log
-     * With the [APN] prefix and styled with the browser's console "debug" level trace style
+     * With the [Prebid-Plugin] prefix and styled with the browser's console "debug" level trace style
      * @see https://developer.mozilla.org/en-US/docs/Web/API/console#Outputting_text_to_the_console
      * for more details about how to use console.debug style logging.
      */
     verbose: function() {
-        try {
-            traceMessageAtLevel.call(this, TRACE_LEVEL_VERBOSE, Array.prototype.slice.call(arguments));
-        } catch (e) {}
+        traceMessageAtLevel.call(this, TRACE_LEVEL_VERBOSE, Array.prototype.slice.call(arguments));
     },
 
     /**

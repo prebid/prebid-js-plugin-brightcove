@@ -1,8 +1,8 @@
-# apn_bc_prebid_vast
+# bc_prebid_vast
 
 > A free and open source library for publishers to quickly implement a plugin for a videoJS player, such as Brightcove Player.  This plugin may be used to invoke prebid.js to execute the prebidding process.  It may also be used to render the "selected" video ad within the player.
 
-This README is for developers who want to use and/or contribute to apn_bc_prebid_vast.
+This README is for developers who want to use and/or contribute to bc_prebid_vast.
 Additional documentation can be found at [the Brightcove Prebid Plugin homepage](http://prebid.org/dev-docs/plugins/brightcove-prebid-plugin/About-BC-Prebid-Plugin.html).
 Working examples can be found in [Sample Implementations](http://prebid.org/dev-docs/plugins/brightcove-prebid-plugin/SampleImplementations/*.html) for the plugin.
 
@@ -22,8 +22,8 @@ A successful deployment of this plugin not only includes a build of this plugin 
 -- This rendering plugin is availabe from: `https://github.com/prebid/videojs-mailonline-plugin.git`.  
 -- You may use the MailOnline plugin as is or you may create your own build.  
 -- Alternatively, you may also partner the prebid plugin with your own rendering code.  Details about how to do this is provided below under HOW TO BUILD AND RUN PROJECT LOCALLY.
-- **MailOnline CSS** - If you are using the MailOnline rendering plugin, you also need to load the CSS file associated with the MailOnline plugin.  This CSS file is provided in the companion MailOnline repository mentioned above at the following location: `./videojs-mailonline-plugin/bin/apn_vpaid_vast_mo.css`.
-- **Prebid Plugin CSS** - This prebid plugin also supplies an additional CSS file that must be loaded along with this plugin.  This CSS file is located in this repository at: `./prebid-js-plugin-brightcove/src/apn_bc_prebid_vast_vjs.css`.
+- **MailOnline CSS** - If you are using the MailOnline rendering plugin, you also need to load the CSS file associated with the MailOnline plugin.  This CSS file is provided in the companion MailOnline repository mentioned above at the following location: `./videojs-mailonline-plugin/bin/bc_vpaid_vast_mo.css`.
+- **Prebid Plugin CSS** - This prebid plugin also supplies an additional CSS file that must be loaded along with this plugin.  This CSS file is located in this repository at: `./prebid-js-plugin-brightcove/src/bc_prebid_vast_vjs.css`.
 - **Markers Plugin** - This plugin incorporates code from the Markers plugin: `https://github.com/spchuang/videojs-markers/`. 
 -- The Markers code is used to help launch ad playback at different points along the timeine. 
 -- This code has been added directly in this plugin and is found in `./prebid-js-plugin-brightcove/src/MarkersHandler.js`.
@@ -48,8 +48,8 @@ To build the project on your local machine, run:
 
 This runs some code quality checks and generates the following files:
 
-+ `./dist/apn_bc_prebid_vast.min.js` - Minified production code
-+ `./dist/apn_bc_prebid_vast.js` - Non-minified production code
++ `./dist/bc_prebid_vast.min.js` - Minified production code
++ `./dist/bc_prebid_vast.js` - Non-minified production code
 
 <a name="Run"></a>
 
@@ -85,7 +85,7 @@ c. (optional) Modify path to MailOnline CSS file
 d. (optional) Modify path to the prebid.js
 
 ### Update Host File (optional step)
-To build and run this project locally, you must first modify your host file to setup an alias for local.appnexus if you are planning on using an AppNexus bidder.  Otherwise, your "localhost" domain may become blacklisted by AppNexus.
+To build and run this project locally, you must first modify your host file to setup an alias for local.prebid if you are planning on using an AppNexus bidder.  Otherwise, your "localhost" domain may become blacklisted by AppNexus.
 
 Add the following line to your host file:
 ```bash
@@ -96,13 +96,13 @@ You can either create your own custom build of the MailOnline plugin or you can 
 
 #### Using your own build of MailOnline plugin
 If you have either created your own build of the MailOnline plugin or if you are replacing the MailOnline plugin with your own rendering code, you will need to modify the path that the plugin uses to load the rendering plugin
-- the path to the rendering plugin is defined in `./src/ApnPrebidVast.js>loadApnMolPlugin(callback)`
+- the path to the rendering plugin is defined in `./src/ApnPrebidVast.js>loadMolPlugin(callback)`
 - the MailOnline plugin is invoked in `./src/VastManager.js>playAd(xml)`
 
 #### Using your own rendering code
 If you are replacing the MailOnline rendering plugin with your own custom rendering code, you need to change the code where currently the MailOnline plugin is loaded and invoked.
 - Your renderer must be compatible with the Brightcove Player environment.
-- Remove the following function which is used to load the MailOnline plugin: `./src/ApnPrebidVast.js>loadApnMolPlugin(callback)`
+- Remove the following function which is used to load the MailOnline plugin: `./src/ApnPrebidVast.js>loadMolPlugin(callback)`
 -- Make sure that all calls to this function have also been removed from your plugin code.
 - Add code to load in your rendering script, if needed
 - Re-write the following function which currently invokes the MailOnline plugin to play the ad:  `./src/VastManager.js>playAd(xml)`
@@ -121,8 +121,8 @@ Build and run the project locally with:
 gulp dev-server
 ```
 
-This builds the plugin and starts a web server at `http://local.appnexus:8082` serving from the project root.
-Navigate to your example implementation to test, and if you use the `./dist/apn_bc_prebid_vast.js` file, you will have sourcemaps available in your browser's developer tools.
+This builds the plugin and starts a web server at `http://local.prebid:8082` serving from the project root.
+Navigate to your example implementation to test, and if you use the `./dist/bc_prebid_vast.js` file, you will have sourcemaps available in your browser's developer tools.
 
 ### Select Test Page
 ##### Sample Test Pages
@@ -165,7 +165,7 @@ Before testing, you may need to make the following changes to your selected test
 
 As an example, to run the prebid-body.html test page, go to:
 
-+ `http://local.appnexus:8082/prebid-body.html`
++ `http://local.prebid:8082/prebid-body.html`
 
 As you make code changes, the bundles will be rebuilt but you must refresh the page to test the new code.
 
@@ -202,7 +202,7 @@ If you are contributing code, you should [configure your editor](http://eslint.o
 
         $ gulp test
 
-This will run the tests. To keep the Karma test browser open, you need to modify `karma.conf.js` to set `singleRun` to `false`. If you test with the `apn_bc_prebid_vast.js` file, you will also have sourcemaps available when using your browser's developer tools.
+This will run the tests. To keep the Karma test browser open, you need to modify `karma.conf.js` to set `singleRun` to `false`. If you test with the `bc_prebid_vast.js` file, you will also have sourcemaps available when using your browser's developer tools.
 
 + To access the Karma debug page, go to `http://localhost:9876/debug.html`
 
@@ -221,7 +221,7 @@ The results will be in
 
 ### Supported Browsers
 
-apn_bc_prebid_vast is supported on IE11+ and modern browsers.
+bc_prebid_vast is supported on IE11+ and modern browsers.
 
 ### Governance 
 Review our governance model [here](https://github.com/prebid/prebid-js-plugin-brightcove/tree/master/governance.md).

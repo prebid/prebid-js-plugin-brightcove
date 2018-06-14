@@ -1,5 +1,8 @@
 var PrebidCommunicator = require('./../../../src/PrebidCommunicator.js');
-var ApnPrebidVast = require('./../../../src/ApnPrebidVast.js');
+var BcPrebidVast = require('./../../../src/BcPrebidVast.js');
+var _prebidGlobal = require('./../../../src/PrebidGlobal.js');
+
+var $$PREBID_GLOBAL$$ = _prebidGlobal.getGlobal();
 
 describe('PrebidCommunicator unit test', function() {
     var mock;
@@ -8,7 +11,7 @@ describe('PrebidCommunicator unit test', function() {
 
     beforeEach(function (done) {
 		console.log(this.currentTest.title);
-		window.pbjs = {
+		$$PREBID_GLOBAL$$.pbjs = {
 			que: [],
 			requestBids: function(obj) {}
 		};
@@ -52,14 +55,14 @@ describe('PrebidCommunicator unit test', function() {
             };
         };
 		mockObject = new mock();
-		if (!window.apn_pbjs) {
-			ApnPrebidVast.test().loadPrebidScript(mockObject.options, false);
+		if (!$$PREBID_GLOBAL$$.bc_pbjs) {
+			BcPrebidVast.test().loadPrebidScript(mockObject.options, false);
 		}
 		var waitPbjs = setInterval(function() {
-			if (window.apn_pbjs) {
+			if ($$PREBID_GLOBAL$$.bc_pbjs) {
 				clearInterval(waitPbjs);
 				waitPbjs = null;
-				sinonStub = sinon.stub(window.apn_pbjs, 'requestBids', function(obj) {
+				sinonStub = sinon.stub($$PREBID_GLOBAL$$.bc_pbjs, 'requestBids', function(obj) {
 					var response = {
 						'my-video-tag': {
 							bids: [
@@ -90,7 +93,7 @@ describe('PrebidCommunicator unit test', function() {
 		// this.timeout(5000);
         var options = mockObject.options;
 		options.biddersSpec.bids[0].params.placementId = 11653264;
-		options.doPrebid = ApnPrebidVast.test().doPrebid;
+		options.doPrebid = BcPrebidVast.test().doPrebid;
 		var communicator = new PrebidCommunicator();
         communicator.doPrebid(options, function(url) {
 			assert.equal(url, 'http://bla_bla');
@@ -102,14 +105,14 @@ describe('PrebidCommunicator unit test', function() {
 		// this.timeout(5000);
         var options = mockObject.options;
 		options.biddersSpec.bids[0].params.placementId = 11653264;
-		options.doPrebid = ApnPrebidVast.test().doPrebid;
+		options.doPrebid = BcPrebidVast.test().doPrebid;
 		options.dfpParameters = {
 			params: {
 				iu: '/19968336/prebid_cache_video_adunit',
 				output: 'vast'
 			}
 		};
-		var sinonStub2 = sinon.stub(window.apn_pbjs.adServers.dfp, 'buildVideoUrl', function(opts) {
+		var sinonStub2 = sinon.stub($$PREBID_GLOBAL$$.bc_pbjs.adServers.dfp, 'buildVideoUrl', function(opts) {
 			return 'http://bla_bla';
 		});
 		var communicator = new PrebidCommunicator();
@@ -124,11 +127,11 @@ describe('PrebidCommunicator unit test', function() {
 		// this.timeout(5000);
         var options = mockObject.options;
 		options.biddersSpec.bids[0].params.placementId = 11653264;
-		options.doPrebid = ApnPrebidVast.test().doPrebid;
+		options.doPrebid = BcPrebidVast.test().doPrebid;
 		options.dfpParameters = {
 			url: 'http://fake_fake'
 		};
-		var sinonStub2 = sinon.stub(window.apn_pbjs.adServers.dfp, 'buildVideoUrl', function(opts) {
+		var sinonStub2 = sinon.stub($$PREBID_GLOBAL$$.bc_pbjs.adServers.dfp, 'buildVideoUrl', function(opts) {
 			return 'http://bla_bla';
 		});
 		var communicator = new PrebidCommunicator();
@@ -143,7 +146,7 @@ describe('PrebidCommunicator unit test', function() {
 		// this.timeout(5000);
         var options = mockObject.options;
 		options.biddersSpec.bids[0].params.placementId = 11653264;
-		options.doPrebid = ApnPrebidVast.test().doPrebid;
+		options.doPrebid = BcPrebidVast.test().doPrebid;
 		options.adServerCallback = function(arrBids, callback) {
 			callback('http://video.devnxs.net/meena/BurstingPipe_http.xml');
 		};

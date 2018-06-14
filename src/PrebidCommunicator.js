@@ -3,8 +3,11 @@
  * @module prebidCommunicator
  */
 
+var _prebidGlobal = require('./PrebidGlobal.js');
 var _logger = require('./Logging.js');
-var _prefix = 'apnPrebidVast->PrebidCommunicator';
+var _prefix = 'PrebidVast->PrebidCommunicator';
+
+var $$PREBID_GLOBAL$$ = _prebidGlobal.getGlobal();
 
 var prebidCommunicator = function () {
 	var _options;
@@ -32,13 +35,13 @@ var prebidCommunicator = function () {
 							dfpOpts.bid = _options.dfpParameters.bid;
 						}
 						_logger.log(_prefix, 'DFP buildVideoUrl options: ', dfpOpts);
-						creative = window.apn_pbjs.adServers.dfp.buildVideoUrl(dfpOpts);
+						creative = $$PREBID_GLOBAL$$.bc_pbjs.adServers.dfp.buildVideoUrl(dfpOpts);
             			_logger.log(_prefix, 'Selected VAST url: ' + creative);
 						if (_callback) {
 							_callback(creative);
         				}
         				else {
-        					window.prebid_creative = creative;
+        					$$PREBID_GLOBAL$$.prebid_creative = creative;
         				}
         			}
         			else if (_options.adServerCallback) {
@@ -50,7 +53,7 @@ var prebidCommunicator = function () {
 								_callback(adServerCreative);
             				}
             				else {
-            					window.prebid_creative = adServerCreative;
+            					$$PREBID_GLOBAL$$.prebid_creative = adServerCreative;
             				}
         				});
         			}
@@ -70,7 +73,7 @@ var prebidCommunicator = function () {
         					_callback(creative);
         				}
         				else {
-        					window.prebid_creative = creative;
+        					$$PREBID_GLOBAL$$.prebid_creative = creative;
         				}
         			}
     			}
@@ -94,19 +97,19 @@ var prebidCommunicator = function () {
     	_callback = callback;
 
     	if (_options.doPrebid) {
-    		if (window.apn_pbjs) {
+    		if ($$PREBID_GLOBAL$$.bc_pbjs) {
     			// do prebid if prebid.js is loaded
     			doPrebid();
     		}
     		else {
     			// wait until prebid.js is loaded
     			var waitPbjs = setInterval(function() {
-    	    		if (window.apn_pbjs) {
+    	    		if ($$PREBID_GLOBAL$$.bc_pbjs) {
     	    			clearInterval(waitPbjs);
     	    			waitPbjs = null;
     	    			doPrebid();
     	    		}
-    	    		else if (window.apn_pbjs_error) {
+    	    		else if ($$PREBID_GLOBAL$$.bc_pbjs_error) {
     	    			clearInterval(waitPbjs);
     	    			waitPbjs = null;
     	    			callback(null);

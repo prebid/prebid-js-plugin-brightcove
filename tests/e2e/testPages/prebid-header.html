@@ -5,16 +5,16 @@
   	<title>Brightcove Plugin Test (MailOnline)</title>
 
 	<script src="./default-options.js"></script>
-	<link href="apn_vpaid_vast_mo.css" rel="stylesheet">
-	<link href="apn_bc_prebid_vast_vjs.css" rel="stylesheet">
+	<link href="bc_vpaid_vast_mo.css" rel="stylesheet">
+	<link href="bc_prebid_vast_vjs.css" rel="stylesheet">
 
 	<script>
 		var _popUpOptions = getOptions('plugin_prebid_vast');
 	    
 		var opts; 
-			var tmp = JSON.stringify(_popUpOptions);
-			opts = JSON.parse(tmp);
-		window.apn_plugin_prebid_options = opts;
+		var tmp = JSON.stringify(_popUpOptions);
+		opts = JSON.parse(tmp);
+		window.bc_plugin_pbjs = {plugin_prebid_options: opts};
 		opts.bidderSettings = 
 	       {
 	         standard: {
@@ -46,7 +46,7 @@
 	         }
 	       };
 	</script>
-	<script type="text/javascript" src="../../../dist/apn_bc_prebid_vast.js"></script>
+	<script type="text/javascript" src="../../../dist/bc_prebid_vast.js"></script>
 </head>
 
 <body >
@@ -76,11 +76,11 @@
 	<script>
 		opts.pageNotificationCallback = pageNotification;
 	
-		APNVideo_PrebidVastPlugin.init();
-		APNVideo_PrebidVastPlugin.renderAd(opts, 'test_player');
+		BCVideo_PrebidVastPlugin.init();
+		BCVideo_PrebidVastPlugin.renderAd(opts, 'test_player');
 		
 		function stopAd() {
-			APNVideo_PrebidVastPlugin.stop();
+			BCVideo_PrebidVastPlugin.stop();
 		}
 		
 	    function appendStatistics(text) {

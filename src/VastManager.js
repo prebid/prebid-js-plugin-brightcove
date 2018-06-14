@@ -6,7 +6,7 @@
  var _logger = require('./Logging.js');
 var _prebidCommunicator = require('./PrebidCommunicator.js');
 var _MarkersHandler = require('./MarkersHandler.js');
-var _prefix = 'apnPrebidVast->vastManager';
+var _prefix = 'PrebidVast->vastManager';
 
 var vastManager = function () {
 	var _player;
@@ -401,10 +401,10 @@ var vastManager = function () {
     	_player = vjsPlayer;
     	_options = options;
 
-    	_cover = document.getElementById('apn-break-cover');
+    	_cover = document.getElementById('plugin-break-cover');
     	if (!_cover) {
     		_cover = document.createElement('div');
-    		_cover.id = 'apn-break-cover';
+    		_cover.id = 'plugin-break-cover';
     		_cover.style.width = '100%';
     		_cover.style.height = '100%';
     		_cover.style.backgroundColor = 'black';
@@ -414,10 +414,10 @@ var vastManager = function () {
     		_cover.style.display = 'none';
     	}
 
-    	_spinnerDiv = document.getElementById('apn-vast-spinner');
+    	_spinnerDiv = document.getElementById('plugin-vast-spinner');
     	if (!_spinnerDiv) {
 			_spinnerDiv = document.createElement('div');
-			_spinnerDiv.id = 'apn-vast-spinner';
+			_spinnerDiv.id = 'plugin-vast-spinner';
 			_spinnerDiv.className = 'vjs-loading-spinner';
 			_spinnerDiv.style.display = 'none';
 			_spinnerDiv.style.zIndex = 101;

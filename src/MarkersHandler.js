@@ -1,5 +1,5 @@
 /**
- * This code contains portions of videojs.markers.js modified by AppNexus.
+ * This code contains portions of videojs.markers.js modified by in this project.
  *
  * Support Timeline Markers module.
  * @module markersHandler

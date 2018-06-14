@@ -5,14 +5,10 @@ var WebpackDevServer = require('webpack-dev-server');
 var fs = require('fs');
 var rename = require('gulp-rename');
 var eslint = require('gulp-eslint');
-
 var gulpWebpack = require('gulp-webpack');
-
 var preprocess = require('gulp-preprocess');
 var header = require('gulp-header');
-
 var cp = require('child_process');
-
 var webpackConfig = require('./webpack.conf.js');
 var pkg = require('./package.json');
 
@@ -22,7 +18,7 @@ var licenseHeaders = fs.readFileSync('license-bc-prebid.txt');
 
 var curDateObj = new Date();
 
-var copyrightText = '(c)' + curDateObj.getUTCFullYear() + ' AppNexus, Inc.';
+var copyrightText = '(c)' + curDateObj.getUTCFullYear() + ' PREBID.ORG, INC.';
 
 var bannerText = '/*! ' + copyrightText + ' ' + versionText + '\n' + licenseHeaders + '*/\n';
 
@@ -63,6 +59,8 @@ gulp.task('dev-server', function(callback) {
     myConfig.devtool = 'eval';
     myConfig.debug = true;
 
+    const debugPort = 8082;
+
     // Start a webpack-dev-server
     // note- setting "publicPath" to /dist/ hides the actual
     // dist folder.  When webpack-dev-server runs, it does a webpack build
@@ -78,9 +76,9 @@ gulp.task('dev-server', function(callback) {
         stats: {
             colors: true
         }
-    }).listen(8082, 'local.appnexus', function(err) {
+    }).listen(debugPort, 'local.prebid', function(err) {
         if (err) throw new gutil.PluginError('webpack-dev-server', err);
-        gutil.log('[webpack-dev-server]', 'Webpack Dev Server Started at: http://local.appnexus:8082/webpack-dev-server/');
+        gutil.log('[webpack-dev-server]', 'Webpack Dev Server Started at: http://local.prebid:' + debugPort + '/webpack-dev-server/');
     });
 });
 

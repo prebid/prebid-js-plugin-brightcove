@@ -5,8 +5,8 @@
   	<title>Brightcove Plugin Test (MailOnline)</title>
 
 	<script src="./default-options.js"></script>
-	<link href="apn_vpaid_vast_mo.css" rel="stylesheet">
-	<link href="apn_bc_prebid_vast_vjs.css" rel="stylesheet">
+	<link href="bc_vpaid_vast_mo.css" rel="stylesheet">
+	<link href="bc_prebid_vast_vjs.css" rel="stylesheet">
 </head>
 
 <body >
@@ -57,7 +57,7 @@
 		<script src="//players.brightcove.net/5530036758001/HkbQZNXy7_default/index.min.js"></script>	
 	</div>
 
-	<script type="text/javascript" src="../../../dist/apn_bc_prebid_vast.js"></script>
+	<script type="text/javascript" src="../../../dist/bc_prebid_vast.js"></script>
 	<script>
 		var _popUpOptions = getOptions('plugin_prebid_vast');
 	    
@@ -98,11 +98,11 @@
 	         }
 	       };
 	
-		APNVideo_PrebidVastPlugin.init();
-		APNVideo_PrebidVastPlugin.renderAd(opts, 'test_player');
+		BCVideo_PrebidVastPlugin.init();
+		BCVideo_PrebidVastPlugin.renderAd(opts, 'test_player');
 		
 		function stopAd() {
-			APNVideo_PrebidVastPlugin.stop();
+			BCVideo_PrebidVastPlugin.stop();
 		}
 		
 	    function appendStatistics(text) {

@@ -1,7 +1,7 @@
-var ApnPrebidVast = require('./../../../src/ApnPrebidVast.js');
+var BcPrebidVast = require('./../../../src/BcPrebidVast.js');
 var logger = require('./../../../src/Logging.js');
 
-describe('ApnPrebidVast unit test', function() {
+describe('BcPrebidVast unit test', function() {
     var mock;
 	var mockObject;
 	var sinonStub;
@@ -70,7 +70,7 @@ describe('ApnPrebidVast unit test', function() {
 
 	it('doPrebid test - success bidding for 1 bidder', function (done) {
 		this.timeout(5000);
-		ApnPrebidVast.test().loadPrebidScript(mockObject.options, false);
+		BcPrebidVast.test().loadPrebidScript(mockObject.options, false);
 		setTimeout(function() {
 			var options = mockObject.options;
 			options.biddersSpec.bids[0].params.placementId = 11653264;
@@ -89,7 +89,7 @@ describe('ApnPrebidVast unit test', function() {
 					obj.bidsBackHandler(response);
 				}, 0);
 			});
-			ApnPrebidVast.test().doPrebid(options, function(bids) {
+			BcPrebidVast.test().doPrebid(options, function(bids) {
 				   var arrBids = (bids && bids[options.biddersSpec.code]) ? bids[options.biddersSpec.code].bids : [];
 				assert.strictEqual(arrBids.length, 1, 'failed - expected 1 bid');
 				assert.strictEqual(arrBids[0].vastUrl && arrBids[0].vastUrl.length > 0, true, 'failed - empty vastUrl property');
@@ -105,11 +105,11 @@ describe('ApnPrebidVast unit test', function() {
 				done();
 			}
 		});
-		ApnPrebidVast.test().loadPrebidScript(mockObject.options, true);
+		BcPrebidVast.test().loadPrebidScript(mockObject.options, true);
      });
 
-    it('loadApnMolPlugin test - loads Appnexus MailOnline Plugin', function (done) {
-		ApnPrebidVast.test().loadApnMolPlugin(function(succ) {
+    it('loadMolPlugin test - loads MailOnline Plugin', function (done) {
+		BcPrebidVast.test().loadMolPlugin(function(succ) {
 			assert.isTrue(succ);
 			done();
 		});
@@ -117,10 +117,10 @@ describe('ApnPrebidVast unit test', function() {
 
     it('init test - registers Brightcove Prebid Plugin in videojs', function (done) {
 		sinonStub = sinon.stub(videojs, 'registerPlugin', function(name, fnc) {
-			assert.equal(name, 'apnPrebidVastPlugin');
+			assert.equal(name, 'bcPrebidVastPlugin');
 			assert.isTrue(typeof fnc == 'function');
 			done();
 		});
-		ApnPrebidVast.init();
+		BcPrebidVast.init();
     });
 });

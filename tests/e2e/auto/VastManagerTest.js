@@ -1,5 +1,5 @@
 var _vastManager = require('../../../src/VastManager.js');
-var ApnPrebidVast = require('./../../../src/ApnPrebidVast.js');
+var BcPrebidVast = require('./../../../src/BcPrebidVast.js');
 
 describe('VastManager unit test', function () {
     var mock;
@@ -67,8 +67,8 @@ describe('VastManager unit test', function () {
     describe('player related', function () {
         before(function(done) {
             setTimeout(function() {
-                ApnPrebidVast.init();
-                ApnPrebidVast.renderAd({}, 'test_player');
+                BcPrebidVast.init();
+                BcPrebidVast.renderAd({}, 'test_player');
                 done();
             }, 1500);
         });
@@ -76,13 +76,13 @@ describe('VastManager unit test', function () {
         var player, vastManager, testObj, cover, spinner, spy, adIndicator;
 
         beforeEach(function (done) {
-            player = ApnPrebidVast.test().player;
+            player = BcPrebidVast.test().player;
             vastManager = new _vastManager();
             testObj = vastManager.test();
             testObj.setPlayer(player);
             if (!cover) {
                 cover = document.createElement('div');
-                cover.id = 'apn-break-cover';
+                cover.id = 'plugin-break-cover';
                 cover.style.width = '100%';
                 cover.style.height = '100%';
                 cover.style.backgroundColor = 'black';
@@ -93,7 +93,7 @@ describe('VastManager unit test', function () {
             }
             if (!spinner) {
                 spinner = document.createElement('div');
-                spinner.id = 'apn-vast-spinner';
+                spinner.id = 'plugin-vast-spinner';
                 spinner.className = 'vjs-loading-spinner';
                 spinner.style.display = 'none';
                 spinner.style.zIndex = 101;
