@@ -20,42 +20,41 @@ var BC_prebid_in_progress = $$PREBID_GLOBAL$$.plugin_prebid_options && $$PREBID_
 // the function does bidding and returns bids thru callback
 function doPrebid(options, callback) {
 	if ($$PREBID_GLOBAL$$.bc_pbjs && options.biddersSpec) {
-		  var pbjs = $$PREBID_GLOBAL$$.bc_pbjs || {};
-	      pbjs.que = pbjs.que || [];
+		$$PREBID_GLOBAL$$.bc_pbjs.que = $$PREBID_GLOBAL$$.bc_pbjs.que || [];
 
-	      //
-	      // Prebid Video adUnit
-	      //
-	      var logBids = function(bids) {
-	    	  _logger.log(_prefix, 'MESSAGE: got bids back: ', bids);
-	      };
+		//
+		// Prebid Video adUnit
+		//
+		var logBids = function(bids) {
+			_logger.log(_prefix, 'MESSAGE: got bids back: ', bids);
+		};
 
-	      pbjs.que.push(function() {
-	        pbjs.addAdUnits(options.biddersSpec); // add your ad units to the bid request
+		$$PREBID_GLOBAL$$.bc_pbjs.que.push(function() {
+			$$PREBID_GLOBAL$$.bc_pbjs.addAdUnits(options.biddersSpec); // add your ad units to the bid request
 
-	        if (options.prebidConfigOptions) {
-	        	// DFP reqired prebid cache
-			    if (!options.enablePrebidCache && options.prebidConfigOptions.cache && !options.dfpParameters) {
-			    	delete options.prebidConfigOptions.cache;
-			    }
-	        	pbjs.setConfig(options.prebidConfigOptions);
-	        }
+			if (options.prebidConfigOptions) {
+				// DFP reqired prebid cache
+				if (!options.enablePrebidCache && options.prebidConfigOptions.cache && !options.dfpParameters) {
+					delete options.prebidConfigOptions.cache;
+				}
+				$$PREBID_GLOBAL$$.bc_pbjs.setConfig(options.prebidConfigOptions);
+			}
 
-	        // activate prebid cache (DFP reqired prebid cache)
-		    if (options.enablePrebidCache || options.dfpParameters) {
-			    pbjs.setConfig({
-			        usePrebidCache: true
-			    });
-		    }
+			// activate prebid cache (DFP reqired prebid cache)
+			if (options.enablePrebidCache || options.dfpParameters) {
+				$$PREBID_GLOBAL$$.bc_pbjs.setConfig({
+					usePrebidCache: true
+				});
+			}
 
-	        pbjs.requestBids({
-	          timeout: (options.prebidTimeout && options.prebidTimeout > 0) ? options.prebidTimeout : 700,
-	          bidsBackHandler: function(bids) { // this function will be called once bids are returned
-	            logBids(bids);
-	            callback(bids);
-	          }
-	        });
-		  });
+			$$PREBID_GLOBAL$$.bc_pbjs.requestBids({
+				timeout: (options.prebidTimeout && options.prebidTimeout > 0) ? options.prebidTimeout : 700,
+				bidsBackHandler: function(bids) { // this function will be called once bids are returned
+					logBids(bids);
+					callback(bids);
+				}
+			});
+		});
 	}
 	else {
 		callback(null);

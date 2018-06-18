@@ -1,4 +1,6 @@
 var path = require('path');
+var stringReplacePlugin = require('string-replace-webpack-plugin');
+var plugin = require('./package.json');
 
 // webpack.config.js for build
 module.exports = {
@@ -25,6 +27,19 @@ module.exports = {
             test: /\.js$/,
             exclude: /node_modules/,
             loader: 'preprocessor-loader'
+        }, {
+            test: /\.js$/,
+            include: /(src|tests)/,
+            loader: stringReplacePlugin.replace({
+              replacements: [
+                {
+                  pattern: /\$\$PREBID_GLOBAL\$\$/g,
+                  replacement: function (match, p1, offset, string) {
+                    return plugin.globalVarName;
+                  }
+                }
+              ]
+            })
         }]
     },
 
