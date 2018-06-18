@@ -110,7 +110,9 @@ function loadPrebidScript(options, fromHeader) {
 	    					$$PREBID_GLOBAL$$.prebid_creative = creative;
 	    		            BC_prebid_in_progress = false;
 							dispatchPrebidDoneEvent();
-	    				});
+							_logger.log(_prefix, 'Selected VAST url: ' + $$PREBID_GLOBAL$$.prebid_creative);
+						});
+						return;
 	    			}
 	    			else {
 	    				// select vast url from bid with higher cpm

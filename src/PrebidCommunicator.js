@@ -48,7 +48,7 @@ var prebidCommunicator = function () {
         				// use 3rd party ad server if ad server callback is present in options
 	        			_logger.log(_prefix, 'Use 3rd party ad server');
         				_options.adServerCallback(arrBids, function(adServerCreative) {
-        	    			_logger.log(_prefix, 'Selected VAST url: ' + creative);
+        	    			_logger.log(_prefix, 'Selected VAST url: ' + adServerCreative);
 							if (_callback) {
 								_callback(adServerCreative);
             				}
