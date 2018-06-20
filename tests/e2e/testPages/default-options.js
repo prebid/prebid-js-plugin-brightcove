@@ -17,7 +17,7 @@ var defaultOptions = {
             {
                 "bidder": 'appnexus',
                 "params": {
-                    "placementId": 8845778,
+                    "placementId": 12527596,
                     "video": {
                         "skippable": true,
                         "playback_method": ['auto_play_sound_off']
