@@ -15,7 +15,7 @@ var defaultOptions = {
         },
         "bids": [
             {
-                "bidder": 'appnexusAst',
+                "bidder": 'appnexus',
                 "params": {
                     "placementId": 8845778,
                     "video": {

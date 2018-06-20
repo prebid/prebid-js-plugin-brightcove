@@ -36,7 +36,7 @@ describe('BcPrebidVast unit test', function() {
             	        },
             	        bids: [
             	            {
-            	                bidder: 'appnexusAst',
+            	                bidder: 'appnexus',
             	                params: {
             	                    // "placementId": 8845778,
             	                    video: {
