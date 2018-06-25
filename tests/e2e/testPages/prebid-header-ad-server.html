@@ -1,0 +1,282 @@
+<!doctype html>
+<html>
+<head>
+	<meta charset="utf-8">
+  	<title>Brightcove Plugin Test (MailOnline)</title>
+
+	<script src="./default-options.js"></script>
+	<link href="bc_vpaid_vast_mo.css" rel="stylesheet">
+	<link href="bc_prebid_vast_vjs.css" rel="stylesheet">
+
+	<script>
+		var _messages = [];
+		var _creativeReady = false;
+		var _rendererReady = false;
+		var _adServerCreative = null;
+		var tryRenderAd = null;
+		document.addEventListener('creative_ready', function() {
+			console.log('****** creative_ready event happened');
+			_creativeReady = true;
+			if (tryRenderAd) {
+				tryRenderAd();
+			}
+		});
+		document.addEventListener('renderer_ready', function() {
+			console.log('****** renderer_ready event happened');
+			_rendererReady = true;
+			if (tryRenderAd) {
+				tryRenderAd();
+			}
+		});		
+		
+		var _popUpOptions = getOptions('plugin_prebid_vast');
+	    
+		var opts; 
+		var tmp = JSON.stringify(_popUpOptions);
+		opts = JSON.parse(tmp);
+		window.bc_plugin_pbjs = {plugin_prebid_options: opts};
+		opts.bidderSettings = 
+	       {
+	         standard: {
+	           adserverTargeting: [
+	             {
+	               key: "hb_bidder",
+	               val: function (bidResponse) {
+	                 return bidResponse.bidderCode;
+	               }
+	             }, {
+	               key: "hb_adid",
+	               val: function (bidResponse) {
+	                 return bidResponse.adId;
+	               }
+	             }, {
+	               key: "hb_pb",
+	               val: function (bidResponse) {
+	            	   var hBpb = (opts.qa && opts.qa.hb_pb)? opts.qa.hb_pb : "10.00";
+	            	   console.log("Hb-pb = " + hBpb);
+	                 return hBpb;
+	               }
+	             }, {
+	               key: "hb_size",
+	               val: function (bidResponse) {
+	                 return bidResponse.size;
+	               }
+	             }
+	           ]
+	         }
+	       };
+		
+		if (opts.hasOwnProperty('dfpParameters')) {
+			delete opts.dfpParameters;
+		}
+	    function appendStatistics(text) {
+	    	if (document.getElementById('statistics')) {
+	    		if (_messages.length > 0) {
+	    			for (var i = 0; i < _messages.length; i++) {
+	    		    	document.getElementById('statistics').value = document.getElementById('statistics').value + '\r\n' + _messages[i];
+	    			}
+	    		}
+	    		_messages = [];
+		    	document.getElementById('statistics').value = document.getElementById('statistics').value + '\r\n' + text;
+		    	document.getElementById('statistics').scrollTop = document.getElementById('statistics').scrollHeight;
+	    	}
+	    	else {
+	    		_messages.push(text);
+	    	}
+	    }
+
+		opts.adServerCallback = function(arrBids) {
+			var cpmAdServer = 2.0;		// modify to simulate CPM for 3rd party Ad server
+			var urlAdServer = 'https://video-demo.appnexus.com/encino/xml/9POC_cr2.xml';	// modify to use our own VAST xml
+			var adServerUrlSelected = false;
+			var creative = '';
+			if (Array.isArray(arrBids) && arrBids.length > 0) {
+   				var cpm = 0.0;
+   				for (var i = 0; i < arrBids.length; i++) {
+   					appendStatistics('Bid #' + (i + 1) + ": creative - " + arrBids[i].creativeId + ", cpm - " + arrBids[i].cpm);
+   					if (arrBids[i].cpm > cpm) {
+   						creative = arrBids[i].creativeId;
+   						cpm = arrBids[i].cpm;
+   						_adServerCreative = arrBids[i].vastUrl;
+   					}
+   				}
+    			appendStatistics('Ad Server cpm - ' + cpmAdServer);
+				if (cpmAdServer > cpm) {
+					adServerUrlSelected = true;
+					_adServerCreative = urlAdServer;
+				}
+ 			}
+			else {
+ 				appendStatistics('Ad Server cpm - ' + cpmAdServer);
+				adServerUrlSelected = true;
+				_adServerCreative = urlAdServer;
+			}
+			appendStatistics('Selected ' + (adServerUrlSelected ? 'Ad Server' : ('creative ' + creative)) + '. URL - ' + _adServerCreative);
+	    	var event;
+	    	if(typeof(Event) === 'function') {
+	    	    event = new Event('creative_ready');
+	    	}else{
+	    	    event = document.createEvent('Event');
+	    	    event.initEvent('creative_ready', true, true);
+	    	}
+			document.dispatchEvent(event);
+		};
+		
+	</script>
+	<script type="text/javascript" src="../../../dist/bc_prebid_vast.js"></script>
+</head>
+
+<body >
+<div id = "divBackground" style="position: fixed; z-index: 900; height: 100%; width: 100%; top: 0; left:0; background-color: Black; filter: alpha(opacity=60); opacity: 0.6; -moz-opacity: 0.8;display:none">
+</div>
+
+<div style="background: #ff8800; color: #ffffff; overflow:scroll; width:1000px; height:840px;">
+    
+	<div id="parentContainer1" style="width:640px; position:absolute; top:20px; left:70px; z-index:1000;">
+		<p><b>Prebid in Header (Ad Server)</b></p>
+	
+		<video id="test_player"
+			data-video-id="5664543481001" 
+			data-account="5530036758001" 
+			data-player="HJMTvh2YZ" 
+			data-embed="default" 
+			data-application-id 
+			class="video-js" 
+			controls 
+			autoplay
+			width="600" 
+			height="337.5">
+		</video>
+		<script src="//players.brightcove.net/5530036758001/HJMTvh2YZ_default/index.min.js"></script>	
+	</div>
+
+	<script>
+		opts.pageNotificationCallback = pageNotification;
+	
+		tryRenderAd = function() {
+			console.log('****** tryRenderAd: _creativeReady = ' + _creativeReady + ', _rendererReady = ' + _rendererReady);
+			if (_creativeReady && _rendererReady) {
+				_creativeReady = false;
+				_rendererReady = false;
+				BCVideo_PrebidVastPlugin.renderAd(opts, 'test_player', _adServerCreative);
+			}
+		};
+		
+		BCVideo_PrebidVastPlugin.init();
+    	var event;
+    	if(typeof(Event) === 'function') {
+    	    event = new Event('renderer_ready');
+    	}else{
+    	    event = document.createEvent('Event');
+    	    event.initEvent('renderer_ready', true, true);
+    	}
+		document.dispatchEvent(event);
+
+		function stopAd() {
+			BCVideo_PrebidVastPlugin.stop();
+		}
+		
+	    function pageNotification(type, data) {
+			if (type === 'event') {
+	    		appendStatistics('Event: ' + data);
+			}
+			else if (type === 'message') {
+	    		appendStatistics(data);
+			}
+		}
+		
+	</script>
+
+	<div style="height:100px;position:absolute;top:100px;left:750px; z-index:920;">
+	   	<img src='assets/settings_40x41.png' onclick="showPopupOptions()"><br><br>
+		<button type="button" onclick="stopAd()">Stop Ad</button><br><br>
+	</div>
+	
+	<div style="position:absolute;top:440px; left:70px; z-index:920; width:840px; height:400px;">
+		<textarea id="statistics" wrap="off" cols="110" rows="20" 
+			style="color:black; background-color:transparent; border:solid 1px black; font-size:10pt; resize:none;">Ad Statistics:</textarea>
+	</div>
+</div>
+
+<div id='dlgOptions' style='display: none; position: absolute; top: 0px; left: 100px; z-index: 20000; background-color: orange; border:solid 1px black;'>
+	<p id='title'><b>&nbsp&nbsp&nbsp&nbspBrightcove VMAP plugin Options</b></p>
+    <table>
+    	<tr>
+    		<td>
+	    		<div>
+				    <p><b>Options</b></p>
+				    <input id="txtOptions" size="350" value='' style='display:none;'></input>
+				    <textarea id='options' rows='38' cols='70' style='color:black; border:solid 1px black; font-size:10pt; resize:none;'></textarea>
+	    		</div>
+	    	</td>
+	    	<td>
+			    <button type="button" onclick="onSetOptions()">Save and Close</button>
+				<br><br>
+			    <button type="button" onclick="onCancel()">Cancel</button>
+				<br><br>
+			    <button type="button" onclick="onReloadDefaultOptions()">Reload Default Options</button>
+			</td>
+		</tr>
+    </table>
+
+    <script type="text/javascript">
+		function showPopupOptions() {
+			var opt = document.getElementById('txtOptions');
+			if (opt) {
+				opt.value = JSON.stringify(_popUpOptions);
+			}
+			optInit();
+		}
+		function ReturnOptions(options1) {
+			// save the options
+			_popUpOptions = options1;
+			saveOptions(_popUpOptions, 'plugin_prebid_vast');
+		}
+		
+  		var _dlgOptions = {};
+  		
+  		function LoadModalDiv()
+  		{
+  		    var bcgDiv = document.getElementById("divBackground");
+  		    bcgDiv.style.display="block";
+  		}
+  		function HideModalDiv()
+  		{
+  		   var bcgDiv = document.getElementById("divBackground");
+  		   bcgDiv.style.display="none";
+  		}
+  		
+  		function optInit() {
+  			LoadModalDiv();
+			document.getElementById('dlgOptions').style.display = 'block';
+  			var opts = JSON.parse(document.getElementById('txtOptions').value);
+  			document.getElementById('options').value = JSON.stringify(opts, null, "\t");
+  			document.getElementById('dlgOptions').style.display = 'block';
+		}
+  		
+  		function onSetOptions() {
+  			try {
+	  			_dlgOptions = JSON.parse(document.getElementById('options').value);
+  			}
+  			catch(ex) {
+  				alert("Invalid options format.");
+  				return;
+  			}
+			ReturnOptions(_dlgOptions);
+			document.getElementById('dlgOptions').style.display = 'none';
+			HideModalDiv();
+  		}
+  		
+  		function onReloadDefaultOptions() {
+  			var opts = defaultOptions;
+  			document.getElementById('options').value = JSON.stringify(opts, null, "\t");
+  		}
+  		
+  		function onCancel() {
+			document.getElementById('dlgOptions').style.display = 'none';
+			HideModalDiv();
+  		}
+    </script>
+</div>
+</body>
+</html>
