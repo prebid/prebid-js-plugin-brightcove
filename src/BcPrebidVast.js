@@ -13,11 +13,12 @@ var _prefix = 'PrebidVast->';
 
 var $$PREBID_GLOBAL$$ = _prebidGlobal.getGlobal();
 
-_logger.always(_prefix, 'Version 0.0.10');
+_logger.always(_prefix, 'Version 0.1.4');
 
 var BC_prebid_in_progress = $$PREBID_GLOBAL$$.plugin_prebid_options && $$PREBID_GLOBAL$$.plugin_prebid_options.biddersSpec;
 
 // the function does bidding and returns bids thru callback
+var BC_bidders_added = false;
 function doPrebid(options, callback) {
 	if ($$PREBID_GLOBAL$$.bc_pbjs && options.biddersSpec) {
 		$$PREBID_GLOBAL$$.bc_pbjs.que = $$PREBID_GLOBAL$$.bc_pbjs.que || [];
@@ -30,7 +31,10 @@ function doPrebid(options, callback) {
 		};
 
 		$$PREBID_GLOBAL$$.bc_pbjs.que.push(function() {
-			$$PREBID_GLOBAL$$.bc_pbjs.addAdUnits(options.biddersSpec); // add your ad units to the bid request
+			if (!BC_bidders_added) {
+				BC_bidders_added = true;
+				$$PREBID_GLOBAL$$.bc_pbjs.addAdUnits(options.biddersSpec); // add your ad units to the bid request
+			}
 
 			if (options.prebidConfigOptions) {
 				// DFP reqired prebid cache
@@ -75,14 +79,24 @@ function dispatchPrebidDoneEvent() {
 
 // the function loads prebid.js and does header bidding if needed
 function loadPrebidScript(options, fromHeader) {
-    var pbjsScr = document.createElement('script');
-    pbjsScr.onload = function() {
-    	$$PREBID_GLOBAL$$.bc_pbjs = pbjs;
+	var doInternalPrebid = function() {
     	// do header bidding if needed
     	if (fromHeader && options && options.biddersSpec) {
     		BC_prebid_in_progress = true;
     		doPrebid(options, function(bids) {
-    			var arrBids = (bids && bids[options.biddersSpec.code]) ? bids[options.biddersSpec.code].bids : [];
+				var selectWinnerByCPM = function(arrBids) {
+					var cpm = 0.0;
+					var creative = null;
+					for (var i = 0; i < arrBids.length; i++) {
+						if (arrBids[i].cpm > cpm) {
+							cpm = arrBids[i].cpm;
+							creative = arrBids[i].vastUrl;
+						}
+					}
+					_logger.log(_prefix, 'Selected VAST url: ' + creative);
+					return creative;
+				};
+				var arrBids = (bids && bids[options.biddersSpec.code]) ? bids[options.biddersSpec.code].bids : [];
     			_logger.log(_prefix, 'bids for bidding: ', arrBids);
     			if (arrBids && Array.isArray(arrBids)) {
 	    			if (options.dfpParameters) {
@@ -102,29 +116,39 @@ function loadPrebidScript(options, fromHeader) {
 						$$PREBID_GLOBAL$$.prebid_creative = $$PREBID_GLOBAL$$.bc_pbjs.adServers.dfp.buildVideoUrl(dfpOpts);
 						BC_prebid_in_progress = false;
 						dispatchPrebidDoneEvent();
-	    			}
+						_logger.log(_prefix, 'Selected VAST url: ' + $$PREBID_GLOBAL$$.prebid_creative);
+					}
 	    			else if (options.adServerCallback) {
 	    				// use 3rd party ad server if ad server callback present in options
-	        			_logger.log(_prefix, 'Use 3rd party ad server');
-	    				$$PREBID_GLOBAL$$.plugin_prebid_options.adServerCallback(arrBids, function(creative) {
-	    					$$PREBID_GLOBAL$$.prebid_creative = creative;
-	    		            BC_prebid_in_progress = false;
+						_logger.log(_prefix, 'Use 3rd party ad server');
+						var func;
+						if (typeof options.adServerCallback === 'function') {
+							func = $$PREBID_GLOBAL$$.plugin_prebid_options.adServerCallback;
+						}
+						else if (typeof options.adServerCallback === 'string' &&
+								 window[options.adServerCallback] &&
+								 typeof window[options.adServerCallback] === 'function') {
+							func = window[options.adServerCallback];
+						}
+						if (func) {
+							func(arrBids, function(creative) {
+	    						$$PREBID_GLOBAL$$.prebid_creative = creative;
+	    		            	BC_prebid_in_progress = false;
+								dispatchPrebidDoneEvent();
+								_logger.log(_prefix, 'Selected VAST url: ' + $$PREBID_GLOBAL$$.prebid_creative);
+							});
+						}
+						else {
+							_logger.log(_prefix, 'Select winner by CPM because 3rd party callback is invalid');
+							$$PREBID_GLOBAL$$.prebid_creative = selectWinnerByCPM(arrBids);
+							BC_prebid_in_progress = false;
 							dispatchPrebidDoneEvent();
-							_logger.log(_prefix, 'Selected VAST url: ' + $$PREBID_GLOBAL$$.prebid_creative);
-						});
-						return;
+						}
 	    			}
 	    			else {
 	    				// select vast url from bid with higher cpm
 	        			_logger.log(_prefix, 'Select winner by CPM');
-	    				var cpm = 0.0;
-	    				$$PREBID_GLOBAL$$.prebid_creativ = null;
-	    				for (var i = 0; i < arrBids.length; i++) {
-	    					if (arrBids[i].cpm > cpm) {
-	    						cpm = arrBids[i].cpm;
-	    						$$PREBID_GLOBAL$$.prebid_creative = arrBids[i].vastUrl;
-	    					}
-	    				}
+	    				$$PREBID_GLOBAL$$.prebid_creative = selectWinnerByCPM(arrBids);
 	    	            BC_prebid_in_progress = false;
 						dispatchPrebidDoneEvent();
 	    			}
@@ -132,11 +156,20 @@ function loadPrebidScript(options, fromHeader) {
     			else {
     				// no bids
     	            BC_prebid_in_progress = false;
-					dispatchPrebidDoneEvent();
-    			}
-    			_logger.log(_prefix, 'Selected VAST url: ' + $$PREBID_GLOBAL$$.prebid_creative);
+					_logger.log(_prefix, 'Selected VAST url: ' + $$PREBID_GLOBAL$$.prebid_creative);
+				}
 			});
     	}
+	};
+	if (document.getElementById('bc-pb-script')) {
+		doInternalPrebid();
+		return;
+	}
+
+    var pbjsScr = document.createElement('script');
+    pbjsScr.onload = function() {
+    	$$PREBID_GLOBAL$$.bc_pbjs = pbjs;
+		doInternalPrebid();
     };
     pbjsScr.onerror = function(e) {
     	_logger.error(_prefix, 'Failed to load prebid.js. Error event: ', e);
@@ -146,6 +179,7 @@ function loadPrebidScript(options, fromHeader) {
     	$$PREBID_GLOBAL$$.bc_pbjs_error = true;
 		dispatchPrebidDoneEvent();
     };
+	pbjsScr.id = 'bc-pb-script';
     pbjsScr.async = true;
     pbjsScr.type = 'text/javascript';
     pbjsScr.src = options.prebidPath ? options.prebidPath : '//acdn.adnxs.com/prebid/not-for-prod/1/prebid.js';
@@ -216,10 +250,10 @@ function loadMolPlugin(callback) {
 })();
 
 // register videojs prebid plugins
-function registerPrebidVastPlugin(vjs) {
+function regPrebidVastPlugin(vjs) {
 	_vjs = vjs;
 	if (!_vjs.getPlugins().bcPrebidVastPlugin) {
-		reqisterPrebidVastPlugin();
+		registerPrebidVastPlugin();
 	}
 
 	_vjs.registerPlugin('bcPrebidVastPluginCommand', function(command) {
@@ -261,7 +295,7 @@ var prebidVastPlugin = {
 	// @endexclude
 
 	init: function () {
-		registerPrebidVastPlugin(videojs);
+		regPrebidVastPlugin(videojs);
 	},
 
 	id: null,
@@ -296,7 +330,7 @@ var _player;
 var _vastManagerObj;
 var _prebidCommunicatorObj;
 if (_vjs) {
-	reqisterPrebidVastPlugin();
+	registerPrebidVastPlugin();
 }
 
 function renderAd(options) {
@@ -345,7 +379,7 @@ function renderAd(options) {
 	}
 }
 
-function reqisterPrebidVastPlugin() {
+function registerPrebidVastPlugin() {
 	_vjs.registerPlugin('bcPrebidVastPlugin', function(options) {
 		if (!$$PREBID_GLOBAL$$.bc_pbjs && !BC_prebid_in_progress && !options.creative) {
 			loadPrebidScript(options, false);

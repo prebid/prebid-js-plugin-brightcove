@@ -445,11 +445,11 @@ var markersHandler = function (vjs) {
 
     this.init = function (player) {
     	_player = player;
-    	_vjs.registerPlugin('markers', markers);
+    	_vjs.registerPlugin('markersHandler', markers);
     };
 
     this.markers = function(timeMarkers) {
-    	_player.markers(timeMarkers);
+    	_player.markersHandler(timeMarkers);
     };
 };
 
