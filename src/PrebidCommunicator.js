@@ -23,9 +23,6 @@ var prebidCommunicator = function () {
 			}
 		}
 		_logger.log(_prefix, 'Selected VAST url: ' + creative);
-		if (_qaOptionsSupport && _qaOptionsSupport.notifyPublisher) {
-			_qaOptionsSupport.notifyPublisher(_options, {key: 'selectedXml', value: creative});
-		}
 		return creative;
 	}
 
