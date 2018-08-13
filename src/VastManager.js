@@ -41,6 +41,7 @@ var vastManager = function () {
     	return /iP(hone|od)/.test(navigator.userAgent);
     }
 
+	// show/hide black div witrh spinner
 	function showCover(show) {
 		_logger.log(_prefix, (show ? 'Show' : 'Hide') + ' ad cover with spinner');
 		if (show) {
@@ -61,6 +62,7 @@ var vastManager = function () {
 		}
 	}
 
+	// show/hide brightcove controls activated for next clip within playlist
 	function showNextOverlay(show) {
 		var nextOverlays = document.getElementsByClassName('vjs-next-overlay');
 		if (nextOverlays && nextOverlays.length > 0) {
@@ -68,6 +70,7 @@ var vastManager = function () {
 		}
 	}
 
+	// check frequency capping rules
 	function needPlayAdForPlaylistItem(plIdx) {
 		if (_options.frequencyRules && _options.frequencyRules.playlistClips && _options.frequencyRules.playlistClips > 1) {
 			var mod = plIdx % _options.frequencyRules.playlistClips;
@@ -76,6 +79,7 @@ var vastManager = function () {
 		return true;
 	}
 
+	// event handler for 'playlistitem' event
 	function nextListItemHandler() {
 		_nextPlaylistItemFired = true;
 		_savedMarkers = null;
@@ -136,6 +140,7 @@ var vastManager = function () {
 		}, 1000);
 	}
 
+	// request prebid.js for creative for next clip in playlist
 	function doPrebidForNextPlaylistItem() {
 		_playlist = (_player.playlist && typeof _player.playlist === 'function') ? _player.playlist() : [];
 		if (!_playlist) {
@@ -270,6 +275,7 @@ var vastManager = function () {
 		}
 	}
 
+	// set ad playback options base on main content state
 	function setPlaybackMethodData() {
 		var initPlayback = 'auto';
     	if (_player.currentTime() === 0) {
@@ -280,6 +286,7 @@ var vastManager = function () {
 		_options.initialAudio = initAudio;
 	}
 
+	// add listeners for renderer events
     function addListeners() {
     	_player.one('vast.adStart', function() {
 			_adIndicator.style.display = 'block';
@@ -298,6 +305,7 @@ var vastManager = function () {
     	_player.on('trace.event', traceEvent);
     }
 
+	// remove listeners for renderer events
     function removeListeners() {
     	_player.off('vast.adError', resetContent);
     	_player.off('vast.adsCancel', resetContent);
@@ -599,6 +607,7 @@ var vastManager = function () {
 		}
     }
 
+	// main entry point to start play ad
     this.play = function (vjsPlayer, creative, options) {
     	_player = vjsPlayer;
 		_options = options;
@@ -652,6 +661,7 @@ var vastManager = function () {
     	}
     };
 
+	// stop play ad
     this.stop = function() {
     	// stop ad if playing and remove marker from timeline
     	if (_adPlaying) {

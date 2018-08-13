@@ -71,7 +71,7 @@ var prebidCommunicator = function () {
 						}
 						if (func) {
 							func(arrBids, function(adServerCreative) {
-								_logger.log(_prefix, 'Selected VAST url: ' + creative);
+								_logger.log(_prefix, 'Selected VAST url: ' + adServerCreative);
 								if (_callback) {
 									_callback(adServerCreative);
 								}
