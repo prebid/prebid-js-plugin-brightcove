@@ -77,13 +77,21 @@ function dispatchPrebidDoneEvent() {
 	document.dispatchEvent(event);
 }
 
-// the function loads prebid.js and does header bidding if needed
+// This function will be invoked immediately when plugin script is loaded in the page or by brightcove player.
+// The function loads prebid.js and does header bidding if needed.
+// The first parameter contains bidder settings needed for prebid.
+// If second parameter is present and is 'true' we have to call prebid right now (header bidding).
+// That parameter is present and set to 'true' when $$PREBID_GLOBAL$$.plugin_prebid_options.biddersSpec has a value.
+// $$PREBID_GLOBAL$$.plugin_prebid_options.biddersSpec has to be set for header bidding BEFORE the plugin's script is loaded.
 function loadPrebidScript(options, fromHeader) {
+	// internal function which will be called later
 	var doInternalPrebid = function() {
-    	// do header bidding if needed
+    	// do header bidding if fromHeader is 'true' and bidder setting are present in options
     	if (fromHeader && options && options.biddersSpec) {
-    		BC_prebid_in_progress = true;
+			BC_prebid_in_progress = true;
+			// invoke prebid
     		doPrebid(options, function(bids) {
+				// this function returns creative with higher CPM
 				var selectWinnerByCPM = function(arrBids) {
 					var cpm = 0.0;
 					var creative = null;
@@ -162,16 +170,19 @@ function loadPrebidScript(options, fromHeader) {
     	}
 	};
 	if (document.getElementById('bc-pb-script')) {
+		// if prebid.js is already loaded try to invoke prebid.
 		doInternalPrebid();
 		return;
 	}
 
     var pbjsScr = document.createElement('script');
     pbjsScr.onload = function() {
-    	$$PREBID_GLOBAL$$.bc_pbjs = pbjs;
+		$$PREBID_GLOBAL$$.bc_pbjs = pbjs;
+		// after prebid.js is successfully loaded try to invoke prebid.
 		doInternalPrebid();
     };
     pbjsScr.onerror = function(e) {
+		// failed to load prebid.js.
     	_logger.error(_prefix, 'Failed to load prebid.js. Error event: ', e);
 		if (options.pageNotificationCallback) {
 			options.pageNotificationCallback('message', 'Failed to load prebid.js');
