@@ -13,7 +13,7 @@ var _prefix = 'PrebidVast->';
 
 var $$PREBID_GLOBAL$$ = _prebidGlobal.getGlobal();
 
-_logger.always(_prefix, 'Version 0.1.1');
+_logger.always(_prefix, 'Version 0.1.2');
 
 var BC_prebid_in_progress = $$PREBID_GLOBAL$$.plugin_prebid_options && $$PREBID_GLOBAL$$.plugin_prebid_options.biddersSpec;
 
