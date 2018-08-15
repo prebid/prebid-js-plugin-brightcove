@@ -13,6 +13,19 @@ var prebidCommunicator = function () {
 	var _options;
 	var _callback;
 
+	function selectWinnerByCPM(arrBids) {
+		var cpm = 0.0;
+		var creative;
+		for (var i = 0; i < arrBids.length; i++) {
+			if (arrBids[i].cpm > cpm) {
+				cpm = arrBids[i].cpm;
+				creative = arrBids[i].vastUrl;
+			}
+		}
+		_logger.log(_prefix, 'Selected VAST url: ' + creative);
+		return creative;
+	}
+
 	function doPrebid() {
 		// call bidding
     	if (_options.biddersSpec) {
@@ -47,28 +60,41 @@ var prebidCommunicator = function () {
         			else if (_options.adServerCallback) {
         				// use 3rd party ad server if ad server callback is present in options
 	        			_logger.log(_prefix, 'Use 3rd party ad server');
-        				_options.adServerCallback(arrBids, function(adServerCreative) {
-        	    			_logger.log(_prefix, 'Selected VAST url: ' + adServerCreative);
+						var func;
+						if (typeof _options.adServerCallback === 'function') {
+							func = _options.adServerCallback;
+						}
+						else if (typeof _options.adServerCallback === 'string' &&
+								 window[_options.adServerCallback] &&
+								 typeof window[_options.adServerCallback] === 'function') {
+							func = window[_options.adServerCallback];
+						}
+						if (func) {
+							func(arrBids, function(adServerCreative) {
+								_logger.log(_prefix, 'Selected VAST url: ' + adServerCreative);
+								if (_callback) {
+									_callback(adServerCreative);
+								}
+								else {
+									$$PREBID_GLOBAL$.prebid_creative = adServerCreative;
+								}
+							});
+						}
+						else {
+							_logger.log(_prefix, 'Select winner by CPM because 3rd party callback is invalid');
+							creative = selectWinnerByCPM(arrBids);
 							if (_callback) {
-								_callback(adServerCreative);
-            				}
-            				else {
-            					$$PREBID_GLOBAL$$.prebid_creative = adServerCreative;
-            				}
-        				});
+								_callback(creative);
+							}
+							else {
+								$$PREBID_GLOBAL$$.prebid_creative = creative;
+							}
+						}
         			}
         			else {
         				// select vast url from bid with higher cpm
 	        			_logger.log(_prefix, 'Select winner by CPM');
-	    				var cpm = 0.0;
-	    				creative = null;
-	    				for (var i = 0; i < arrBids.length; i++) {
-	    					if (arrBids[i].cpm > cpm) {
-	    						cpm = arrBids[i].cpm;
-	    						creative = arrBids[i].vastUrl;
-	    					}
-	    				}
-    	    			_logger.log(_prefix, 'Selected VAST url: ' + creative);
+	    				creative = selectWinnerByCPM(arrBids);
 						if (_callback) {
         					_callback(creative);
         				}

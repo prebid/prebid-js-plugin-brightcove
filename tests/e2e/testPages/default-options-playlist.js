@@ -54,7 +54,10 @@ var defaultOptions = {
   	"adStartTimeout" : 3000,
   	"adServerTimeout" : 1000,
   	"timeOffset": "start",
-  	"adText": "Ad"
+  	"adText": "Ad",
+	"frequencyRules" : {
+		"playlistClips" : 1
+	}
 };
 
 function getOptions(cacheName) {
