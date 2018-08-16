@@ -13,7 +13,7 @@ var _prefix = 'PrebidVast->';
 
 var $$PREBID_GLOBAL$$ = _prebidGlobal.getGlobal();
 
-_logger.always(_prefix, 'Version 0.1.2');
+_logger.always(_prefix, 'Version 0.2.1');
 
 var BC_prebid_in_progress = $$PREBID_GLOBAL$$.plugin_prebid_options && $$PREBID_GLOBAL$$.plugin_prebid_options.biddersSpec;
 
@@ -33,6 +33,7 @@ function doPrebid(options, callback) {
 		$$PREBID_GLOBAL$$.bc_pbjs.que.push(function() {
 			if (!BC_bidders_added) {
 				BC_bidders_added = true;
+				specifyBidderAliases(options.bidderAliases, $$PREBID_GLOBAL$$.bc_pbjs);
 				$$PREBID_GLOBAL$$.bc_pbjs.addAdUnits(options.biddersSpec); // add your ad units to the bid request
 			}
 
@@ -62,6 +63,16 @@ function doPrebid(options, callback) {
 	}
 	else {
 		callback(null);
+	}
+}
+
+function specifyBidderAliases(bidderAliases, bc_pbjs) {
+	if (bidderAliases && Array.isArray(bidderAliases) && bidderAliases.length > 0) {
+		for (var i = 0; i < bidderAliases.length; i++) {
+			if (bidderAliases[i].bidderName && bidderAliases[i].name) {
+				bc_pbjs.aliasBidder(bidderAliases[i].bidderName, bidderAliases[i].name);
+			}
+		}
 	}
 }
 
@@ -296,6 +307,7 @@ var prebidVastPlugin = {
 					doPrebid(options, callback);
 				}
 			},
+			specifyBidderAliases: specifyBidderAliases,
 			loadPrebidScript: loadPrebidScript,
 			bcPrebidInProgress: function() { return BC_prebid_in_progress; },
 			loadMolPlugin: loadMolPlugin,

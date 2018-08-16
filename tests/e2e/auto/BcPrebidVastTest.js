@@ -98,7 +98,24 @@ describe('BcPrebidVast unit test', function() {
 		}, 2000);
     });
 
-    it('loadPrebidScript test - loads prebid js on a page and starts pushing command in pbjs que', function (done) {
+	it('specifyBidderAliases test - specify alias for appnexus bidder', function (done) {
+		var pbjs = {
+			aliasBidder: function(bidder, alias) {
+				assert.equal(bidder, 'appnexus', 'expected appnexus bidder');
+				assert.equal(alias, 'appnexus2', 'expected appnexus2 alias');
+				done();
+			}
+		};
+		var bidderAlias = [
+			{
+				bidderName: 'appnexus',
+				name: 'appnexus2'
+			}
+		];
+		BcPrebidVast.test().specifyBidderAliases(bidderAlias, pbjs);
+	});
+
+	it('loadPrebidScript test - loads prebid js on a page and starts pushing command in pbjs que', function (done) {
 		sinonStub = sinon.stub(logger, 'log', function(pref, data) {
 			if (data && data.indexOf('Selected VAST url') === 0) {
 				console.log(data);
