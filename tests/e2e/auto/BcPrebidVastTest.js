@@ -98,7 +98,28 @@ describe('BcPrebidVast unit test', function() {
 		}, 2000);
     });
 
-    it('loadPrebidScript test - loads prebid js on a page and starts pushing command in pbjs que', function (done) {
+	it('prepareBidderSettins test - converts bidder settings values from string arrays to functions', function () {
+		mockObject.options.bidderSettings = {
+			standard: {
+				adserverTargeting: [
+					{
+						key: 'hb_pb',
+						val: [
+							'valueIsFunction',
+							'function (bidResponse) {',
+							'  return "10.00";',
+							'}'
+						]
+					}
+				]
+			}
+		};
+		BcPrebidVast.test().prepareBidderSettings(mockObject.options);
+		var value = mockObject.options.bidderSettings.standard.adserverTargeting[0].val();
+		assert.equal(value, '10.00', 'failed - expected 10.00, got ' + value);
+	});
+
+	it('loadPrebidScript test - loads prebid js on a page and starts pushing command in pbjs que', function (done) {
 		sinonStub = sinon.stub(logger, 'log', function(pref, data) {
 			if (data && data.indexOf('Selected VAST url') === 0) {
 				console.log(data);

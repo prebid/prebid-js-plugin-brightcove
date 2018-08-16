@@ -67,36 +67,38 @@
 		
 		opts.pageNotificationCallback = pageNotification;
 		
-		opts.bidderSettings = 
-	       {
-	         standard: {
-	           adserverTargeting: [
-	             {
-	               key: "hb_bidder",
-	               val: function (bidResponse) {
-	                 return bidResponse.bidderCode;
-	               }
-	             }, {
-	               key: "hb_adid",
-	               val: function (bidResponse) {
-	                 return bidResponse.adId;
-	               }
-	             }, {
-	               key: "hb_pb",
-	               val: function (bidResponse) {
-	            	   var hBpb = (opts.qa && opts.qa.hb_pb)? opts.qa.hb_pb : "10.00";
-	            	   console.log("Hb-pb = " + hBpb);
-	                 return hBpb;
-	               }
-	             }, {
-	               key: "hb_size",
-	               val: function (bidResponse) {
-	                 return bidResponse.size;
-	               }
-	             }
-	           ]
-	         }
-	       };
+		if (!opts.bidderSettings) {
+			opts.bidderSettings = 
+				{
+					standard: {
+						adserverTargeting: [
+							{
+								key: "hb_bidder",
+								val: function (bidResponse) {
+									return bidResponse.bidderCode;
+								}
+							}, {
+								key: "hb_adid",
+								val: function (bidResponse) {
+									return bidResponse.adId;
+								}
+							}, {
+								key: "hb_pb",
+								val: function (bidResponse) {
+									var hBpb = (opts.qa && opts.qa.hb_pb)? opts.qa.hb_pb : "10.00";
+									console.log("Hb-pb = " + hBpb);
+									return hBpb;
+								}
+							}, {
+								key: "hb_size",
+								val: function (bidResponse) {
+									return bidResponse.size;
+								}
+							}
+						]
+					}
+				};
+		}
 	
 		BCVideo_PrebidVastPlugin.init();
 		BCVideo_PrebidVastPlugin.renderAd(opts, 'test_player');

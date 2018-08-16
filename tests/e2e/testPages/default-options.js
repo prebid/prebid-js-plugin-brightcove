@@ -26,6 +26,48 @@ var defaultOptions = {
             }
         ]
 	},
+	"bidderSettings": {
+		"standard": {
+			"adserverTargeting": [
+				{
+					"key": "hb_bidder",
+					"val": [
+						"valueIsFunction",
+						"function (bidResponse) {",
+						"  return bidResponse.bidderCode;",
+						"}"
+					]
+				},
+				{
+					"key": "hb_adid",
+					"val": [
+						"valueIsFunction",
+						"function (bidResponse) {",
+						"  return bidResponse.adId;",
+						"}"
+					]
+				},
+				{
+					"key": "hb_pb",
+					"val": [
+						"valueIsFunction",
+						"function (bidResponse) {",
+						"  return '10.00';",
+						"}"
+					]
+				},
+				{
+					"key": "hb_size",
+					"val": [
+						"valueIsFunction",
+						"function (bidResponse) {",
+						"  return bidResponse.size;",
+						"}"
+					]
+				}
+			]
+		}
+	},
 	"prebidConfigOptions" : {
 		"cache": {
 			"url": "https://prebid.adnxs.com/pbc/v1/cache"

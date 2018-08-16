@@ -1,3 +1,4 @@
+/* eslint no-eval: 0 */
 /**
  * Header Bidding Plugin Brightcove module.
  */
@@ -13,7 +14,7 @@ var _prefix = 'PrebidVast->';
 
 var $$PREBID_GLOBAL$$ = _prebidGlobal.getGlobal();
 
-_logger.always(_prefix, 'Version 0.1.2');
+_logger.always(_prefix, 'Version 0.2.1');
 
 var BC_prebid_in_progress = $$PREBID_GLOBAL$$.plugin_prebid_options && $$PREBID_GLOBAL$$.plugin_prebid_options.biddersSpec;
 
@@ -33,6 +34,7 @@ function doPrebid(options, callback) {
 		$$PREBID_GLOBAL$$.bc_pbjs.que.push(function() {
 			if (!BC_bidders_added) {
 				BC_bidders_added = true;
+				prepareBidderSettings(options);
 				$$PREBID_GLOBAL$$.bc_pbjs.addAdUnits(options.biddersSpec); // add your ad units to the bid request
 			}
 
@@ -62,6 +64,33 @@ function doPrebid(options, callback) {
 	}
 	else {
 		callback(null);
+	}
+}
+
+function prepareBidderSettings(options) {
+	if (options.bidderSettings) {
+		var subtituteToEval = function (arr, obj) {
+			if (arr.length > 1 && arr[0] === 'valueIsFunction') {
+				arr.shift();
+				var str = arr.join('');
+				eval('obj.val = ' + str); // jshint ignore:line
+			}
+		};
+		var findValProperty = function findValProperty(obj) {
+			for (var name in obj) {
+				if (name.toLowerCase() === 'val') {
+					if (Array.isArray(obj.val)) {
+						subtituteToEval(obj.val, obj);
+					}
+				}
+				else if (obj[name] instanceof Object) {
+					findValProperty(obj[name]);
+				}
+			}
+		};
+		if (options.bidderSettings) {
+			findValProperty(options.bidderSettings);
+		}
 	}
 }
 
@@ -296,6 +325,7 @@ var prebidVastPlugin = {
 					doPrebid(options, callback);
 				}
 			},
+			prepareBidderSettings: prepareBidderSettings,
 			loadPrebidScript: loadPrebidScript,
 			bcPrebidInProgress: function() { return BC_prebid_in_progress; },
 			loadMolPlugin: loadMolPlugin,
