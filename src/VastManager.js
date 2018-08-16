@@ -426,7 +426,7 @@ var vastManager = function () {
 			};
 
 			var preroll = _player.currentTime() < 0.5;
-			if (preroll) {
+			if (preroll && _playlistIdx < 0) {
 				try {
 					var playPromise = _player.tech().el().play();
 					if (playPromise !== undefined && typeof playPromise.then === 'function') {
@@ -478,8 +478,8 @@ var vastManager = function () {
 				}
 			}
 			else {
-				_logger.log(_prefix, 'Video can play with sound (not preroll)');
-				traceMessage({data: {message: 'Video can play with sound (not preroll)'}});
+				_logger.log(_prefix, 'Video can play with sound (not preroll or not 1st in playlist)');
+				traceMessage({data: {message: 'Video can play with sound (not preroll or not 1st in playlist)'}});
 				renderAd(clientParams, true);
 			}
 		};
