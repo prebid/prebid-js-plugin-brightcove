@@ -67,6 +67,7 @@ function doPrebid(options, callback) {
 	}
 }
 
+// This function converts 'val' properties in bidderSettings represented as string array to inline functions.
 function prepareBidderSettings(options) {
 	if (options.bidderSettings) {
 		var subtituteToEval = function (arr, obj) {
