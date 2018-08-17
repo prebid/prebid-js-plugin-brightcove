@@ -68,6 +68,8 @@ function doPrebid(options, callback) {
 }
 
 // This function converts 'val' properties in bidderSettings represented as string array to inline functions.
+// We recommend to use string array in bidderSettings only when options are defined for Brightcove player
+// in Brightcove studio.
 function prepareBidderSettings(options) {
 	if (options.bidderSettings) {
 		var subtituteToEval = function (arr, obj) {
