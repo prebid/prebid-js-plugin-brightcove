@@ -35,6 +35,9 @@ function doPrebid(options, callback) {
 			if (!BC_bidders_added) {
 				BC_bidders_added = true;
 				prepareBidderSettings(options);
+				if (options.bidderSettings) {
+					$$PREBID_GLOBAL$$.bc_pbjs.bidderSettings = options.bidderSettings;
+				}
 				$$PREBID_GLOBAL$$.bc_pbjs.addAdUnits(options.biddersSpec); // add your ad units to the bid request
 			}
 
