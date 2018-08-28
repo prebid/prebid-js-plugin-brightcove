@@ -66,7 +66,7 @@ function doPrebid(options, callback) {
 	}
 }
 
-// This function enumerates all aliases for didder adaptersand defines them in prebid.js.
+// This function enumerates all aliases for bidder adapters and defines them in prebid.js.
 // bidderAliases is array of object each of them defines pair of alias/bidder.
 // bc_pbjs is prebid.js instance.
 function specifyBidderAliases(bidderAliases, bc_pbjs) {
