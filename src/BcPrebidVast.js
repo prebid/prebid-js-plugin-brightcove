@@ -13,7 +13,7 @@ var _prefix = 'PrebidVast->';
 
 var $$PREBID_GLOBAL$$ = _prebidGlobal.getGlobal();
 
-_logger.always(_prefix, 'Version 0.1.2');
+_logger.always(_prefix, 'Version 0.1.3');
 
 var BC_prebid_in_progress = $$PREBID_GLOBAL$$.plugin_prebid_options && $$PREBID_GLOBAL$$.plugin_prebid_options.biddersSpec;
 
@@ -33,6 +33,9 @@ function doPrebid(options, callback) {
 		$$PREBID_GLOBAL$$.bc_pbjs.que.push(function() {
 			if (!BC_bidders_added) {
 				BC_bidders_added = true;
+				if (options.bidderSettings) {
+					$$PREBID_GLOBAL$$.bc_pbjs.bidderSettings = options.bidderSettings;
+				}
 				$$PREBID_GLOBAL$$.bc_pbjs.addAdUnits(options.biddersSpec); // add your ad units to the bid request
 			}
 
