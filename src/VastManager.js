@@ -383,7 +383,8 @@ var vastManager = function () {
     		else {
     			// creative is VAST URL
     			clientParams.adTagUrl = creative;
-    		}
+			}
+			// set rendering options
     		if (_options && _options.skippable && _options.skippable.skipText) {
     			clientParams.skipText = _options.skippable.skipText;
     		}
@@ -406,6 +407,7 @@ var vastManager = function () {
 				if (_options.initialPlayback !== 'click' || _mobilePrerollNeedClick) {
 					if (!prerollNeedClickToPlay) {
 						setTimeout(function() {
+							// check if ad can be autoplayed with sound
 							if (canAutoplay) {
 								traceMessage({data: {message: 'Video main content - play()'}});
 								_player.play();
@@ -426,8 +428,10 @@ var vastManager = function () {
 			};
 
 			var preroll = _player.currentTime() < 0.5;
-			if (preroll && _playlistIdx < 0) {
+			// preroll for first video (event playlistitem did not triggered)
+			if (preroll && _playlistIdx === -1) {
 				try {
+					// check if browser allows video to autoplay with sound
 					var playPromise = _player.tech().el().play();
 					if (playPromise !== undefined && typeof playPromise.then === 'function') {
 						playPromise.then(function() {
@@ -445,8 +449,10 @@ var vastManager = function () {
 						});
 					}
 					else {
+						// assumes a video can autoplay with sound if Promise is undefined
 						_logger.log(_prefix, 'Video can play with sound (promise undefined)');
 						traceMessage({data: {message: 'Video can play with sound (promise undefined)'}});
+						// pause main content before playing ad
 						if (_player.paused()) {
 							traceMessage({data: {message: 'Main video paused before preroll'}});
 							renderAd(clientParams, false);
@@ -478,6 +484,7 @@ var vastManager = function () {
 				}
 			}
 			else {
+				// video can always autoplay with sound if it is not preroll
 				_logger.log(_prefix, 'Video can play with sound (not preroll or not 1st in playlist)');
 				traceMessage({data: {message: 'Video can play with sound (not preroll or not 1st in playlist)'}});
 				renderAd(clientParams, true);
@@ -504,7 +511,8 @@ var vastManager = function () {
 				onMarkerReached: function(marker) {
 					if (_markerXml[marker.time]) {
 						_mobilePrerollNeedClick = isMobile() && marker.time === 0;
-						if (_mobilePrerollNeedClick && _playlistIdx < 0) {
+						// preroll for first video (event playlistitem did not triggered)
+						if (_mobilePrerollNeedClick && _playlistIdx === -1) {
 							showCover(false);
 							_player.bigPlayButton.el_.style.opacity = 1;
 							if (isIDevice()) {
