@@ -23,9 +23,39 @@ var defaultOptions = {
                         "playback_method": ['auto_play_sound_off']
                     }
                 }
+            },
+            {
+                "bidder": 'appnexus2',
+                "params": {
+                    "placementId": 12531984,
+                    "video": {
+                        "skippable": true,
+                        "playback_method": ['auto_play_sound_off']
+                    }
+                }
+            },
+            {
+                "bidder": 'appnexus3',
+                "params": {
+                    "placementId": 12531977,
+                    "video": {
+                        "skippable": true,
+                        "playback_method": ['auto_play_sound_off']
+                    }
+                }
             }
-        ]
+		]
 	},
+	"bidderAliases": [
+		{
+			"bidderName": 'appnexus',
+			"name": 'appnexus2'
+		},
+		{
+			"bidderName": 'appnexus',
+			"name": 'appnexus3'
+		}
+	],
 	"prebidConfigOptions" : {
 		"cache": {
 			"url": "https://prebid.adnxs.com/pbc/v1/cache"
