@@ -1,3 +1,4 @@
+/* eslint no-eval: 0 */
 /**
  * Header Bidding Plugin Brightcove module.
  */
@@ -34,6 +35,10 @@ function doPrebid(options, callback) {
 			if (!BC_bidders_added) {
 				BC_bidders_added = true;
 				specifyBidderAliases(options.bidderAliases, $$PREBID_GLOBAL$$.bc_pbjs);
+				prepareBidderSettings(options);
+				if (options.bidderSettings) {
+					$$PREBID_GLOBAL$$.bc_pbjs.bidderSettings = options.bidderSettings;
+				}
 				$$PREBID_GLOBAL$$.bc_pbjs.addAdUnits(options.biddersSpec); // add your ad units to the bid request
 			}
 
@@ -76,6 +81,36 @@ function specifyBidderAliases(bidderAliases, bc_pbjs) {
 				// defines alias for bidder adapter in prebid.js
 				bc_pbjs.aliasBidder(bidderAliases[i].bidderName, bidderAliases[i].name);
 			}
+		}
+	}
+}
+
+// This function converts 'val' properties in bidderSettings represented as string array to inline functions.
+// We recommend to use string array in bidderSettings only when options are defined for Brightcove player
+// in Brightcove studio.
+function prepareBidderSettings(options) {
+	if (options.bidderSettings) {
+		var subtituteToEval = function (arr, obj) {
+			if (arr.length > 1 && arr[0] === 'valueIsFunction') {
+				arr.shift();
+				var str = arr.join('');
+				eval('obj.val = ' + str); // jshint ignore:line
+			}
+		};
+		var findValProperty = function findValProperty(obj) {
+			for (var name in obj) {
+				if (name.toLowerCase() === 'val') {
+					if (Array.isArray(obj.val)) {
+						subtituteToEval(obj.val, obj);
+					}
+				}
+				else if (obj[name] instanceof Object) {
+					findValProperty(obj[name]);
+				}
+			}
+		};
+		if (options.bidderSettings) {
+			findValProperty(options.bidderSettings);
 		}
 	}
 }
@@ -312,6 +347,7 @@ var prebidVastPlugin = {
 				}
 			},
 			specifyBidderAliases: specifyBidderAliases,
+			prepareBidderSettings: prepareBidderSettings,
 			loadPrebidScript: loadPrebidScript,
 			bcPrebidInProgress: function() { return BC_prebid_in_progress; },
 			loadMolPlugin: loadMolPlugin,
