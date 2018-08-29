@@ -416,6 +416,7 @@ var vastManager = function () {
 								traceMessage({data: {message: 'Video main content - activate play button'}});
 								_player.bigPlayButton.el_.style.display = 'block';
 								_player.bigPlayButton.el_.style.opacity = 1;
+								_player.bigPlayButton.el_.style.zIndex = 99999;
 								_player.bigPlayButton.one('click', function() {
 									showCover(true);
 								});
