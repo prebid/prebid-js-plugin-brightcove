@@ -12,6 +12,10 @@ var _prebidCommunicator = require('./PrebidCommunicator.js');
 var _logger = require('./Logging.js');
 var _prefix = 'PrebidVast->';
 
+var DEFAULT_PREBID_JS_URL = '//acdn.adnxs.com/prebid/not-for-prod/1/prebid.js';
+var DEFAULT_PREBID_CACHE_URL = '//prebid.adnxs.com/pbc/v1/cache';
+var MOL_PLUGIN_URL = '//acdn.adnxs.com/video/plugins/mol/videojs_5.vast.vpaid.min.js';
+
 var $$PREBID_GLOBAL$$ = _prebidGlobal.getGlobal();
 
 _logger.always(_prefix, 'Version 0.2.1');
@@ -43,18 +47,25 @@ function doPrebid(options, callback) {
 			}
 
 			if (options.prebidConfigOptions) {
-				// DFP reqired prebid cache
-				if (!options.enablePrebidCache && options.prebidConfigOptions.cache && !options.dfpParameters) {
-					delete options.prebidConfigOptions.cache;
-				}
+                // Enable Prebid Cache by default
+			    if (options.enablePrebidCache !== false) {
+                    options.enablePrebidCache = true;
+                    // If no Prebid Cache url is set, use AppNexus' Prebid Cache by default
+                    if (!options.prebidConfigOptions.cache) {
+                        options.prebidConfigOptions.cache = {};
+                    }
+                    if (!options.prebidConfigOptions.cache.url) {
+                        var defaultCacheURL = DEFAULT_PREBID_CACHE_URL;
+                        options.prebidConfigOptions.cache.url = defaultCacheURL;
+                        _logger.log(_prefix, 'No Prebid Cache url set - using default: ' + defaultCacheURL);
+                    }
+				} else {
+                    // DFP requires Prebid Cache, but otherwise remove the unused cache object if present
+                    if (options.prebidConfigOptions.cache && !options.dfpParameters) {
+                        delete options.prebidConfigOptions.cache;
+                    }
+                }
 				$$PREBID_GLOBAL$$.bc_pbjs.setConfig(options.prebidConfigOptions);
-			}
-
-			// activate prebid cache (DFP reqired prebid cache)
-			if (options.enablePrebidCache || options.dfpParameters) {
-				$$PREBID_GLOBAL$$.bc_pbjs.setConfig({
-					usePrebidCache: true
-				});
 			}
 
 			$$PREBID_GLOBAL$$.bc_pbjs.requestBids({
@@ -243,7 +254,7 @@ function loadPrebidScript(options, fromHeader) {
 	pbjsScr.id = 'bc-pb-script';
     pbjsScr.async = true;
     pbjsScr.type = 'text/javascript';
-    pbjsScr.src = options.prebidPath ? options.prebidPath : '//acdn.adnxs.com/prebid/not-for-prod/1/prebid.js';
+    pbjsScr.src = options.prebidPath ? options.prebidPath : DEFAULT_PREBID_JS_URL;
     var node = document.getElementsByTagName('head')[0];
     node.appendChild(pbjsScr);
 }
@@ -261,14 +272,14 @@ function loadMolPlugin(callback) {
 	if (!vjs.getPlugins().vastClient) {
 		if (document.getElementById('mol-script')) {
 			if (!molLoadingInProgress) {
-		    	_logger.log(_prefix, 'MailOnline Plugin ' + (molLoaded ? '' : 'not ') + 'loaded successfilly already');
+		    	_logger.log(_prefix, 'MailOnline Plugin ' + (molLoaded ? '' : 'not ') + 'loaded successfully already');
 				callback(molLoaded);
 			}
 			else {
 				var waitMolLoaded = setInterval(function() {
 					if (!molLoadingInProgress) {
 						clearInterval(waitMolLoaded);
-				    	_logger.log(_prefix, 'MailOnline Plugin ' + (molLoaded ? '' : 'not ') + 'loaded successfilly already');
+				    	_logger.log(_prefix, 'MailOnline Plugin ' + (molLoaded ? '' : 'not ') + 'loaded successfully already');
 						callback(molLoaded);
 					}
 				}, 50);
@@ -279,7 +290,7 @@ function loadMolPlugin(callback) {
 	    var molScr = document.createElement('script');
 	    molScr.id = 'mol-script';
 	    molScr.onload = function() {
-	    	_logger.log(_prefix, 'MailOnline Plugin loaded successfilly');
+	    	_logger.log(_prefix, 'MailOnline Plugin loaded successfully');
 	    	molLoaded = true;
 	    	molLoadingInProgress = false;
 	    	callback(true);
@@ -291,7 +302,7 @@ function loadMolPlugin(callback) {
 	    };
 	    molScr.async = true;
 	    molScr.type = 'text/javascript';
-	    molScr.src = '//acdn.adnxs.com/video/plugins/mol/videojs_5.vast.vpaid.min.js';
+	    molScr.src = MOL_PLUGIN_URL;
 	    var node = document.getElementsByTagName('head')[0];
 	    node.appendChild(molScr);
 	}
