@@ -64,14 +64,6 @@ function doPrebid(options, callback) {
 				$$PREBID_GLOBAL$$.bc_pbjs.setConfig(options.prebidConfigOptions);
 			}
 
-			// activate prebid cache (DFP reqired prebid cache)
-            // ** NOTE ** 9/6/18: { usePrebidCache:true } has apparently been deprecated from the Prebid.js API
-			// if (options.enablePrebidCache || options.dfpParameters) {
-            //     $$PREBID_GLOBAL$$.bc_pbjs.setConfig({
-			// 		usePrebidCache: true
-			// 	});
-			// }
-
 			$$PREBID_GLOBAL$$.bc_pbjs.requestBids({
 				timeout: (options.prebidTimeout && options.prebidTimeout > 0) ? options.prebidTimeout : 700,
 				bidsBackHandler: function(bids) { // this function will be called once bids are returned
