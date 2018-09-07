@@ -12,9 +12,9 @@ var _prebidCommunicator = require('./PrebidCommunicator.js');
 var _logger = require('./Logging.js');
 var _prefix = 'PrebidVast->';
 
-var PREBID_JS_URL = '//acdn.adnxs.com/prebid/not-for-prod/1/prebid.js';
-var MOL_PLUGIN_URL = '//acdn.adnxs.com/video/plugins/mol/videojs_5.vast.vpaid.min.js';
+var DEFAULT_PREBID_JS_URL = '//acdn.adnxs.com/prebid/not-for-prod/1/prebid.js';
 var DEFAULT_PREBID_CACHE_URL = '//prebid.adnxs.com/pbc/v1/cache';
+var MOL_PLUGIN_URL = '//acdn.adnxs.com/video/plugins/mol/videojs_5.vast.vpaid.min.js';
 
 var $$PREBID_GLOBAL$$ = _prebidGlobal.getGlobal();
 
@@ -254,7 +254,7 @@ function loadPrebidScript(options, fromHeader) {
 	pbjsScr.id = 'bc-pb-script';
     pbjsScr.async = true;
     pbjsScr.type = 'text/javascript';
-    pbjsScr.src = options.prebidPath ? options.prebidPath : PREBID_JS_URL;
+    pbjsScr.src = options.prebidPath ? options.prebidPath : DEFAULT_PREBID_JS_URL;
     var node = document.getElementsByTagName('head')[0];
     node.appendChild(pbjsScr);
 }
