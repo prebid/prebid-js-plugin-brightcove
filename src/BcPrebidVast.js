@@ -43,19 +43,34 @@ function doPrebid(options, callback) {
 			}
 
 			if (options.prebidConfigOptions) {
-				// DFP reqired prebid cache
-				if (!options.enablePrebidCache && options.prebidConfigOptions.cache && !options.dfpParameters) {
-					delete options.prebidConfigOptions.cache;
-				}
+                // Enable Prebid Cache by default
+			    if (options.enablePrebidCache !== false) {
+                    options.enablePrebidCache = true;
+                    // If no Prebid Cache url is set, use AppNexus' Prebid Cache by default
+                    if (!options.prebidConfigOptions.cache) {
+                        options.prebidConfigOptions.cache = {};
+                    }
+                    if (!options.prebidConfigOptions.cache.url) {
+                        var defaultCacheURL = 'https://prebid.adnxs.com/pbc/v1/cache';
+                        options.prebidConfigOptions.cache.url = defaultCacheURL;
+                        _logger.log(_prefix, 'No Prebid Cache url set - using default: ' + defaultCacheURL);
+                    }
+				} else {
+                    // DFP requires Prebid Cache, but otherwise remove the unused cache object if present
+                    if (options.prebidConfigOptions.cache && !options.dfpParameters) {
+                        delete options.prebidConfigOptions.cache;
+                    }
+                }
 				$$PREBID_GLOBAL$$.bc_pbjs.setConfig(options.prebidConfigOptions);
 			}
 
 			// activate prebid cache (DFP reqired prebid cache)
-			if (options.enablePrebidCache || options.dfpParameters) {
-				$$PREBID_GLOBAL$$.bc_pbjs.setConfig({
-					usePrebidCache: true
-				});
-			}
+            // ** NOTE ** 9/6/18: { usePrebidCache:true } has apparently been deprecated from the Prebid.js API
+			// if (options.enablePrebidCache || options.dfpParameters) {
+            //     $$PREBID_GLOBAL$$.bc_pbjs.setConfig({
+			// 		usePrebidCache: true
+			// 	});
+			// }
 
 			$$PREBID_GLOBAL$$.bc_pbjs.requestBids({
 				timeout: (options.prebidTimeout && options.prebidTimeout > 0) ? options.prebidTimeout : 700,
@@ -261,14 +276,14 @@ function loadMolPlugin(callback) {
 	if (!vjs.getPlugins().vastClient) {
 		if (document.getElementById('mol-script')) {
 			if (!molLoadingInProgress) {
-		    	_logger.log(_prefix, 'MailOnline Plugin ' + (molLoaded ? '' : 'not ') + 'loaded successfilly already');
+		    	_logger.log(_prefix, 'MailOnline Plugin ' + (molLoaded ? '' : 'not ') + 'loaded successfully already');
 				callback(molLoaded);
 			}
 			else {
 				var waitMolLoaded = setInterval(function() {
 					if (!molLoadingInProgress) {
 						clearInterval(waitMolLoaded);
-				    	_logger.log(_prefix, 'MailOnline Plugin ' + (molLoaded ? '' : 'not ') + 'loaded successfilly already');
+				    	_logger.log(_prefix, 'MailOnline Plugin ' + (molLoaded ? '' : 'not ') + 'loaded successfully already');
 						callback(molLoaded);
 					}
 				}, 50);
@@ -279,7 +294,7 @@ function loadMolPlugin(callback) {
 	    var molScr = document.createElement('script');
 	    molScr.id = 'mol-script';
 	    molScr.onload = function() {
-	    	_logger.log(_prefix, 'MailOnline Plugin loaded successfilly');
+	    	_logger.log(_prefix, 'MailOnline Plugin loaded successfully');
 	    	molLoaded = true;
 	    	molLoadingInProgress = false;
 	    	callback(true);
