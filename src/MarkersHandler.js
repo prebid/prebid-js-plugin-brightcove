@@ -34,11 +34,6 @@ var markersHandler = function (vjs) {
 
 	// default setting
 	var defaultSetting = {
-		markerStyle: {
-			'width': '7px',
-			'border-radius': '30%',
-			'background-color': 'red'
-		},
 		markerTip: {
 			display: true,
 			text: function text(marker) {
@@ -128,9 +123,6 @@ var markersHandler = function (vjs) {
 	        'data-marker-time': setting.markerTip.time(marker)
 	      });
 
-	      Object.keys(setting.markerStyle).forEach(function (key) {
-	        markerDiv.style[key] = setting.markerStyle[key];
-	      });
 	      var pos = getPosition(marker);
 	      if (pos === 100) {
 	    	  pos = 99.5;

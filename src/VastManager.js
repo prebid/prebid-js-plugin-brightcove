@@ -501,11 +501,6 @@ var vastManager = function () {
 		if (_options.timeOffset) {
 	        // prepare timeline marker for the ad
 		    var timeMarkers = {
-				markerStyle: {
-					'width': '5px',
-					'border-radius': '10%',
-					'background-color': 'white'
-				},
 				markerTip: {
 					display: false
 				},
