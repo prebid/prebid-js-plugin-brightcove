@@ -9,6 +9,9 @@
   -webkit-transition: opacity .2s ease;
   -moz-transition: opacity .2s ease;
   z-index: 100;
+  width: 5px;
+  border-radius: 10%;
+  background-color: white;
 }
 .vjs-marker:hover {
   cursor: pointer;
