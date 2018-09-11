@@ -28,10 +28,10 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
-var markersHandler = function (vjs, markerOptions) {
+var markersHandler = function (vjs, adMarkerStyle) {
 	var _vjs = vjs;
 	var _player = null;
-	var _markerOptions = markerOptions;
+	var _adMarkerStyle = adMarkerStyle;
 
 	// default setting
 	var defaultSetting = {
@@ -96,8 +96,8 @@ var markersHandler = function (vjs, markerOptions) {
 	        breakOverlay = null,
 	        overlayIndex = NULL_INDEX;
 
-	    if (_markerOptions && _markerOptions.markerStyle) {
-	    	setting.markerStyle  = _vjs.mergeOptions(setting.markerStyle, _markerOptions.markerStyle);
+	    if (_adMarkerStyle) {
+	    	setting.markerStyle = _vjs.mergeOptions(setting.markerStyle, _adMarkerStyle);
 		}
 
 		function sortMarkersList() {

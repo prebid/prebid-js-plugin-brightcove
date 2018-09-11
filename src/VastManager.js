@@ -569,7 +569,7 @@ var vastManager = function () {
 			};
 			var needRegMarkers = false;
 			if (!_markersHandler) {
-				_markersHandler = new _MarkersHandler(videojs, _options.adMarkers);
+				_markersHandler = new _MarkersHandler(videojs, _options.adMarkerStyle);
 				needRegMarkers = true;
 			}
 			var seconds = convertStringToSeconds(_options.timeOffset, function(seconds) {
