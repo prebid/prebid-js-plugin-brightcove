@@ -96,6 +96,8 @@ var markersHandler = function (vjs, adMarkerStyle) {
 	        breakOverlay = null,
 	        overlayIndex = NULL_INDEX;
 
+	    // If an adMarkerStyle object was defined by the publisher in their options, merge that object into setting.markerStyle
+		// (Any style the publisher passed in will override the internal hard-coded defaults.)
 	    if (_adMarkerStyle) {
 	    	setting.markerStyle = _vjs.mergeOptions(setting.markerStyle, _adMarkerStyle);
 		}
