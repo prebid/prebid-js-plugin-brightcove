@@ -126,7 +126,12 @@ var defaultOptions = {
   	"adStartTimeout" : 3000,
   	"adServerTimeout" : 1000,
   	"timeOffset": "start",
-  	"adText": "Ad"
+  	"adText": "Ad",
+    "adMarkerStyle": {
+		"width": "5px",
+        "border-radius": "10%",
+        "background-color": "white"
+	}
 };
 
 function getOptions(cacheName) {

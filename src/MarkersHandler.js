@@ -28,9 +28,10 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
-var markersHandler = function (vjs) {
+var markersHandler = function (vjs, adMarkerStyle) {
 	var _vjs = vjs;
 	var _player = null;
+	var _adMarkerStyle = adMarkerStyle;
 
 	// default setting
 	var defaultSetting = {
@@ -90,12 +91,18 @@ var markersHandler = function (vjs) {
 	        markersMap = {},
 	        markersList = [],
 	        // list of markers sorted by time
-	    		currentMarkerIndex = NULL_INDEX,
+			currentMarkerIndex = NULL_INDEX,
 	        markerTip = null,
 	        breakOverlay = null,
 	        overlayIndex = NULL_INDEX;
 
-	    function sortMarkersList() {
+	    // If an adMarkerStyle object was defined by the publisher in their options, merge that object into setting.markerStyle
+		// (Any style the publisher passed in will override the internal hard-coded defaults.)
+	    if (_adMarkerStyle) {
+	    	setting.markerStyle = _vjs.mergeOptions(setting.markerStyle, _adMarkerStyle);
+		}
+
+		function sortMarkersList() {
 	      // sort the list by time in asc order
 	      markersList.sort(function (a, b) {
 	        return setting.markerTip.time(a) - setting.markerTip.time(b);
