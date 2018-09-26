@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Brightcove Prebid Plugin : Bidder Settings JSON Converter</title>
+    <style type="text/css">
+        body {
+            background: #EDEDED; color: black;
+            font-family: Arial, sans-serif;
+        }
+        div#content {
+            margin: 10px;
+        }
+        form {
+            margin: 0;
+        }
+        h2 {
+            line-height: 0.85em;
+            border-bottom: 2px solid;
+            margin: 20px 0px;
+            padding-bottom: 10px;
+        }
+        ol li {
+            margin: 6px;
+        }
+        textarea {
+            padding: 10px;
+            background: #FFFFFF;
+            font-size: 11px;
+            font-family: Monaco, "Lucida Console", monospace;
+        }
+        #convert_btn {
+            display: inline-block;
+            font-size: 30px;
+            font-weight: bold;
+            width: 140px;
+            margin: 15px 0px;
+            padding: 15px 32px;
+        }
+        label {
+            margin: 5px 0px;
+            display: block;
+            padding: 0px;
+            font-size: 18px;
+        }
+        div#successBanner {
+            background: #e0ffdc;
+            font-size: 18px;
+            font-weight: bolder;
+            padding: 8px;
+            margin: 14px 0px;
+            border-radius: 8px;
+            border: 1px solid #009900;
+            color: #009900;
+        }
+        .errorTxt {
+            color: #CC0000;
+            font-weight: bolder;
+            background: #FFFEC8;
+        }
+        .successTxt {
+            background: #e0ffdc;
+        }
+        .showSuccess {
+            display: inline-block;
+        }
+        .hideSuccess {
+            display: none;
+        }
+    </style>
+    <script type="text/javascript">
+        function convertBidderSettings () {
+
+            removeOutputStyles();
+
+            var inputObj = document.getElementById('settings_txt');
+            var bidSetStr = inputObj.value;
+
+            if (!bidSetStr) {
+                setOutputText("Please paste your original bidderSettings Javascript code above, then click Convert...", true);
+                return;
+            }
+
+            bidSetStr = prepString(bidSetStr);
+
+            try {
+                var bidSetObj = eval( "(" + bidSetStr + ")" );
+            } catch (e) {
+                console.log("OOOPS! JS Evaluation Error: ");
+                console.log(e);
+                handleError(e.message);
+                return;
+            }
+
+            inputObj.value = "var bidderSettings = " + bidSetStr;
+
+            bidSetObj = {
+                bidderSpec: { bids: ["// Placeholder - Replace this with your bids array"] },
+                bidderSettings: bidSetObj
+            };
+
+            try {
+                var jsonStr = JSON.stringify(bidSetObj, function (key, value) {
+                    if (typeof value === 'function' || value instanceof Function) {
+                        var arr = getFunctionArray(value);
+                        var arr2 = ["valueIsFunction"].concat(arr);
+                        return arr2;
+                    }
+                    return value;
+                }, 2);
+            } catch (e) {
+                console.log("OOOPS! JSON Conversion Error: ");
+                console.log(e);
+                handleError(e.message);
+                return;
+            }
+            setOutputText(jsonStr);
+        }
+
+        function prepString (str) {
+            str = str.trim();
+            var i = str.indexOf("{");
+            if (i > 0) {
+                str = str.substring(i);
+            }
+            i = str.lastIndexOf("}");
+            str = str.substring(0, i + 1);
+            str = str.replace(/“+|”+/g, '"');                       // Globally replace smart quotes with normal "
+            return str;
+        }
+
+        function handleError (msg) {
+            var str = "DOH! Something is wrong with your code.";
+
+            // Ignore this error - it's from the parens we use to wrap the string before doing eval() to convert the input string to JS
+            if (msg != "Unexpected token )") {
+                str += " Here's what the browser told us:\n\n Error: " + msg;
+            }
+
+            str += "\n\n...Maybe you should validate your Javascript first?\n\n Try this JS validator if you don't have one: http://esprima.org/demo/validate.html";
+
+            setOutputText(str, true);
+        }
+
+        function setOutputText (str, isError) {
+            var obj2 = document.getElementById('settingsJSON_txt');
+            obj2.value = str;
+
+            if (isError) {
+                addErrorStyle();
+            } else {
+                addSuccessStyle();
+            }
+        }
+
+        function addSuccessStyle () {
+            var obj = document.getElementById("settingsJSON_txt");
+            obj.classList.add("successTxt");
+
+            var banner = document.getElementById("successBanner");
+            banner.classList.add("showSuccess");
+            banner.classList.remove("hideSuccess");
+        }
+
+        function addErrorStyle () {
+            var obj = document.getElementById("settingsJSON_txt");
+            obj.classList.add("errorTxt");
+
+            removeOutputClickListener(obj);
+        }
+
+        function removeOutputStyles () {
+            var obj = document.getElementById("settingsJSON_txt");
+            obj.classList.remove("successTxt");
+            obj.classList.remove("errorTxt");
+
+            var banner = document.getElementById("successBanner");
+            banner.classList.remove("showSuccess");
+            banner.classList.add("hideSuccess");
+
+            addOutputClickListener(obj);
+        }
+
+        function addOutputClickListener (obj) {
+            obj.addEventListener("click", handleOutputClick);
+        }
+
+        function removeOutputClickListener (obj) {
+            obj.removeEventListener("click", handleOutputClick);
+        }
+
+        function handleOutputClick (e) {
+            // Remember, this executes in the context of the TextArea object
+            this.focus();
+            this.select();
+        }
+
+        function getFunctionArray (func) {
+            var delimToken = 'X$,$X';
+            var funcStr = func.toString();
+            funcStr = funcStr.replace(/\t/g, '  ');                     // Globally replace multiple spaces with 1 space
+            funcStr = funcStr.replace(/(\r\n)+|\r+|\n+/gi, '\n');       // Globally replace all line break chars with single \n char
+            funcStr = funcStr.replace(/\n+/gi,delimToken);              // Then, globally replace each newline with a line delimeter token
+            var arr = funcStr.split(delimToken);                        // Split the string on the token into an array
+
+            if (arr.length > 1) {
+                // For multi-line functions, determine the minimum left-side white space among function lines (2nd line and after)
+                var i, j, whiteList = [];
+                for (i = 1, j = 0; i < arr.length; i++, j = 0) {
+                    var str = arr[i];
+                    while (str[j] === ' ') {
+                        j++;
+                    }
+                    if (j > 0) {
+                        whiteList.push(j);
+                    }
+                }
+                whiteList = whiteList.sort();
+                var start = whiteList[0];
+                // Trim the min white space to shift left (for readability in JSON format)
+                for (i = 1; i < arr.length; i++) {
+                    arr[i] = arr[i].substring(start);
+                }
+            }
+            return arr;
+        }
+    </script>
+</head>
+<body>
+    <div id="content">
+        <h2>Brightcove Prebid Plugin : Bidder Settings JSON Converter</h2>
+        <h3>Converter Instructions:</h3>
+        <ol>
+            <li>Copy and paste <b>just</b> your Javascript <b>bidderSettings</b> object into the top text box.</li>
+            <li>Click the <b>Convert</b> button.</li>
+            <li>When JSON conversion succeeds, copy and paste the bidderSettings JSON into your JSON options configuration in Brightcove Studio.</li>
+        </ol>
+        <br/>
+        <form onsubmit="return false;">
+            <label>Original Javascript:</label>
+            <textarea cols="100" rows="20" id="settings_txt" placeholder="Paste Your bidderSettings Javascript Object Here..." onfocus="this.placeholder=''" onblur="this.placeholder='Paste Your bidderSettings Javascript Object Here...'"></textarea>
+            <div>
+                <input type="button" id="convert_btn" onclick="convertBidderSettings()" value="Convert to JSON">
+            </div>
+            <br/>
+            <div id="successBanner" class="hideSuccess">SUCCESS!</div>
+            <label>Converted JSON:</label>
+            <textarea cols="100" rows="20" id="settingsJSON_txt" readonly></textarea>
+        </form>
+    </div>
+</body>
+</html>
