@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <title>Brightcove Prebid Plugin : Bidder Settings JSON Converter</title>
     <style type="text/css">
-        <!--
         body {
             background: #EDEDED; color: black;
             font-family: Arial, sans-serif;
@@ -68,7 +67,6 @@
         .hideSuccess {
             display: none;
         }
-        -->
     </style>
     <script type="text/javascript">
         function convertBidderSettings () {
@@ -88,7 +86,7 @@
             try {
                 var bidSetObj = eval( "(" + bidSetStr + ")" );
             } catch (e) {
-                console.log("OOOPS! JS CONVERSION ERROR: ");
+                console.log("OOOPS! JS Evaluation Error: ");
                 console.log(e);
                 handleError(e.message);
                 return;
@@ -101,15 +99,21 @@
                 bidderSettings: bidSetObj
             };
 
-            var jsonStr = JSON.stringify(bidSetObj, function (key, value) {
-                if (typeof value === 'function' || value instanceof Function) {
-                    var arr = getFunctionArray(value);
-                    var arr2 = ["valueIsFunction"].concat(arr);
-                    return arr2;
-                }
-                return value;
-            }, 2);
-
+            try {
+                var jsonStr = JSON.stringify(bidSetObj, function (key, value) {
+                    if (typeof value === 'function' || value instanceof Function) {
+                        var arr = getFunctionArray(value);
+                        var arr2 = ["valueIsFunction"].concat(arr);
+                        return arr2;
+                    }
+                    return value;
+                }, 2);
+            } catch (e) {
+                console.log("OOOPS! JSON Conversion Error: ");
+                console.log(e);
+                handleError(e.message);
+                return;
+            }
             setOutputText(jsonStr);
         }
 
@@ -133,7 +137,7 @@
                 str += " Here's what the browser told us:\n\n Error: " + msg;
             }
 
-            str += "\n\n...Maybe you should validate your Javascript first?\n\n Try this JS validator if you don't have one: http://esprima.org/demo/validate.html"
+            str += "\n\n...Maybe you should validate your Javascript first?\n\n Try this JS validator if you don't have one: http://esprima.org/demo/validate.html";
 
             setOutputText(str, true);
         }
@@ -171,7 +175,7 @@
             obj.classList.remove("errorTxt");
 
             var banner = document.getElementById("successBanner");
-            obj.classList.remove("showSuccess");
+            banner.classList.remove("showSuccess");
             banner.classList.add("hideSuccess");
 
             addOutputClickListener(obj);
@@ -194,13 +198,13 @@
         function getFunctionArray (func) {
             var delimToken = 'X$,$X';
             var funcStr = func.toString();
-            funcStr = funcStr.replace(/\t/g, '  ');                   // Globally replace multiple spaces with 1 space
+            funcStr = funcStr.replace(/\t/g, '  ');                     // Globally replace multiple spaces with 1 space
             funcStr = funcStr.replace(/(\r\n)+|\r+|\n+/gi, '\n');       // Globally replace all line break chars with single \n char
             funcStr = funcStr.replace(/\n+/gi,delimToken);              // Then, globally replace each newline with a line delimeter token
             var arr = funcStr.split(delimToken);                        // Split the string on the token into an array
 
             if (arr.length > 1) {
-                // For multiline functions, determine the minimum left-side white space among function lines (2nd line and after)
+                // For multi-line functions, determine the minimum left-side white space among function lines (2nd line and after)
                 var i, j, whiteList = [];
                 for (i = 1, j = 0; i < arr.length; i++, j = 0) {
                     var str = arr[i];
