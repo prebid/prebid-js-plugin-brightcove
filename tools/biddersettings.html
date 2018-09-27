@@ -31,11 +31,10 @@
         }
         #convert_btn {
             display: inline-block;
-            font-size: 30px;
+            font-size: 14px;
             font-weight: bold;
-            width: 140px;
             margin: 15px 0px;
-            padding: 15px 32px;
+            padding: 5px 8px;
         }
         label {
             margin: 5px 0px;
@@ -95,7 +94,7 @@
             inputObj.value = "var bidderSettings = " + bidSetStr;
 
             bidSetObj = {
-                bidderSpec: { bids: ["// Placeholder - Replace this with your bids array"] },
+                bidderSpec: { bids: ["// Placeholder - Your customized bidders array would go here"] },
                 bidderSettings: bidSetObj
             };
 
@@ -190,9 +189,11 @@
         }
 
         function handleOutputClick (e) {
-            // Remember, this executes in the context of the TextArea object
+            // Note: this executes in the context of the TextArea object
+            var startChar = this.value.indexOf("bidderSettings") - 1;       // Start of the "bidderSettings": {...} block in the generated JSON
+            var endChar = this.value.length - 2;                            // End of the "bidderSettings": {...} block in the generated JSON
             this.focus();
-            this.select();
+            this.setSelectionRange(startChar, endChar);
         }
 
         function getFunctionArray (func) {
