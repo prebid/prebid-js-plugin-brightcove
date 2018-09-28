@@ -8,8 +8,15 @@
             background: #EDEDED; color: black;
             font-family: Arial, sans-serif;
         }
+        div#overview {
+            margin-top: 25px;
+        }
+        div#overview p {
+            padding-left: 22px;
+        }
         div#content {
             margin: 10px;
+            width: 800px;
         }
         form {
             margin: 0;
@@ -31,17 +38,19 @@
         }
         #convert_btn {
             display: inline-block;
-            font-size: 30px;
+            font-size: 14px;
             font-weight: bold;
-            width: 140px;
             margin: 15px 0px;
-            padding: 15px 32px;
+            padding: 5px 8px;
         }
         label {
             margin: 5px 0px;
             display: block;
             padding: 0px;
             font-size: 18px;
+        }
+        form {
+            margin-bottom: 100px;
         }
         div#successBanner {
             background: #e0ffdc;
@@ -73,7 +82,7 @@
 
             removeOutputStyles();
 
-            var inputObj = document.getElementById('settings_txt');
+            var inputObj = document.getElementById("settings_txt");
             var bidSetStr = inputObj.value;
 
             if (!bidSetStr) {
@@ -94,20 +103,17 @@
 
             inputObj.value = "var bidderSettings = " + bidSetStr;
 
-            bidSetObj = {
-                bidderSpec: { bids: ["// Placeholder - Replace this with your bids array"] },
-                bidderSettings: bidSetObj
-            };
 
             try {
                 var jsonStr = JSON.stringify(bidSetObj, function (key, value) {
-                    if (typeof value === 'function' || value instanceof Function) {
+                    if (typeof value === "function" || value instanceof Function) {
                         var arr = getFunctionArray(value);
                         var arr2 = ["valueIsFunction"].concat(arr);
                         return arr2;
                     }
                     return value;
                 }, 2);
+                jsonStr = "\"bidderSettings\": " + jsonStr;
             } catch (e) {
                 console.log("OOOPS! JSON Conversion Error: ");
                 console.log(e);
@@ -143,7 +149,7 @@
         }
 
         function setOutputText (str, isError) {
-            var obj2 = document.getElementById('settingsJSON_txt');
+            var obj2 = document.getElementById("settingsJSON_txt");
             obj2.value = str;
 
             if (isError) {
@@ -190,16 +196,16 @@
         }
 
         function handleOutputClick (e) {
-            // Remember, this executes in the context of the TextArea object
+            // Note: this executes in the context of the TextArea object
             this.focus();
             this.select();
         }
 
         function getFunctionArray (func) {
-            var delimToken = 'X$,$X';
+            var delimToken = "X$,$X";
             var funcStr = func.toString();
-            funcStr = funcStr.replace(/\t/g, '  ');                     // Globally replace multiple spaces with 1 space
-            funcStr = funcStr.replace(/(\r\n)+|\r+|\n+/gi, '\n');       // Globally replace all line break chars with single \n char
+            funcStr = funcStr.replace(/\t/g, "  ");                     // Globally replace multiple spaces with 1 space
+            funcStr = funcStr.replace(/(\r\n)+|\r+|\n+/gi, "\n");       // Globally replace all line break chars with single \n char
             funcStr = funcStr.replace(/\n+/gi,delimToken);              // Then, globally replace each newline with a line delimeter token
             var arr = funcStr.split(delimToken);                        // Split the string on the token into an array
 
@@ -208,7 +214,7 @@
                 var i, j, whiteList = [];
                 for (i = 1, j = 0; i < arr.length; i++, j = 0) {
                     var str = arr[i];
-                    while (str[j] === ' ') {
+                    while (str[j] === " ") {
                         j++;
                     }
                     if (j > 0) {
@@ -229,7 +235,11 @@
 <body>
     <div id="content">
         <h2>Brightcove Prebid Plugin : Bidder Settings JSON Converter</h2>
-        <h3>Converter Instructions:</h3>
+        <div id="overview">
+            <h3>Creating JSON for Brightcove Studio</h3>
+            <p>When the Prebid Plugin is configured for a player in Brightcove Studio, the plugin's configuration options must be added to Studio as a JSON object. The Prebid.js API <i><a href="http://prebid.org/dev-docs/publisher-api-reference.html#module_pbjs.bidderSettings">bidderSettings</a></i> object supports the use of Javascript functions as values. This simple tool allows a developer to easily convert a Javascript <i>bidderSettings</i> object into the custom JSON format that the Prebid Plugin supports.</p>
+        </div>
+        <h4>Usage Instructions:</h4>
         <ol>
             <li>Copy and paste <b>just</b> your Javascript <b>bidderSettings</b> object into the top text box.</li>
             <li>Click the <b>Convert</b> button.</li>
@@ -238,14 +248,14 @@
         <br/>
         <form onsubmit="return false;">
             <label>Original Javascript:</label>
-            <textarea cols="100" rows="20" id="settings_txt" placeholder="Paste Your bidderSettings Javascript Object Here..." onfocus="this.placeholder=''" onblur="this.placeholder='Paste Your bidderSettings Javascript Object Here...'"></textarea>
+            <textarea cols="110" rows="20" id="settings_txt" placeholder="Paste Your bidderSettings Javascript Object Here..." onfocus="this.placeholder=''" onblur="this.placeholder='Paste Your bidderSettings Javascript Object Here...'"></textarea>
             <div>
                 <input type="button" id="convert_btn" onclick="convertBidderSettings()" value="Convert to JSON">
             </div>
             <br/>
             <div id="successBanner" class="hideSuccess">SUCCESS!</div>
             <label>Converted JSON:</label>
-            <textarea cols="100" rows="20" id="settingsJSON_txt" readonly></textarea>
+            <textarea cols="110" rows="20" id="settingsJSON_txt" readonly></textarea>
         </form>
     </div>
 </body>
