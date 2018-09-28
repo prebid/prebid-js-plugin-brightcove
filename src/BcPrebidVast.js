@@ -1,3 +1,4 @@
+/* eslint no-eval: 0 */
 /**
  * Header Bidding Plugin Brightcove module.
  */
@@ -11,9 +12,13 @@ var _prebidCommunicator = require('./PrebidCommunicator.js');
 var _logger = require('./Logging.js');
 var _prefix = 'PrebidVast->';
 
+var DEFAULT_PREBID_JS_URL = '//acdn.adnxs.com/prebid/not-for-prod/1/prebid.js';
+var DEFAULT_PREBID_CACHE_URL = '//prebid.adnxs.com/pbc/v1/cache';
+var MOL_PLUGIN_URL = '//acdn.adnxs.com/video/plugins/mol/videojs_5.vast.vpaid.min.js';
+
 var $$PREBID_GLOBAL$$ = _prebidGlobal.getGlobal();
 
-_logger.always(_prefix, 'Version 0.1.3');
+_logger.always(_prefix, 'Version 0.2.2');
 
 var BC_prebid_in_progress = $$PREBID_GLOBAL$$.plugin_prebid_options && $$PREBID_GLOBAL$$.plugin_prebid_options.biddersSpec;
 
@@ -33,6 +38,8 @@ function doPrebid(options, callback) {
 		$$PREBID_GLOBAL$$.bc_pbjs.que.push(function() {
 			if (!BC_bidders_added) {
 				BC_bidders_added = true;
+				specifyBidderAliases(options.bidderAliases, $$PREBID_GLOBAL$$.bc_pbjs);
+				prepareBidderSettings(options);
 				if (options.bidderSettings) {
 					$$PREBID_GLOBAL$$.bc_pbjs.bidderSettings = options.bidderSettings;
 				}
@@ -40,18 +47,25 @@ function doPrebid(options, callback) {
 			}
 
 			if (options.prebidConfigOptions) {
-				// DFP reqired prebid cache
-				if (!options.enablePrebidCache && options.prebidConfigOptions.cache && !options.dfpParameters) {
-					delete options.prebidConfigOptions.cache;
-				}
+                // Enable Prebid Cache by default
+			    if (options.enablePrebidCache !== false) {
+                    options.enablePrebidCache = true;
+                    // If no Prebid Cache url is set, use AppNexus' Prebid Cache by default
+                    if (!options.prebidConfigOptions.cache) {
+                        options.prebidConfigOptions.cache = {};
+                    }
+                    if (!options.prebidConfigOptions.cache.url) {
+                        var defaultCacheURL = DEFAULT_PREBID_CACHE_URL;
+                        options.prebidConfigOptions.cache.url = defaultCacheURL;
+                        _logger.log(_prefix, 'No Prebid Cache url set - using default: ' + defaultCacheURL);
+                    }
+				} else {
+                    // DFP requires Prebid Cache, but otherwise remove the unused cache object if present
+                    if (options.prebidConfigOptions.cache && !options.dfpParameters) {
+                        delete options.prebidConfigOptions.cache;
+                    }
+                }
 				$$PREBID_GLOBAL$$.bc_pbjs.setConfig(options.prebidConfigOptions);
-			}
-
-			// activate prebid cache (DFP reqired prebid cache)
-			if (options.enablePrebidCache || options.dfpParameters) {
-				$$PREBID_GLOBAL$$.bc_pbjs.setConfig({
-					usePrebidCache: true
-				});
 			}
 
 			$$PREBID_GLOBAL$$.bc_pbjs.requestBids({
@@ -65,6 +79,50 @@ function doPrebid(options, callback) {
 	}
 	else {
 		callback(null);
+	}
+}
+
+// This function enumerates all aliases for bidder adapters and defines them in prebid.js.
+// bidderAliases is array of object each of them defines pair of alias/bidder.
+// bc_pbjs is prebid.js instance.
+function specifyBidderAliases(bidderAliases, bc_pbjs) {
+	if (bidderAliases && Array.isArray(bidderAliases) && bidderAliases.length > 0) {
+		for (var i = 0; i < bidderAliases.length; i++) {
+			if (bidderAliases[i].bidderName && bidderAliases[i].name) {
+				// defines alias for bidder adapter in prebid.js
+				bc_pbjs.aliasBidder(bidderAliases[i].bidderName, bidderAliases[i].name);
+			}
+		}
+	}
+}
+
+// This function converts 'val' properties in bidderSettings represented as string array to inline functions.
+// We recommend to use string array in bidderSettings only when options are defined for Brightcove player
+// in Brightcove studio.
+function prepareBidderSettings(options) {
+	if (options.bidderSettings) {
+		var subtituteToEval = function (arr, obj) {
+			if (arr.length > 1 && arr[0] === 'valueIsFunction') {
+				arr.shift();
+				var str = arr.join('');
+				eval('obj.val = ' + str); // jshint ignore:line
+			}
+		};
+		var findValProperty = function findValProperty(obj) {
+			for (var name in obj) {
+				if (name.toLowerCase() === 'val') {
+					if (Array.isArray(obj.val)) {
+						subtituteToEval(obj.val, obj);
+					}
+				}
+				else if (obj[name] instanceof Object) {
+					findValProperty(obj[name]);
+				}
+			}
+		};
+		if (options.bidderSettings) {
+			findValProperty(options.bidderSettings);
+		}
 	}
 }
 
@@ -196,7 +254,7 @@ function loadPrebidScript(options, fromHeader) {
 	pbjsScr.id = 'bc-pb-script';
     pbjsScr.async = true;
     pbjsScr.type = 'text/javascript';
-    pbjsScr.src = options.prebidPath ? options.prebidPath : '//acdn.adnxs.com/prebid/not-for-prod/1/prebid.js';
+    pbjsScr.src = options.prebidPath ? options.prebidPath : DEFAULT_PREBID_JS_URL;
     var node = document.getElementsByTagName('head')[0];
     node.appendChild(pbjsScr);
 }
@@ -214,14 +272,14 @@ function loadMolPlugin(callback) {
 	if (!vjs.getPlugins().vastClient) {
 		if (document.getElementById('mol-script')) {
 			if (!molLoadingInProgress) {
-		    	_logger.log(_prefix, 'MailOnline Plugin ' + (molLoaded ? '' : 'not ') + 'loaded successfilly already');
+		    	_logger.log(_prefix, 'MailOnline Plugin ' + (molLoaded ? '' : 'not ') + 'loaded successfully already');
 				callback(molLoaded);
 			}
 			else {
 				var waitMolLoaded = setInterval(function() {
 					if (!molLoadingInProgress) {
 						clearInterval(waitMolLoaded);
-				    	_logger.log(_prefix, 'MailOnline Plugin ' + (molLoaded ? '' : 'not ') + 'loaded successfilly already');
+				    	_logger.log(_prefix, 'MailOnline Plugin ' + (molLoaded ? '' : 'not ') + 'loaded successfully already');
 						callback(molLoaded);
 					}
 				}, 50);
@@ -232,7 +290,7 @@ function loadMolPlugin(callback) {
 	    var molScr = document.createElement('script');
 	    molScr.id = 'mol-script';
 	    molScr.onload = function() {
-	    	_logger.log(_prefix, 'MailOnline Plugin loaded successfilly');
+	    	_logger.log(_prefix, 'MailOnline Plugin loaded successfully');
 	    	molLoaded = true;
 	    	molLoadingInProgress = false;
 	    	callback(true);
@@ -244,7 +302,7 @@ function loadMolPlugin(callback) {
 	    };
 	    molScr.async = true;
 	    molScr.type = 'text/javascript';
-	    molScr.src = '//acdn.adnxs.com/video/plugins/mol/videojs_5.vast.vpaid.min.js';
+	    molScr.src = MOL_PLUGIN_URL;
 	    var node = document.getElementsByTagName('head')[0];
 	    node.appendChild(molScr);
 	}
@@ -299,6 +357,8 @@ var prebidVastPlugin = {
 					doPrebid(options, callback);
 				}
 			},
+			specifyBidderAliases: specifyBidderAliases,
+			prepareBidderSettings: prepareBidderSettings,
 			loadPrebidScript: loadPrebidScript,
 			bcPrebidInProgress: function() { return BC_prebid_in_progress; },
 			loadMolPlugin: loadMolPlugin,

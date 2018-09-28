@@ -35,34 +35,37 @@
 		var tmp = JSON.stringify(_popUpOptions);
 		opts = JSON.parse(tmp);
 		window.bc_plugin_pbjs = {plugin_prebid_options: opts};
-		opts.bidderSettings = 
-	       {
-	         standard: {
-	           adserverTargeting: [
-	             {
-	               key: "hb_bidder",
-	               val: function (bidResponse) {
-	                 return bidResponse.bidderCode;
-	               }
-	             }, {
-	               key: "hb_adid",
-	               val: function (bidResponse) {
-	                 return bidResponse.adId;
-	               }
-	             }, {
-	               key: "hb_pb",
-	               val: function (bidResponse) {
-	                 return "10.00";
-	               }
-	             }, {
-	               key: "hb_size",
-	               val: function (bidResponse) {
-	                 return bidResponse.size;
-	               }
-	             }
-	           ]
-	         }
-	       };
+
+		if (!opts.bidderSettings) {
+			opts.bidderSettings = 
+			{
+				standard: {
+					adserverTargeting: [
+						{
+						key: "hb_bidder",
+						val: function (bidResponse) {
+							return bidResponse.bidderCode;
+						}
+						}, {
+						key: "hb_adid",
+						val: function (bidResponse) {
+							return bidResponse.adId;
+						}
+						}, {
+						key: "hb_pb",
+						val: function (bidResponse) {
+							return "10.00";
+						}
+						}, {
+						key: "hb_size",
+						val: function (bidResponse) {
+							return bidResponse.size;
+						}
+						}
+					]
+				}
+			};
+		}
 		
 		if (opts.hasOwnProperty('dfpParameters')) {
 			delete opts.dfpParameters;

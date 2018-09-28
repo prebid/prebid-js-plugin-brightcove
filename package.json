@@ -1,6 +1,6 @@
 {
 	"name": "videoads-product-prebid-plugin",
-	"version": "0.1.3",
+	"version": "0.2.2",
 	"description": "Header Bidding plug-in for Brightcove player.",
 	"main": "src/BcPrebidVast.js",
 	"scripts": {
@@ -31,9 +31,9 @@
 		"css-loader": "^0.15.5",
 		"del": "^1.1.1",
 		"eslint-config-standard": "^10.2.1",
-		"eslint-plugin-import": "^2.2.0",
+		"eslint-plugin-import": "^2.14.0",
 		"eslint-plugin-node": "^5.1.0",
-		"eslint-plugin-promise": "^3.5.0",
+		"eslint-plugin-promise": "^3.8.0",
 		"eslint-plugin-standard": "^3.0.1",
 		"expect": "^1.13.0",
 		"extract-text-webpack-plugin": "^0.8.2",
@@ -52,7 +52,7 @@
 		"gulp-minify-css": "^1.2.0",
 		"gulp-notify": "^2.2.0",
 		"gulp-preprocess": "^2.0.0",
-		"gulp-rename": "^1.3.0",
+		"gulp-rename": "^1.4.0",
 		"gulp-replace": "0.5.3",
 		"gulp-run": "^1.7.1",
 		"gulp-sourcemaps": "2.4.1",
@@ -71,7 +71,7 @@
 		"karma-coverage": "^1.1.1",
 		"karma-firefox-launcher": "^1.1.0",
 		"karma-html-reporter": "^0.2.7",
-		"karma-htmlfile-reporter": "^0.3.5",
+		"karma-htmlfile-reporter": "^0.3.6",
 		"karma-mocha": "^1.3.0",
 		"karma-mocha-reporter": "^2.2.4",
 		"karma-nyan-reporter": "^0.2.5",
@@ -93,7 +93,7 @@
 		"webpack": "^1.12.9",
 		"webpack-dev-server": "^1.10.1",
 		"webpack-stream": "^3.2.0",
-		"yargs": "latest"
+		"yargs": "^12.0.1"
 	},
 	"dependencies": {}
 }

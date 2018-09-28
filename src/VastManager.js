@@ -39,7 +39,11 @@ var vastManager = function () {
 
     function isIPhone() {
     	return /iP(hone|od)/.test(navigator.userAgent);
-    }
+	}
+
+	function isMobileSafari() {
+		return /version\/([\w\.]+).+?mobile\/\w+\s(safari)/i.test(navigator.userAgent);
+	}
 
 	// show/hide black div witrh spinner
 	function showCover(show) {
@@ -316,7 +320,21 @@ var vastManager = function () {
 
     	_player.off('trace.message', traceMessage);
     	_player.off('trace.event', traceEvent);
-    }
+	}
+
+	function getMobileSafariVersion() {
+		var nVer = null;
+		var nPos = navigator.userAgent.indexOf('Version');
+		if (nPos > 0) {
+			var temp = navigator.userAgent.substring(nPos + 8);
+			nPos = temp.indexOf('.');
+			if (nPos > 0) {
+				temp = temp.substr(0, nPos);
+				nVer = parseInt(temp);
+			}
+		}
+		return nVer;
+	}
 
 	// function to play ad
     function play(creative) {
@@ -414,6 +432,7 @@ var vastManager = function () {
 								traceMessage({data: {message: 'Video main content - activate play button'}});
 								_player.bigPlayButton.el_.style.display = 'block';
 								_player.bigPlayButton.el_.style.opacity = 1;
+								_player.bigPlayButton.el_.style.zIndex = 99999;
 								_player.bigPlayButton.one('click', function() {
 									showCover(true);
 								});
@@ -426,7 +445,22 @@ var vastManager = function () {
 			};
 
 			var preroll = _player.currentTime() < 0.5;
-			if (preroll) {
+			// preroll for first video (event playlistitem did not triggered)
+			if (preroll && _playlistIdx === -1) {
+				if (isMobileSafari()) {
+					// the special code to force player start preroll by click for safari version 10 or less for iOS.
+					var ver = getMobileSafariVersion();
+					if (ver != null && ver < 11) {
+						_logger.log(_prefix, 'Do not autoplay preroll on mobile safari version 10 or less');
+						traceMessage({data: {message: 'Do not autoplay preroll on mobile safari version 10 or less'}});
+						// give player the time to finish initialization
+						setTimeout(function() {
+							_player.pause();
+							renderAd(clientParams, false);
+						}, 1000);
+						return;
+					}
+				}
 				try {
 					var playPromise = _player.tech().el().play();
 					if (playPromise !== undefined && typeof playPromise.then === 'function') {
@@ -519,9 +553,9 @@ var vastManager = function () {
 								else {
 									// iPad
 									_player.pause();
-									_player.bigPlayButton.el_.style.display = 'block';
-									_player.bigPlayButton.el_.style.opacity = 1;
 									_player.one('play', function() {
+										traceMessage({data: {message: 'Main content - play event'}});
+										_player.pause();
 										playAd(_markerXml[marker.time]);
 										delete _markerXml[marker.time];
 									});
@@ -560,7 +594,7 @@ var vastManager = function () {
 			};
 			var needRegMarkers = false;
 			if (!_markersHandler) {
-				_markersHandler = new _MarkersHandler(videojs);
+				_markersHandler = new _MarkersHandler(videojs, _options.adMarkerStyle);
 				needRegMarkers = true;
 			}
 			var seconds = convertStringToSeconds(_options.timeOffset, function(seconds) {
