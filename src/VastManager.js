@@ -14,7 +14,6 @@ var vastManager = function () {
 	var _playlist = [];
 	var _playlistIdx = -1;
 	var _playlistCreative;
-	var _nextPlaylistItemFired = false;
 	var _creative;
 	var _options;
 	var _adPlaying = false;
@@ -85,7 +84,7 @@ var vastManager = function () {
 
 	// event handler for 'playlistitem' event
 	function nextListItemHandler() {
-		_nextPlaylistItemFired = true;
+		_player.off('ended', forceToNextVideo);
 		_savedMarkers = null;
 		showCover(true);
 		_playlistIdx++;
@@ -178,17 +177,18 @@ var vastManager = function () {
 		_adIndicator.style.display = 'none';
 		removeListeners();
 		showNextOverlay(true);
-		_nextPlaylistItemFired = false;
 		if (_playlistCreative && _playlist.length > 0) {
-			_player.one('ended', function() {
-				// traceMessage({data: {message: '****** ended fired'}});
-				setTimeout(function() {
-					if (!_nextPlaylistItemFired && _playlistCreative) {
-						_player.playlist.next();
-					}
-				}, 500);
-			});
+			_player.one('ended', forceToNextVideo);
 		}
+	}
+
+	// event handler to force to next playlist item if current playlist item video is ended
+	function forceToNextVideo() {
+		setTimeout(function() {
+			if (_playlistCreative) {
+				_player.playlist.next();
+			}
+		}, 500);
 	}
 
 	// convert string represetation of time to number represents seconds
