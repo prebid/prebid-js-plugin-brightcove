@@ -269,7 +269,8 @@ function loadMolPlugin(callback) {
 		callback(false);
 		return;
 	}
-	if (!vjs.getPlugins().vastClient) {
+	// getPlugins not exist in Brightcove Player v5.28.1
+	if (!vjs.getPlugins || !vjs.getPlugins().vastClient) {
 		if (document.getElementById('mol-script')) {
 			if (!molLoadingInProgress) {
 		    	_logger.log(_prefix, 'MailOnline Plugin ' + (molLoaded ? '' : 'not ') + 'loaded successfully already');
@@ -324,11 +325,14 @@ function loadMolPlugin(callback) {
 // register videojs prebid plugins
 function regPrebidVastPlugin(vjs) {
 	_vjs = vjs;
-	if (!_vjs.getPlugins().bcPrebidVastPlugin) {
+	// getPlugins not exist in Brightcove Player v5.28.1
+	if (!vjs.getPlugins || !_vjs.getPlugins().bcPrebidVastPlugin) {
 		registerPrebidVastPlugin();
 	}
 
-	_vjs.registerPlugin('bcPrebidVastPluginCommand', function(command) {
+	// Brightcove Player v5.28.1 uses 'plugin' function to register plugin
+	var regFn = !!_vjs.registerPlugin ? _vjs.registerPlugin : _vjs.plugin;
+	regFn('bcPrebidVastPluginCommand', function(command) {
 		if (command === 'stop') {
 			if (_vastManagerObj) {
 				_vastManagerObj.stop();
@@ -385,7 +389,10 @@ var prebidVastPlugin = {
 			_vjs(this.id).bcPrebidVastPluginCommand('stop');
 		}
 		else {
-			_vjs.getPlugins().bcPrebidVastPluginCommand('stop');
+			// getPlugins not exist in Brightcove Player v5.28.1
+			if (_vjs.getPlugins) {
+				_vjs.getPlugins().bcPrebidVastPluginCommand('stop');
+			}
 		}
 	},
 
@@ -454,11 +461,19 @@ function renderAd(options) {
 }
 
 function registerPrebidVastPlugin() {
-	_vjs.registerPlugin('bcPrebidVastPlugin', function(options) {
+	// Brightcove Player v5.28.1 uses 'plugin' function to register plugin
+	var regFn = !!_vjs.registerPlugin ? _vjs.registerPlugin : _vjs.plugin;
+	regFn('bcPrebidVastPlugin', function(options) {
 		if (!$$PREBID_GLOBAL$$.bc_pbjs && !BC_prebid_in_progress && !options.creative) {
 			loadPrebidScript(options, false);
 		}
 		_player = this;
+		// Brightcove Player v5.28.1 issues alert on every tech() call
+		if (videojs.VERSION.substr(0, 2) <= '5.') {
+			_player.tech = function() {
+				return _player.tech_;
+			};
+		}
 		if (!options.onlyPrebid) {
 			loadMolPlugin(function(succ) {
 				if (succ) {
