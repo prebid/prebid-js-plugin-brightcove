@@ -181,7 +181,6 @@ var vastManager = function () {
 		_nextPlaylistItemFired = false;
 		if (_playlistCreative && _playlist.length > 0) {
 			_player.one('ended', function() {
-				// traceMessage({data: {message: '****** ended fired'}});
 				setTimeout(function() {
 					if (!_nextPlaylistItemFired && _playlistCreative) {
 						_player.playlist.next();
@@ -572,11 +571,15 @@ var vastManager = function () {
 						}
 						else {
 							if (marker.time === 0 && _player.paused()) {
-								showCover(false);
 								if (_player.tech_ && _player.tech_.el_ && !_player.tech_.el_.autoplay) {
+									showCover(false);
+									// show play button if brightcove player is configured for not autoplay
 									prerollNeedClickToPlay = true;
 									_player.bigPlayButton.el_.style.display = 'block';
 									_player.bigPlayButton.el_.style.opacity = 1;
+								}
+								else {
+									showCover(true);
 								}
 							}
 							else {
@@ -625,7 +628,6 @@ var vastManager = function () {
 			if (needRegMarkers) {
 				_markersHandler.init(_player);
 			}
-			// _logger.log(_prefix, '****** Video duration = ' + _player.duration());
 			_markersHandler.markers(timeMarkers);
 		}
 		else {
