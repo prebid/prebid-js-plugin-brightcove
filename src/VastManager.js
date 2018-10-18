@@ -428,6 +428,10 @@ var vastManager = function () {
 								_player.play();
 							}
 							else {
+								// hide black cover before show play button
+								showCover(false);
+								// pause main content just in case
+								_player.pause();
 								traceMessage({data: {message: 'Video main content - activate play button'}});
 								_player.bigPlayButton.el_.style.display = 'block';
 								_player.bigPlayButton.el_.style.opacity = 1;
