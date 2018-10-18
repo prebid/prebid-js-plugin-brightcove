@@ -418,12 +418,12 @@ var vastManager = function () {
 			}
 
 			var renderAd = function (clientParams, canAutoplay) {
-				// start MailOnline plugin for render the ad
-				_player.vastClient(clientParams);
 				if (_options.initialPlayback !== 'click' || _mobilePrerollNeedClick) {
 					if (!prerollNeedClickToPlay) {
 						setTimeout(function() {
 							if (canAutoplay) {
+								// start MailOnline plugin for render the ad
+								_player.vastClient(clientParams);
 								traceMessage({data: {message: 'Video main content - play()'}});
 								_player.play();
 							}
@@ -436,12 +436,27 @@ var vastManager = function () {
 								_player.bigPlayButton.el_.style.display = 'block';
 								_player.bigPlayButton.el_.style.opacity = 1;
 								_player.bigPlayButton.el_.style.zIndex = 99999;
-								_player.bigPlayButton.one('click', function() {
+								_player.one('play', function() {
+									_player.bigPlayButton.el_.style.display = 'none';
 									showCover(true);
+									// start MailOnline plugin for render the ad
+									_player.vastClient(clientParams);
+									setTimeout(function() {
+										// trigger play event to MailOnline plugin to force render pre-roll
+										_player.trigger('play');
+									}, 0);
 								});
 							}
 						}, 0);
 					}
+					else {
+						// start MailOnline plugin for render the ad
+						_player.vastClient(clientParams);
+					}
+				}
+				else {
+					// start MailOnline plugin for render the ad
+					_player.vastClient(clientParams);
 				}
 				showNextOverlay(false);
 				doPrebidForNextPlaylistItem();
