@@ -9,6 +9,7 @@ var _MarkersHandler = require('./MarkersHandler.js');
 var _prefix = 'PrebidVast->vastManager';
 
 var vastManager = function () {
+	'use strict';
 	var _prebidCommunicatorObj;
 	var _player;
 	var _playlist = [];
@@ -29,24 +30,24 @@ var vastManager = function () {
 	var _showSpinner = false;
     var _mobilePrerollNeedClick = false;
 
-    function isMobile() {
+    var isMobile = function isMobile() {
     	return /iP(hone|ad|od)|Android|Windows Phone/.test(navigator.userAgent);
-    }
+    };
 
-    function isIDevice() {
+    var isIDevice = function isIDevice() {
     	return /iP(hone|ad)/.test(navigator.userAgent);
-    }
+    };
 
-    function isIPhone() {
+    var isIPhone = function isIPhone() {
     	return /iP(hone|od)/.test(navigator.userAgent);
-	}
+	};
 
-	function isMobileSafari() {
+	var isMobileSafari = function isMobileSafari() {
 		return /version\/([\w\.]+).+?mobile\/\w+\s(safari)/i.test(navigator.userAgent);
-	}
+	};
 
 	// show/hide black div witrh spinner
-	function showCover(show) {
+	var showCover = function showCover(show) {
 		_logger.log(_prefix, (show ? 'Show' : 'Hide') + ' ad cover with spinner');
 		if (show) {
     		_cover.style.display = 'block';
@@ -64,7 +65,7 @@ var vastManager = function () {
     		_cover.style.display = 'none';
     		_player.el().classList.remove('vjs-waiting');
 		}
-	}
+	};
 
 	// show/hide brightcove controls activated for next clip within playlist
 	function showNextOverlay(show) {
