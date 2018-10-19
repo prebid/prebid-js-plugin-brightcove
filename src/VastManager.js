@@ -67,13 +67,37 @@ var vastManager = function () {
 		}
 	};
 
+	// restore main content after ad is finished
+	var resetContent = function resetContent() {
+		showCover(false);
+		setTimeout(function() {
+			_adPlaying = false;
+			if (_savedMarkers && _player.markers && _player.markers.reset) {
+		    	_player.markers.reset(JSON.parse(_savedMarkers));
+			}
+		}, 1000);
+		_adIndicator.style.display = 'none';
+		removeListeners();
+		showNextOverlay(true);
+		_nextPlaylistItemFired = false;
+		if (_playlistCreative && _playlist.length > 0) {
+			_player.one('ended', function() {
+				setTimeout(function() {
+					if (!_nextPlaylistItemFired && _playlistCreative) {
+						_player.playlist.next();
+					}
+				}, 500);
+			});
+		}
+	};
+
 	// show/hide brightcove controls activated for next clip within playlist
-	function showNextOverlay(show) {
+	var showNextOverlay = function showNextOverlay(show) {
 		var nextOverlays = document.getElementsByClassName('vjs-next-overlay');
 		if (nextOverlays && nextOverlays.length > 0) {
 			nextOverlays[0].style.display = show ? '' : 'none';
 		}
-	}
+	};
 
 	// check frequency capping rules
 	function needPlayAdForPlaylistItem(plIdx) {
@@ -164,30 +188,6 @@ var vastManager = function () {
 		}
 		else {
 			_player.off('playlistitem', nextListItemHandler);
-		}
-	}
-
-	// restore main content after ad is finished
-	function resetContent() {
-		showCover(false);
-		setTimeout(function() {
-			_adPlaying = false;
-			if (_savedMarkers && _player.markers && _player.markers.reset) {
-		    	_player.markers.reset(JSON.parse(_savedMarkers));
-			}
-		}, 1000);
-		_adIndicator.style.display = 'none';
-		removeListeners();
-		showNextOverlay(true);
-		_nextPlaylistItemFired = false;
-		if (_playlistCreative && _playlist.length > 0) {
-			_player.one('ended', function() {
-				setTimeout(function() {
-					if (!_nextPlaylistItemFired && _playlistCreative) {
-						_player.playlist.next();
-					}
-				}, 500);
-			});
 		}
 	}
 
@@ -400,7 +400,7 @@ var vastManager = function () {
     		}
     		else {
     			// creative is VAST URL
-    			clientParams.adTagUrl = creative;
+    			clientParams.adTagUrl = _creative;
     		}
     		if (_options && _options.skippable && _options.skippable.skipText) {
     			clientParams.skipText = _options.skippable.skipText;
