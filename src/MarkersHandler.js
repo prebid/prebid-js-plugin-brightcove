@@ -128,7 +128,9 @@ var markersHandler = function (vjs, adMarkerStyle) {
 	    }
 
 	    function createMarkerDiv(marker) {
-	      var markerDiv = _vjs.dom.createEl('div', {
+				// In Brightcove player v5.28.1 property 'dom' not exist
+				var dom = !!_vjs.dom ? _vjs.dom : _vjs;
+	      var markerDiv = dom.createEl('div', {
 	        className: 'vjs-marker ' + (marker.class || '')
 	      }, {
 	        'data-marker-key': marker.key,
@@ -236,7 +238,9 @@ var markersHandler = function (vjs, adMarkerStyle) {
 	    }
 
 	    function initializeMarkerTip() {
-	      markerTip = _vjs.dom.createEl('div', {
+				// In Brightcove player v5.28.1 property 'dom' not exist
+				var dom = !!_vjs.dom ? _vjs.dom : _vjs;
+	      markerTip = dom.createEl('div', {
 	        className: 'vjs-tip',
 	        innerHTML: "<div class='vjs-tip-arrow'></div><div class='vjs-tip-inner'></div>"
 	      });
@@ -274,7 +278,9 @@ var markersHandler = function (vjs, adMarkerStyle) {
 
 	    // problem when the next marker is within the overlay display time from the previous marker
 	    function initializeOverlay() {
-	      breakOverlay = _vjs.dom.createEl('div', {
+				// In Brightcove player v5.28.1 property 'dom' not exist
+				var dom = !!_vjs.dom ? _vjs.dom : _vjs;
+	      breakOverlay = dom.createEl('div', {
 	        className: 'vjs-break-overlay',
 	        innerHTML: "<div class='vjs-break-overlay-text'></div>"
 	      });
@@ -452,7 +458,9 @@ var markersHandler = function (vjs, adMarkerStyle) {
 
     this.init = function (player) {
     	_player = player;
-    	_vjs.registerPlugin('markersHandler', markers);
+			// Brightcove Player v5.28.1 uses 'plugin' function to register plugin
+			var regFn = !!_vjs.registerPlugin ? _vjs.registerPlugin : _vjs.plugin;
+    	regFn('markersHandler', markers);
     };
 
     this.markers = function(timeMarkers) {

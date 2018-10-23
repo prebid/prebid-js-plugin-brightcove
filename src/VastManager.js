@@ -9,6 +9,7 @@ var _MarkersHandler = require('./MarkersHandler.js');
 var _prefix = 'PrebidVast->vastManager';
 
 var vastManager = function () {
+	'use strict';
 	var _prebidCommunicatorObj;
 	var _player;
 	var _playlist = [];
@@ -29,24 +30,24 @@ var vastManager = function () {
 	var _showSpinner = false;
     var _mobilePrerollNeedClick = false;
 
-    function isMobile() {
+    var isMobile = function isMobile() {
     	return /iP(hone|ad|od)|Android|Windows Phone/.test(navigator.userAgent);
-    }
+    };
 
-    function isIDevice() {
+    var isIDevice = function isIDevice() {
     	return /iP(hone|ad)/.test(navigator.userAgent);
-    }
+    };
 
-    function isIPhone() {
+    var isIPhone = function isIPhone() {
     	return /iP(hone|od)/.test(navigator.userAgent);
-	}
+	};
 
-	function isMobileSafari() {
+	var isMobileSafari = function isMobileSafari() {
 		return /version\/([\w\.]+).+?mobile\/\w+\s(safari)/i.test(navigator.userAgent);
-	}
+	};
 
 	// show/hide black div witrh spinner
-	function showCover(show) {
+	var showCover = function showCover(show) {
 		_logger.log(_prefix, (show ? 'Show' : 'Hide') + ' ad cover with spinner');
 		if (show) {
     		_cover.style.display = 'block';
@@ -64,15 +65,39 @@ var vastManager = function () {
     		_cover.style.display = 'none';
     		_player.el().classList.remove('vjs-waiting');
 		}
-	}
+	};
+
+	// restore main content after ad is finished
+	var resetContent = function resetContent() {
+		showCover(false);
+		setTimeout(function() {
+			_adPlaying = false;
+			if (_savedMarkers && _player.markers && _player.markers.reset) {
+		    	_player.markers.reset(JSON.parse(_savedMarkers));
+			}
+		}, 1000);
+		_adIndicator.style.display = 'none';
+		removeListeners();
+		showNextOverlay(true);
+		_nextPlaylistItemFired = false;
+		if (_playlistCreative && _playlist.length > 0) {
+			_player.one('ended', function() {
+				setTimeout(function() {
+					if (!_nextPlaylistItemFired && _playlistCreative) {
+						_player.playlist.next();
+					}
+				}, 500);
+			});
+		}
+	};
 
 	// show/hide brightcove controls activated for next clip within playlist
-	function showNextOverlay(show) {
+	var showNextOverlay = function showNextOverlay(show) {
 		var nextOverlays = document.getElementsByClassName('vjs-next-overlay');
 		if (nextOverlays && nextOverlays.length > 0) {
 			nextOverlays[0].style.display = show ? '' : 'none';
 		}
-	}
+	};
 
 	// check frequency capping rules
 	function needPlayAdForPlaylistItem(plIdx) {
@@ -163,31 +188,6 @@ var vastManager = function () {
 		}
 		else {
 			_player.off('playlistitem', nextListItemHandler);
-		}
-	}
-
-	// restore main content after ad is finished
-	function resetContent() {
-		showCover(false);
-		setTimeout(function() {
-			_adPlaying = false;
-			if (_savedMarkers && _player.markers && _player.markers.reset) {
-		    	_player.markers.reset(JSON.parse(_savedMarkers));
-			}
-		}, 1000);
-		_adIndicator.style.display = 'none';
-		removeListeners();
-		showNextOverlay(true);
-		_nextPlaylistItemFired = false;
-		if (_playlistCreative && _playlist.length > 0) {
-			_player.one('ended', function() {
-				// traceMessage({data: {message: '****** ended fired'}});
-				setTimeout(function() {
-					if (!_nextPlaylistItemFired && _playlistCreative) {
-						_player.playlist.next();
-					}
-				}, 500);
-			});
 		}
 	}
 
@@ -400,7 +400,7 @@ var vastManager = function () {
     		}
     		else {
     			// creative is VAST URL
-    			clientParams.adTagUrl = creative;
+    			clientParams.adTagUrl = _creative;
     		}
     		if (_options && _options.skippable && _options.skippable.skipText) {
     			clientParams.skipText = _options.skippable.skipText;
@@ -419,26 +419,45 @@ var vastManager = function () {
 			}
 
 			var renderAd = function (clientParams, canAutoplay) {
-				// start MailOnline plugin for render the ad
-				_player.vastClient(clientParams);
 				if (_options.initialPlayback !== 'click' || _mobilePrerollNeedClick) {
 					if (!prerollNeedClickToPlay) {
 						setTimeout(function() {
 							if (canAutoplay) {
+								// start MailOnline plugin for render the ad
+								_player.vastClient(clientParams);
 								traceMessage({data: {message: 'Video main content - play()'}});
 								_player.play();
 							}
 							else {
+								// hide black cover before show play button
+								showCover(false);
+								// pause main content just in case
+								_player.pause();
 								traceMessage({data: {message: 'Video main content - activate play button'}});
 								_player.bigPlayButton.el_.style.display = 'block';
 								_player.bigPlayButton.el_.style.opacity = 1;
 								_player.bigPlayButton.el_.style.zIndex = 99999;
-								_player.bigPlayButton.one('click', function() {
+								_player.one('play', function() {
+									_player.bigPlayButton.el_.style.display = 'none';
 									showCover(true);
+									// start MailOnline plugin for render the ad
+									_player.vastClient(clientParams);
+									setTimeout(function() {
+										// trigger play event to MailOnline plugin to force render pre-roll
+										_player.trigger('play');
+									}, 0);
 								});
 							}
 						}, 0);
 					}
+					else {
+						// start MailOnline plugin for render the ad
+						_player.vastClient(clientParams);
+					}
+				}
+				else {
+					// start MailOnline plugin for render the ad
+					_player.vastClient(clientParams);
 				}
 				showNextOverlay(false);
 				doPrebidForNextPlaylistItem();
@@ -572,11 +591,15 @@ var vastManager = function () {
 						}
 						else {
 							if (marker.time === 0 && _player.paused()) {
-								showCover(false);
 								if (_player.tech_ && _player.tech_.el_ && !_player.tech_.el_.autoplay) {
+									showCover(false);
+									// show play button if brightcove player is configured for not autoplay
 									prerollNeedClickToPlay = true;
 									_player.bigPlayButton.el_.style.display = 'block';
 									_player.bigPlayButton.el_.style.opacity = 1;
+								}
+								else {
+									showCover(true);
 								}
 							}
 							else {
@@ -625,7 +648,6 @@ var vastManager = function () {
 			if (needRegMarkers) {
 				_markersHandler.init(_player);
 			}
-			// _logger.log(_prefix, '****** Video duration = ' + _player.duration());
 			_markersHandler.markers(timeMarkers);
 		}
 		else {
