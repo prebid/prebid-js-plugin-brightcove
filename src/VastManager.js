@@ -73,8 +73,6 @@ var vastManager = function () {
 			}
 		}, 1000);
 		_adIndicator.style.display = 'none';
-		// removeListeners();
-		// showNextOverlay(true);
 		_nextPlaylistItemFired = false;
 		if (_playlistCreative && _playlist.length > 0) {
 			_player.one('ended', function() {
@@ -299,8 +297,6 @@ var vastManager = function () {
 		if (!creative) {
 			return;
 		}
-		// removeListeners();
-    	// _creative = creative;
 
     	var prerollNeedClickToPlay = false;
 
@@ -311,9 +307,6 @@ var vastManager = function () {
 		_adIndicator.style.display = 'none';
 		_adIndicator.style.left = '10px';
 		_player.el().appendChild(_adIndicator);
-
-		// player event listeners
-		// addListeners();
 
     	// function to play vast xml
     	var playAd = function(xml) {
