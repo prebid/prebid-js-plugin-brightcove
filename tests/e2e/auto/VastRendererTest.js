@@ -10,7 +10,7 @@ describe('VastRenderer unit test', function () {
         }, 1500);
     });
 
-    var player, vastRenderer, testObj, spy;
+    var player, vastRenderer, testObj;
 
     beforeEach(function (done) {
         console.log(this.currentTest.title);
@@ -21,10 +21,6 @@ describe('VastRenderer unit test', function () {
     });
 
     afterEach(function(done) {
-        if (spy) {
-            spy.restore();
-            spy = null;
-        }
         testObj = null;
         vastRenderer = null;
         done();
@@ -48,7 +44,6 @@ describe('VastRenderer unit test', function () {
             assert.equal(params.adTagUrl, 'http://bla_bla');
             done();
         };
-        testObj.setOptions({});
         vastRenderer.playAd('http://bla_bla', {}, true, true, true, function() {});
         player.trigger('loadeddata');
     });
@@ -58,7 +53,6 @@ describe('VastRenderer unit test', function () {
             assert.equal(params.adTagUrl, 'http://bla_bla');
             done();
         };
-        testObj.setOptions({});
         vastRenderer.playAd('http://bla_bla', {}, true, false, false, function() {});
         player.trigger('loadeddata');
         player.trigger('play');
