@@ -191,14 +191,6 @@ describe('VastManager unit test', function () {
             stub1.restore();
         });
 
-        /* it('setPlaybackMethodData test - sets autoplay and muted options base on player status', function () {
-            testObj.setOptions({});
-            testObj.setPlaybackMethodData();
-            var opts = testObj.options();
-            assert.equal(opts.initialPlayback, 'auto');
-            assert.equal(opts.initialAudio, 'on');
-        }); */
-
         it('play test - prepares data to render VAST creative', function (done) {
             player.vastClient = function(params) {
                 assert.equal(params.adTagUrl, 'http://bla_bla');

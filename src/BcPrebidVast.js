@@ -8,6 +8,7 @@
 var _vjs = window.videojs !== undefined ? window.videojs : null;
 var _prebidGlobal = require('./PrebidGlobal.js');
 var _vastManager = require('./VastManager.js');
+var _adListManager = require('./AdListManager.js');
 var _prebidCommunicator = require('./PrebidCommunicator.js');
 var _logger = require('./Logging.js');
 var _prefix = 'PrebidVast->';
@@ -409,6 +410,7 @@ module.exports = prebidVastPlugin;
 
 var _player;
 var _vastManagerObj;
+var _adListManagerObj;
 var _prebidCommunicatorObj;
 if (_vjs) {
 	registerPrebidVastPlugin();
@@ -453,10 +455,19 @@ function renderAd(options) {
 		_prebidCommunicatorObj.doPrebid(options);
 	}
 	else {
-		// do prebid if needed and render ad
-		_vastManagerObj = new _vastManager();
-		options.doPrebid = doPrebid;
-		_vastManagerObj.play(_player, options.creative, options);
+		// do prebid if needed and render ad(s)
+		_adListManagerObj = new _adListManager();
+		var arrOptions;
+		if (Array.isArray(options)) {
+			arrOptions = options;
+		}
+		else {
+			arrOptions = [options];
+		}
+		arrOptions.forEach(function(opt) {
+			opt.doPrebid = doPrebid;
+		});
+		_adListManagerObj.play(_player, arrOptions);
 	}
 }
 

@@ -74,7 +74,7 @@ describe('BcPrebidVast unit test', function() {
 		setTimeout(function() {
 			var options = mockObject.options;
 			options.biddersSpec.bids[0].params.placementId = 11653264;
-			sinonStub = sinon.stub(window.pbjs, 'requestBids', function(obj) {
+			sinonStub = sinon.stub($$PREBID_GLOBAL$$.bc_pbjs, 'requestBids', function(obj) {
 				var response = {
 					'my-video-tag': {
 						bids: [
@@ -155,7 +155,7 @@ describe('BcPrebidVast unit test', function() {
 
     it('init test - registers Brightcove Prebid Plugin in videojs', function (done) {
 		sinonStub = sinon.stub(videojs, 'registerPlugin', function(name, fnc) {
-			assert.equal(name, 'bcPrebidVastPlugin');
+			assert.equal(name, 'bcPrebidVastPluginCommand');
 			assert.isTrue(typeof fnc == 'function');
 			done();
 		});
