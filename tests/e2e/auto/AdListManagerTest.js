@@ -133,7 +133,7 @@ describe('AdListManager unit test', function () {
             var adList = [{status: 2}];
             testObj.setArrAdList(adList);
             testObj.resetContent();
-            assert.equal(adList[0].status, 3);
+            assert.equal(adList[0].status, 2);
         });
 
         it('needPlayAdForPlaylistItem test - returns true when matching frequency rules', function () {
@@ -166,7 +166,7 @@ describe('AdListManager unit test', function () {
                 assert.isTrue(firstVideoPreroll);
                 done();
             });
-            testObj.playAd('<VAST>...</VAST>');
+            testObj.playAd({adTag: '<VAST>...</VAST>'});
         });
 
         it('getAdData test - returns object which represents ad in ad list', function (done) {
@@ -186,7 +186,7 @@ describe('AdListManager unit test', function () {
                 stub1.restore();
             });
             testObj.markerReached({time: 0});
-            assert.equal(adList[0].status, 2);
+            assert.equal(adList[0].status, 3);
         });
 
         it('checkPrepareTime test - if it is a time requests xml from prebid.js', function (done) {

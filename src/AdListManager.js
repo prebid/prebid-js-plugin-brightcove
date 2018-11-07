@@ -34,8 +34,9 @@ var adListManager = function () {
 
 	var AD_STATUS_NOT_PLAYED = 0;
 	var AD_STATUS_TAG_REQUEST = 1;
-	var AD_STATUS_PLAYING = 2;
-	var AD_STATUS_DONE = 3;
+	var AD_STATUS_READY_PLAY = 2;
+	var AD_STATUS_PLAYING = 3;
+	var AD_STATUS_DONE = 4;
 
 	var BEFORE_AD_PREPARE_TIME = 5;		// 5 seconds
 
@@ -75,6 +76,7 @@ var adListManager = function () {
 	// restore main content after ad is finished
 	var resetContent = function resetContent() {
 		showCover(false);
+		_options = null;
 		setTimeout(function() {
 			_adPlaying = false;
 			if (_savedMarkers && _player.markers && _player.markers.reset) {
@@ -214,7 +216,7 @@ var adListManager = function () {
 	}
 
 	// function to play vast xml
-	var playAd = function(xml) {
+	var playAd = function(adData) {
 		if (_adPlaying) {
 			// not interrupt playing ad
 			return;
@@ -227,7 +229,18 @@ var adListManager = function () {
 			_savedMarkers = JSON.stringify(_player.markers.getMarkers());
 		}
 		var firstVideoPreroll = _player.currentTime() < 0.5 && _playlistIdx === -1;
-		_vastRendererObj.playAd(xml, _options, firstVideoPreroll, _mobilePrerollNeedClick, _prerollNeedClickToPlay, eventCallback);
+		_options = adData.options;
+		if (!_adIndicator) {
+			// prepare ad indicator overlay
+			_adIndicator = document.createElement('p');
+			_adIndicator.className = 'vjs-overlay';
+			_adIndicator.innerHTML = _options.adText ? _options.adText : 'Ad';
+			_adIndicator.style.display = 'none';
+			_adIndicator.style.left = '10px';
+			_player.el().appendChild(_adIndicator);
+		}
+		adData.status = AD_STATUS_PLAYING;
+		_vastRendererObj.playAd(adData.adTag, _options, firstVideoPreroll, _mobilePrerollNeedClick, _prerollNeedClickToPlay, eventCallback);
 	};
 
 	function getAdData(adTime, callback) {
@@ -239,9 +252,11 @@ var adListManager = function () {
 				callback(adData);
 			}
 			else {
+				adData.status = AD_STATUS_TAG_REQUEST;
 				_prebidCommunicatorObj.doPrebid(adData.options, function(creative) {
 					adData.adTag = creative;
 					if (creative) {
+						adData.status = AD_STATUS_READY_PLAY;
 						callback(adData);
 					}
 					else {
@@ -249,19 +264,31 @@ var adListManager = function () {
 						callback(null);
 					}
 				});
-				adData.status = AD_STATUS_TAG_REQUEST;
 			}
 		}
 		else {
-			callback(null);
+			adData = _arrAdList.find(function(data) {
+				return data.adTime === adTime && data.status === AD_STATUS_TAG_REQUEST;
+			});
+			if (adData) {
+				var interval = setInterval(function() {
+					if (adData.status != AD_STATUS_TAG_REQUEST) {
+						clearInterval(interval);
+						callback(adData.adTag ? adData : null);
+					}
+				}, 50);
+			}
+			else {
+				callback(null);
+			}
 		}
 	}
 
-	function markerReached(marker) {
+	var markerReached = function markerReached(marker) {
 		var adTime = marker.time;
 		getAdData(adTime, function(adData) {
 			if (adData) {
-				adData.status = AD_STATUS_TAG_REQUEST;
+				adData.status = AD_STATUS_READY_PLAY;
 				_mobilePrerollNeedClick = isMobile() && adTime === 0;
 				if (_mobilePrerollNeedClick && _playlistIdx < 0) {
 					showCover(false);
@@ -272,7 +299,7 @@ var adListManager = function () {
 							// iPhone
 							_player.one('play', function() {
 								adData.status = AD_STATUS_PLAYING;
-								playAd(adData.adTag);
+								playAd(adData);
 							});
 						}
 						else {
@@ -282,7 +309,7 @@ var adListManager = function () {
 								traceMessage({data: {message: 'Main content - play event'}});
 								_player.pause();
 								adData.status = AD_STATUS_PLAYING;
-								playAd(adData.adTag);
+								playAd(adData);
 							});
 						}
 					}
@@ -291,7 +318,7 @@ var adListManager = function () {
 						_player.one('play', function() {
 							showCover(true);
 							adData.status = AD_STATUS_PLAYING;
-							playAd(adData.adTag);
+							playAd(adData);
 						});
 					}
 				}
@@ -312,19 +339,24 @@ var adListManager = function () {
 						showCover(true);
 					}
 					adData.status = AD_STATUS_PLAYING;
-					playAd(adData.adTag);
+					playAd(adData);
 				}
 			}
+			else {
+				showCover(false);
+			}
 		});
-	}
+	};
 
 	function checkPrepareTime() {
 		var curTime = _player.currentTime();
 		for (var i = 0; i < _arrAdList.length; i++) {
 			var nextTime = (i < _arrAdList.length - 1) ? _arrAdList[i + 1].adTime : _contentDuration;
 			if (_arrAdList[i].adTime - curTime <= BEFORE_AD_PREPARE_TIME &&	curTime < nextTime) {
-				if (!_arrAdList[i].adTag) {
+				if (!_arrAdList[i].adTag && _arrAdList[i].status === AD_STATUS_NOT_PLAYED) {
+					_arrAdList[i].status = AD_STATUS_TAG_REQUEST;
 					_prebidCommunicatorObj.doPrebid(_arrAdList[i].options, function(creative) {
+						_arrAdList[i].status = !!creative ? AD_STATUS_READY_PLAY : AD_STATUS_DONE;
 						_arrAdList[i].adTag = creative;
 					});
 				}
@@ -407,13 +439,6 @@ var adListManager = function () {
 			_markersHandler.init(_player);
 		}
 		_markersHandler.markers(timeMarkers);
-
-		if (_hasPreroll) {
-			if (_arrAdList.length > 0 && _arrAdList[0].adTime === 0) {
-				// play preroll right now
-				markerReached({time: 0});
-			}
-		}
 
 		_player.on('timeupdate', checkPrepareTime);
 
