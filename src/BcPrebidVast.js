@@ -27,6 +27,12 @@ var BC_prebid_in_progress = $$PREBID_GLOBAL$$.plugin_prebid_options && $$PREBID_
 var BC_bidders_added = false;
 function doPrebid(options, callback) {
 	if ($$PREBID_GLOBAL$$.bc_pbjs && options.biddersSpec) {
+		if (options.clearPrebid) {
+			$$PREBID_GLOBAL$$.bc_pbjs.adUnits = [];
+			$$PREBID_GLOBAL$$.bc_pbjs.bidderSettings = {};
+			$$PREBID_GLOBAL$$.bc_pbjs.medianetGlobals = {};
+			BC_bidders_added = false;
+		}
 		$$PREBID_GLOBAL$$.bc_pbjs.que = $$PREBID_GLOBAL$$.bc_pbjs.que || [];
 
 		//

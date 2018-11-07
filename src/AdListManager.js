@@ -103,6 +103,7 @@ var adListManager = function () {
 
 	// event handler for 'playlistitem' event
 	function nextListItemHandler() {
+		_player.off('timeupdate', checkPrepareTime);
 		_savedMarkers = null;
 		_prerollNeedClickToPlay = false;
 		showCover(true);
@@ -205,6 +206,9 @@ var adListManager = function () {
 			traceEvent(event);
 		}
 		else if (arrResetEvents.includes(name)) {
+			if (_options.pageNotificationCallback) {
+				_options.pageNotificationCallback('message', 'renderer event name - ' + name);
+			}
 			resetContent();
 		}
 		else if (name === 'internal') {
@@ -227,6 +231,7 @@ var adListManager = function () {
 		_adPlaying = true;
 		if (_markersHandler && _player.markers) {
 			_savedMarkers = JSON.stringify(_player.markers.getMarkers());
+			_player.markers.removeAll();
 		}
 		var firstVideoPreroll = _player.currentTime() < 0.5 && _playlistIdx === -1;
 		_options = adData.options;
@@ -234,18 +239,19 @@ var adListManager = function () {
 			// prepare ad indicator overlay
 			_adIndicator = document.createElement('p');
 			_adIndicator.className = 'vjs-overlay';
-			_adIndicator.innerHTML = _options.adText ? _options.adText : 'Ad';
+			_adIndicator.innerHTML = 'Ad';
 			_adIndicator.style.display = 'none';
 			_adIndicator.style.left = '10px';
 			_player.el().appendChild(_adIndicator);
 		}
+		_adIndicator.innerHTML = _options.adText ? _options.adText : 'Ad';
 		adData.status = AD_STATUS_PLAYING;
 		_vastRendererObj.playAd(adData.adTag, _options, firstVideoPreroll, _mobilePrerollNeedClick, _prerollNeedClickToPlay, eventCallback);
 	};
 
 	function getAdData(adTime, callback) {
 		var adData = _arrAdList.find(function(data) {
-			return data.adTime === adTime && data.status === AD_STATUS_NOT_PLAYED;
+			return data.adTime === adTime && (data.status === AD_STATUS_NOT_PLAYED || data.status === AD_STATUS_READY_PLAY);
 		});
 		if (adData) {
 			if (adData.adTag) {
@@ -253,6 +259,7 @@ var adListManager = function () {
 			}
 			else {
 				adData.status = AD_STATUS_TAG_REQUEST;
+				adData.options.clearPrebid = _arrOptions && _arrOptions.length > 1;
 				_prebidCommunicatorObj.doPrebid(adData.options, function(creative) {
 					adData.adTag = creative;
 					if (creative) {
@@ -349,12 +356,17 @@ var adListManager = function () {
 	};
 
 	function checkPrepareTime() {
+		if (_adPlaying) {
+			// not interrupt playing ad
+			return;
+		}
 		var curTime = _player.currentTime();
 		for (var i = 0; i < _arrAdList.length; i++) {
 			var nextTime = (i < _arrAdList.length - 1) ? _arrAdList[i + 1].adTime : _contentDuration;
 			if (_arrAdList[i].adTime - curTime <= BEFORE_AD_PREPARE_TIME &&	curTime < nextTime) {
 				if (!_arrAdList[i].adTag && _arrAdList[i].status === AD_STATUS_NOT_PLAYED) {
 					_arrAdList[i].status = AD_STATUS_TAG_REQUEST;
+					_arrAdList[i].options.clearPrebid = _arrOptions && _arrOptions.length > 1;
 					_prebidCommunicatorObj.doPrebid(_arrAdList[i].options, function(creative) {
 						_arrAdList[i].status = !!creative ? AD_STATUS_READY_PLAY : AD_STATUS_DONE;
 						_arrAdList[i].adTag = creative;
@@ -406,6 +418,11 @@ var adListManager = function () {
 			}
 		});
 
+		if (_arrAdList.length === 0) {
+			showCover(false);
+			return;
+		}
+
 		// sort ad list by ad time
 		_arrAdList.sort(function (a, b) {
 	        return a.adTime - b.adTime;
@@ -441,8 +458,9 @@ var adListManager = function () {
 		_markersHandler.markers(timeMarkers);
 
 		_player.on('timeupdate', checkPrepareTime);
-
-		_player.on('playlistitem', nextListItemHandler);
+		if (!_hasPreroll) {
+			showCover(false);
+		}
 	}
 
 	// main entry point to start play ad
@@ -475,6 +493,19 @@ var adListManager = function () {
 		_hasPreroll = optionsHavePreroll();
 		if (_hasPreroll) {
 			showCover(true);
+		}
+
+		if (_player.playlist && _player.playlist.autoadvance) {
+			_player.on('ended', function() {
+				if (_player.playlist && _player.playlist.autoadvance) {
+					if (_adPlaying) {
+						return;
+					}
+					_player.one('playlistitem', nextListItemHandler);
+					showCover(true);
+					_player.playlist.next(0);
+				}
+			});
 		}
 
     	if (_player.duration() > 0) {
