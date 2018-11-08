@@ -18,7 +18,7 @@ var MOL_PLUGIN_URL = '//acdn.adnxs.com/video/plugins/mol/videojs_5.vast.vpaid.mi
 
 var $$PREBID_GLOBAL$$ = _prebidGlobal.getGlobal();
 
-_logger.always(_prefix, 'Version 0.2.5');
+_logger.always(_prefix, 'Version 0.2.6');
 
 var BC_prebid_in_progress = $$PREBID_GLOBAL$$.plugin_prebid_options && $$PREBID_GLOBAL$$.plugin_prebid_options.biddersSpec;
 
@@ -26,6 +26,12 @@ var BC_prebid_in_progress = $$PREBID_GLOBAL$$.plugin_prebid_options && $$PREBID_
 var BC_bidders_added = false;
 function doPrebid(options, callback) {
 	if ($$PREBID_GLOBAL$$.bc_pbjs && options.biddersSpec) {
+		// clean some prebid object properties
+		$$PREBID_GLOBAL$$.bc_pbjs.adUnits = [];
+		$$PREBID_GLOBAL$$.bc_pbjs.bidderSettings = {};
+		$$PREBID_GLOBAL$$.bc_pbjs.medianetGlobals = {};
+		BC_bidders_added = false;
+
 		$$PREBID_GLOBAL$$.bc_pbjs.que = $$PREBID_GLOBAL$$.bc_pbjs.que || [];
 
 		//
@@ -230,6 +236,15 @@ function loadPrebidScript(options, fromHeader) {
 			});
     	}
 	};
+
+	var temp_pbjs = window.pbjs || {};
+	if (temp_pbjs.requestBids) {
+		// if prebid.js is already loaded try to invoke prebid.
+		$$PREBID_GLOBAL$$.bc_pbjs = pbjs;
+		doInternalPrebid();
+		return;
+	}
+
 	if (document.getElementById('bc-pb-script')) {
 		// if prebid.js is already loaded try to invoke prebid.
 		doInternalPrebid();
