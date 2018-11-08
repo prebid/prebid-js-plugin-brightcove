@@ -59,7 +59,7 @@
 
 	<script type="text/javascript" src="../../../dist/bc_prebid_vast.js"></script>
 	<script>
-		var _popUpOptions = getOptions('plugin_prebid_vast');
+		var _popUpOptions = getOptions('plugin_prebid_vast_multi');
 	    
 		var opts; 
 		var tmp = JSON.stringify(_popUpOptions);
@@ -139,7 +139,7 @@
 		function ReturnOptions(options1) {
 			// save the options
 			_popUpOptions = options1;
-			saveOptions(_popUpOptions, 'plugin_prebid_vast');
+			saveOptions(_popUpOptions, 'plugin_prebid_vast_multi');
 		}
 		
   		var _dlgOptions = {};
