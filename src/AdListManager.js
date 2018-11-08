@@ -21,7 +21,10 @@ var adListManager = function () {
 	var _adMarkerStyle;
 	var _frequencyRules;
 	var _hasPreroll = false;
+	var _hasPostroll = false;
+	var _waitPostrollEnded = false;
 	var _adPlaying = false;
+	var _mainVideoEnded = false;
     var _savedMarkers;
     var _markersHandler;
     var _contentDuration = 0;
@@ -31,6 +34,8 @@ var adListManager = function () {
 	var _showSpinner = false;
 	var _mobilePrerollNeedClick = false;
 	var _prerollNeedClickToPlay = false;
+
+	var _pageNotificationCallback;
 
 	var AD_STATUS_NOT_PLAYED = 0;
 	var AD_STATUS_TAG_REQUEST = 1;
@@ -82,7 +87,10 @@ var adListManager = function () {
 			if (_savedMarkers && _player.markers && _player.markers.reset) {
 		    	_player.markers.reset(JSON.parse(_savedMarkers));
 			}
-		}, 1000);
+			if (_waitPostrollEnded) {
+				startNextPlaylistVideo();
+			}
+		}, 200);
 		_adIndicator.style.display = 'none';
 		var adData = _arrAdList.find(function(data) {
 			return data.status === AD_STATUS_PLAYING;
@@ -106,10 +114,13 @@ var adListManager = function () {
 		_player.off('timeupdate', checkPrepareTime);
 		_savedMarkers = null;
 		_prerollNeedClickToPlay = false;
+		_hasPostroll = false;
+		_waitPostrollEnded = false;
 		showCover(true);
 		_playlistIdx++;
 		_contentDuration = 0;
 		_player.one('loadedmetadata', function() {
+			_mainVideoEnded = false;
 			if (_markersHandler && _player.markers && _player.markers.destroy) {
 				_player.markers.destroy();
 			}
@@ -177,16 +188,16 @@ var adListManager = function () {
 	// send notification to page
 	function traceMessage(event) {
 		_logger.log(_prefix, 'trace event message: ' + event.data.message);
-		if (_options.pageNotificationCallback) {
-			_options.pageNotificationCallback('message', event.data.message);
+		if (_pageNotificationCallback) {
+			_pageNotificationCallback('message', event.data.message);
 		}
 	}
 
 	// send notification to page
 	function traceEvent(event) {
 		_logger.log(_prefix, 'trace event: ' + event.data.event);
-		if (_options.pageNotificationCallback) {
-			_options.pageNotificationCallback('event', event.data.event);
+		if (_pageNotificationCallback) {
+			_pageNotificationCallback('event', event.data.event);
 		}
 	}
 
@@ -206,8 +217,8 @@ var adListManager = function () {
 			traceEvent(event);
 		}
 		else if (arrResetEvents.includes(name)) {
-			if (_options.pageNotificationCallback) {
-				_options.pageNotificationCallback('message', 'renderer event name - ' + name);
+			if (_pageNotificationCallback) {
+				_pageNotificationCallback('message', 'renderer event name - ' + name);
 			}
 			resetContent();
 		}
@@ -350,7 +361,9 @@ var adListManager = function () {
 				}
 			}
 			else {
-				showCover(false);
+				if (!_mainVideoEnded) {
+					showCover(false);
+				}
 			}
 		});
 	};
@@ -392,7 +405,7 @@ var adListManager = function () {
 	}
 
 	function startRenderingPreparation() {
-		_contentDuration = parseInt(_player.duration()) - 0.5;
+		_contentDuration = _player.duration();	// parseInt(_player.duration()) - 0.5;
 		if (_hasPreroll) {
 			_player.pause();
 		}
@@ -405,6 +418,9 @@ var adListManager = function () {
 			if (options.frequencyRules && !_frequencyRules) {
 				_frequencyRules = options.frequencyRules;
 			}
+			if (options.pageNotificationCallback && !_pageNotificationCallback) {
+				_pageNotificationCallback = options.pageNotificationCallback;
+			}
 			var adTime = convertStringToSeconds(options.timeOffset, _contentDuration);
 			if (adTime >= 0 && adTime <= _contentDuration) {
 				// avoid ad time duplication
@@ -414,6 +430,9 @@ var adListManager = function () {
 				if (!timeVal) {
 					_arrAdList.push({adTag: null, options: options, adTime: adTime, status: AD_STATUS_NOT_PLAYED});
 					arrTimes.push(adTime);
+					if (adTime === _contentDuration) {
+						_hasPostroll = true;
+					}
 				}
 			}
 		});
@@ -463,6 +482,15 @@ var adListManager = function () {
 		}
 	}
 
+	function startNextPlaylistVideo() {
+		_player.one('playlistitem', nextListItemHandler);
+		showCover(true);
+		if (_pageNotificationCallback) {
+			_pageNotificationCallback('message', 'go to next video in playlist');
+		}
+		_player.playlist.next(0);
+	}
+
 	// main entry point to start play ad
     this.play = function (vjsPlayer, options) {
     	_player = vjsPlayer;
@@ -501,9 +529,15 @@ var adListManager = function () {
 					if (_adPlaying) {
 						return;
 					}
-					_player.one('playlistitem', nextListItemHandler);
-					showCover(true);
-					_player.playlist.next(0);
+					_mainVideoEnded = true;
+					if (_player.playlist.currentIndex() < _player.playlist.lastIndex()) {
+						if (_hasPostroll) {
+							_waitPostrollEnded = true;
+						}
+						else {
+							startNextPlaylistVideo();
+						}
+					}
 				}
 			});
 		}
