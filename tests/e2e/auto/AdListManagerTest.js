@@ -166,7 +166,9 @@ describe('AdListManager unit test', function () {
                 assert.isTrue(firstVideoPreroll);
                 done();
             });
-            testObj.playAd({adTag: '<VAST>...</VAST>'});
+            testObj.options({});
+            var adData = {status: 2, adTag: '<VAST>...</VAST>', options: {}, adTime: 0};
+            testObj.playAd(adData);
         });
 
         it('getAdData test - returns object which represents ad in ad list', function (done) {
@@ -218,7 +220,7 @@ describe('AdListManager unit test', function () {
             adListManager.play(player, [{}]);
             player.trigger('loadedmetadata');
             setTimeout(function() {
-                assert.equal(spy.callCount, 6);
+                assert.equal(spy.callCount, 0);
                 done();
             }, 1000);
         });

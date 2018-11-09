@@ -328,11 +328,9 @@ var markersHandler = function (vjs, adMarkerStyle) {
 				if (currentTime === player.duration()) {
 					if (setting.markerTip.time(markersList[markersList.length - 1]) === _videoDuration) {
 						if (options.onMarkerReached) {
-							console.log('****** videoTime = ' + currentTime + ', play post-roll');
 							options.onMarkerReached(markersList[markersList.length - 1]);
 						}
 					}
-					player.off('timeupdate', onTimeUpdate);
 					return;
 				}
 
@@ -363,12 +361,10 @@ var markersHandler = function (vjs, adMarkerStyle) {
 	        }
 	      }
 
-				// console.log('****** videoTime = ' + currentTime + ', newMarkerIndex = ' + newMarkerIndex + ', currentMarkerIndex = ' + currentMarkerIndex);
 	      // set new marker index
 	      if (newMarkerIndex !== currentMarkerIndex) {
 	        // trigger event if index is not null
 	        if (newMarkerIndex !== NULL_INDEX && options.onMarkerReached) {
-						console.log('****** videoTime = ' + currentTime + ', play pre-roll/mid-roll');
 	          options.onMarkerReached(markersList[newMarkerIndex], newMarkerIndex);
 	        }
 	        currentMarkerIndex = newMarkerIndex;

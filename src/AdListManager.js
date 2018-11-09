@@ -208,6 +208,7 @@ var adListManager = function () {
 		}
 	}
 
+	// handles events from VAST renderer
 	function eventCallback(event) {
 		var arrResetEvents = ['vast.adError', 'vast.adsCancel', 'vast.adSkip', 'vast.reset',
 							  'vast.contentEnd', 'adFinished'];
@@ -267,6 +268,7 @@ var adListManager = function () {
 		_vastRendererObj.playAd(adData.adTag, _options, firstVideoPreroll, _mobilePrerollNeedClick, _prerollNeedClickToPlay, eventCallback);
 	};
 
+	// function to get break data for ad renderring
 	function getAdData(adTime, callback) {
 		var adData = _arrAdList.find(function(data) {
 			return data.adTime === adTime && (data.status === AD_STATUS_NOT_PLAYED || data.status === AD_STATUS_READY_PLAY);
@@ -309,6 +311,7 @@ var adListManager = function () {
 		}
 	}
 
+	// callback to handle marker reached event from marker component
 	var markerReached = function markerReached(marker) {
 		var adTime = marker.time;
 		getAdData(adTime, function(adData) {
@@ -375,6 +378,7 @@ var adListManager = function () {
 		});
 	};
 
+	// function to check if it is a time to prepare ad tag
 	function checkPrepareTime() {
 		if (_adPlaying) {
 			// not interrupt playing ad
@@ -397,6 +401,7 @@ var adListManager = function () {
 		}
 	}
 
+	// checks if list of ad options has preroll option
 	function optionsHavePreroll() {
 		for (var i = 0; i < _arrOptions.length; i++) {
 			if (_arrOptions[i].timeOffset &&
@@ -411,6 +416,7 @@ var adListManager = function () {
 		return false;
 	}
 
+	// prepares ad data array, markers data, and starts ad list renderring
 	function startRenderingPreparation() {
 		_contentDuration = _player.duration();	// parseInt(_player.duration()) - 0.5;
 		if (_hasPreroll) {
@@ -489,6 +495,7 @@ var adListManager = function () {
 		}
 	}
 
+	// starts next video in playlist
 	function startNextPlaylistVideo() {
 		_player.one('playlistitem', nextListItemHandler);
 		showCover(true);
@@ -579,7 +586,14 @@ var adListManager = function () {
 			setOptions: function(arrOptions) {
 				_arrOptions = arrOptions;
 			},
-			options: function() { return _options; },
+			options: function(opts) {
+				if (opts) {
+					_options = opts;
+				}
+				else {
+					 return _options;
+				}
+			},
 			setPlayer: function(player) {
 				_player = player;
 			},
