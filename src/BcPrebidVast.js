@@ -8,6 +8,7 @@
 var _vjs = window.videojs !== undefined ? window.videojs : null;
 var _prebidGlobal = require('./PrebidGlobal.js');
 var _vastManager = require('./VastManager.js');
+var _adListManager = require('./AdListManager.js');
 var _prebidCommunicator = require('./PrebidCommunicator.js');
 var _logger = require('./Logging.js');
 var _prefix = 'PrebidVast->';
@@ -18,7 +19,7 @@ var MOL_PLUGIN_URL = '//acdn.adnxs.com/video/plugins/mol/videojs_5.vast.vpaid.mi
 
 var $$PREBID_GLOBAL$$ = _prebidGlobal.getGlobal();
 
-_logger.always(_prefix, 'Version 0.3.1');
+_logger.always(_prefix, 'Version 0.3.2');
 
 var BC_prebid_in_progress = $$PREBID_GLOBAL$$.plugin_prebid_options && $$PREBID_GLOBAL$$.plugin_prebid_options.biddersSpec;
 
@@ -26,6 +27,12 @@ var BC_prebid_in_progress = $$PREBID_GLOBAL$$.plugin_prebid_options && $$PREBID_
 var BC_bidders_added = false;
 function doPrebid(options, callback) {
 	if ($$PREBID_GLOBAL$$.bc_pbjs && options.biddersSpec) {
+		if (options.clearPrebid) {
+			$$PREBID_GLOBAL$$.bc_pbjs.adUnits = [];
+			$$PREBID_GLOBAL$$.bc_pbjs.bidderSettings = {};
+			$$PREBID_GLOBAL$$.bc_pbjs.medianetGlobals = {};
+			BC_bidders_added = false;
+		}
 		$$PREBID_GLOBAL$$.bc_pbjs.que = $$PREBID_GLOBAL$$.bc_pbjs.que || [];
 
 		//
@@ -409,6 +416,7 @@ module.exports = prebidVastPlugin;
 
 var _player;
 var _vastManagerObj;
+var _adListManagerObj;
 var _prebidCommunicatorObj;
 if (_vjs) {
 	registerPrebidVastPlugin();
@@ -453,10 +461,19 @@ function renderAd(options) {
 		_prebidCommunicatorObj.doPrebid(options);
 	}
 	else {
-		// do prebid if needed and render ad
-		_vastManagerObj = new _vastManager();
-		options.doPrebid = doPrebid;
-		_vastManagerObj.play(_player, options.creative, options);
+		// do prebid if needed and render ad(s)
+		_adListManagerObj = new _adListManager();
+		var arrOptions;
+		if (Array.isArray(options)) {
+			arrOptions = options;
+		}
+		else {
+			arrOptions = [options];
+		}
+		arrOptions.forEach(function(opt) {
+			opt.doPrebid = doPrebid;
+		});
+		_adListManagerObj.play(_player, arrOptions);
 	}
 }
 

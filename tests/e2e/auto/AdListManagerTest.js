@@ -1,10 +1,10 @@
-var _vastManager = require('../../../src/VastManager.js');
-var BcPrebidVast = require('./../../../src/BcPrebidVast.js');
-var prebidCommunicator = require('./../../../src/PrebidCommunicator.js');
+var _adListManager = require('../../../src/AdListManager.js');
+var BcPrebidVast = require('../../../src/BcPrebidVast.js');
+// var prebidCommunicator = require('../../../src/PrebidCommunicator.js');
 
-describe('VastManager unit test', function () {
+describe('AdListManager unit test', function () {
     var Mock;
-    var mockObject;
+    var mockObject, adListManager, testObj;
 
     beforeEach(function (done) {
         console.log(this.currentTest.title);
@@ -12,56 +12,38 @@ describe('VastManager unit test', function () {
             this.duration = 900;	// 15 minuts
         };
         mockObject = new Mock();
+        adListManager = new _adListManager();
+        testObj = adListManager.test();
         done();
     });
 
     it('convertStringToSeconds test - 00:10:10', function () {
-        var vastManager = new _vastManager();
-
-    	var testObj = vastManager.test();
     	var title = this.test.title;
-    	testObj.setDuration(mockObject.duration);
-    	var seconds = testObj.convertStringToSeconds('00:10:10', function(seconds) {});
+     	var seconds = testObj.convertStringToSeconds('00:10:10', mockObject.duration);
  		assert(seconds === 610, title + ' failed. Expected - 610, got - ' + seconds);
     });
 
     it('convertStringToSeconds test - 00:10:10.600', function () {
-        var vastManager = new _vastManager();
-
-    	var testObj = vastManager.test();
     	var title = this.test.title;
-    	testObj.setDuration(mockObject.duration);
-    	var seconds = testObj.convertStringToSeconds('00:10:10.600', function(seconds) {});
+    	var seconds = testObj.convertStringToSeconds('00:10:10.600', mockObject.duration);
     	assert(seconds === 611, title + ' failed. Expected - 611, got - ' + seconds);
     });
 
     it('convertStringToSeconds test - 20%', function () {
-        var vastManager = new _vastManager();
-
-    	var testObj = vastManager.test();
     	var title = this.test.title;
-    	testObj.setDuration(mockObject.duration);
-    	var seconds = testObj.convertStringToSeconds('20%', function(seconds) {});
+    	var seconds = testObj.convertStringToSeconds('20%', mockObject.duration);
     	assert(seconds === 180, title + ' failed. Expected - 180, got - ' + seconds);
     });
 
     it('convertStringToSeconds test - start', function () {
-        var vastManager = new _vastManager();
-
-    	var testObj = vastManager.test();
     	var title = this.test.title;
-    	testObj.setDuration(mockObject.duration);
-    	var seconds = testObj.convertStringToSeconds('start', function(seconds) {});
+    	var seconds = testObj.convertStringToSeconds('start', mockObject.duration);
     	assert(seconds === 0, title + ' failed. Expected - 0, got - ' + seconds);
     });
 
     it('convertStringToSeconds test - end', function () {
-        var vastManager = new _vastManager();
-
-    	var testObj = vastManager.test();
     	var title = this.test.title;
-    	testObj.setDuration(mockObject.duration);
-    	var seconds = testObj.convertStringToSeconds('end', function(seconds) {});
+    	var seconds = testObj.convertStringToSeconds('end', mockObject.duration);
     	assert(seconds === 900, title + ' failed. Expected - 900, got - ' + seconds);
     });
 
@@ -74,12 +56,12 @@ describe('VastManager unit test', function () {
             }, 1500);
         });
 
-        var player, vastManager, testObj, cover, spinner, spy, adIndicator;
+        var player, adListManager, testObj, cover, spinner, spy, adIndicator;
 
         beforeEach(function (done) {
             player = BcPrebidVast.test().player;
-            vastManager = new _vastManager();
-            testObj = vastManager.test();
+            adListManager = new _adListManager();
+            testObj = adListManager.test();
             testObj.setPlayer(player);
             if (!cover) {
                 cover = document.createElement('div');
@@ -135,14 +117,14 @@ describe('VastManager unit test', function () {
         });
 
         it('resetContent test - resets main content after ad finished', function () {
-            spy = sinon.spy(player, 'off');
+            var adList = [{status: 2}];
+            testObj.setArrAdList(adList);
             testObj.resetContent();
-            assert.equal(spy.callCount, 1);
+            assert.equal(adList[0].status, 2);
         });
 
         it('needPlayAdForPlaylistItem test - returns true when matching frequency rules', function () {
-            testObj.setPlaylist(['1', '2', '3']);
-            testObj.setOptions({frequencyRules: {playlistClips: 2}});
+            testObj.setFrequencyRules({playlistClips: 2});
             var needPlay = testObj.needPlayAdForPlaylistItem(1);
             assert.isFalse(needPlay);
             needPlay = testObj.needPlayAdForPlaylistItem(2);
@@ -151,68 +133,83 @@ describe('VastManager unit test', function () {
 
         it('nextListItemHandler test - plays ad for next item in playlist', function (done) {
             var orig = player.playlist;
-            var stub1 = sinon.stub(player, 'currentSource', function(tm) {
-                stub1.restore();
-                player.playlist = orig;
-                done();
-            });
             player.playlist = {
-                currentIndex: function() { return 0; },
-                autoadvance: function() {}
-            };
-            testObj.setCreative('http://bla_bla');
-            testObj.setOptions({});
-            testObj.nextListItemHandler();
-            player.duration(300);
-            player.trigger('loadedmetadata');
-            player.trigger('loadeddata');
-        });
-
-        it('doPrebidForNextPlaylistItem test - prepares creative for next video in playlist', function (done) {
-            var stub1 = sinon.stub(player, 'playlist', function() {
-                player.playlist = {
-                    currentIndex: function() {
-                        return 0;
-                    },
-                    autoadvance: function(time) {
-                        assert.isNull(time);
-                        done();
-                    }
+                currentIndex: function() { return 1; },
+                autoadvance: function() {
+                    player.playlist = orig;
+                    done();
                 }
-                return ['1', '2', '3'];
-            });
-            var communicator = new prebidCommunicator();
-            testObj.setCommunicator(communicator);
-            var stub2 = sinon.stub(communicator, 'doPrebid', function(opts, callback) {
-                stub2.restore();
-                callback('http://bla_bla');
-            });
-            testObj.doPrebidForNextPlaylistItem();
-            stub1.restore();
-        });
-
-        it('play test - prepares data to render VAST creative', function (done) {
-            player.vastClient = function(params) {
-                assert.equal(params.adTagUrl, 'http://bla_bla');
-                done();
             };
-            testObj.setOptions({});
-            testObj.play('http://bla_bla');
-            player.trigger('loadeddata');
-        });
-
-        it('play test - prepares data to render VAST creative as mid-roll', function (done) {
-            player.vastClient = function(params) {
-                assert.equal(params.adTagUrl, 'http://bla_bla');
-                assert.equal(params.wrapperLimit, 3);
-                done();
-            };
-            testObj.setOptions({timeOffset: '00:05:00', wrapperLimit: 3});
-            testObj.play('http://bla_bla');
+            testObj.setFrequencyRules({playlistClips: 2});
+            testObj.nextListItemHandler();
             player.trigger('loadedmetadata');
-            player.duration(600);
-            player.currentTime(310);
-            player.trigger('timeupdate');
+        });
+
+        it('playAd test - invokes VastRenderer', function (done) {
+            var renderer = testObj.setVastRenderer(player);
+            var stub1 = sinon.stub(renderer, 'playAd', function(xml, options, firstVideoPreroll, mobilePrerollNeedClick, prerollNeedClickToPlay, eventCallback) {
+                stub1.restore();
+                assert.equal(xml, '<VAST>...</VAST>');
+                assert.isTrue(firstVideoPreroll);
+                done();
+            });
+            testObj.options({});
+            var adData = {status: 2, adTag: '<VAST>...</VAST>', options: {}, adTime: 0};
+            testObj.playAd(adData);
+        });
+
+        it('getAdData test - returns object which represents ad in ad list', function (done) {
+            var adList = [{status: 0, adTag: null, options: {}, adTime: 0}];
+            testObj.setArrAdList(adList);
+            testObj.getAdData(0, function(adData) {
+                assert.isNull(adData);
+                done();
+            });
+        });
+
+        it('markerReached test - prepares data for playAd function and invoked playAd function', function () {
+            var adList = [{status: 0, adTag: 'xml', options: {}, adTime: 0}];
+            testObj.setArrAdList(adList);
+            var renderer = testObj.setVastRenderer(player);
+            var stub1 = sinon.stub(renderer, 'playAd', function(xml, options, firstVideoPreroll, mobilePrerollNeedClick, prerollNeedClickToPlay, eventCallback) {
+                stub1.restore();
+            });
+            testObj.markerReached({time: 0});
+            assert.equal(adList[0].status, 3);
+        });
+
+        it('checkPrepareTime test - if it is a time requests xml from prebid.js', function (done) {
+            var comm = testObj.getCommunicator();
+            var stub1 = sinon.stub(comm, 'doPrebid', function(options, callback) {
+                stub1.restore();
+                callback('fake vast xml');
+            });
+            var adList = [{status: 0, adTag: null, options: {}, adTime: 0}];
+            testObj.setArrAdList(adList);
+            testObj.setDuration(100);
+            testObj.checkPrepareTime();
+            setTimeout(function() {
+                assert.equal(adList[0].adTag, 'fake vast xml');
+                done();
+            }, 500);
+        });
+
+        it('optionsHavePreroll test - checks if ad list has preroll', function () {
+            testObj.setOptions([{timeOffset: 'start'}]);
+            var hasPreroll = testObj.optionsHavePreroll();
+            assert.isTrue(hasPreroll);
+        });
+
+        it('play test - prepares data to render array of Ads', function (done) {
+            var adList = [];
+            testObj.setArrAdList(adList);
+            spy = sinon.spy(player, 'on');
+            adListManager.play(player, [{}]);
+            player.trigger('loadedmetadata');
+            setTimeout(function() {
+                assert.equal(spy.callCount, 0);
+                done();
+            }, 1000);
         });
     });
 });

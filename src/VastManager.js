@@ -287,7 +287,7 @@ var vastManager = function () {
 		else if (name === 'internal') {
 			var internalName = event.data.name;
 			if (internalName === 'cover') {
-				showCaver(event.data.cover);
+				showCover(event.data.cover);
 			}
 		}
 	}

@@ -32,6 +32,7 @@ var markersHandler = function (vjs, adMarkerStyle) {
 	var _vjs = vjs;
 	var _player = null;
 	var _adMarkerStyle = adMarkerStyle;
+	var _videoDuration = 0;
 
 	// default setting
 	var defaultSetting = {
@@ -124,7 +125,7 @@ var markersHandler = function (vjs, adMarkerStyle) {
 	    }
 
 	    function getPosition(marker) {
-	      return setting.markerTip.time(marker) / player.duration() * 100;
+	      return setting.markerTip.time(marker) / _videoDuration * 100;
 	    }
 
 	    function createMarkerDiv(marker) {
@@ -316,12 +317,23 @@ var markersHandler = function (vjs, adMarkerStyle) {
 	          return setting.markerTip.time(markersList[index + 1]);
 	        }
 	        // next marker time of last marker would be end of video time
-	        return player.duration();
+	        return _videoDuration;
 	      };
 	      var currentTime = player.currentTime();
 	      var newMarkerIndex = NULL_INDEX;
 
-	      var nextMarkerTime;
+				var nextMarkerTime;
+
+				// post-roll support
+				if (currentTime === player.duration()) {
+					if (setting.markerTip.time(markersList[markersList.length - 1]) === _videoDuration) {
+						if (options.onMarkerReached) {
+							options.onMarkerReached(markersList[markersList.length - 1]);
+						}
+					}
+					return;
+				}
+
 	      if (currentMarkerIndex !== NULL_INDEX) {
 	        // check if staying at same marker
 	        nextMarkerTime = getNextMarkerTime(currentMarkerIndex);
@@ -330,7 +342,7 @@ var markersHandler = function (vjs, adMarkerStyle) {
 	        }
 
 	        // check for ending (at the end current time equals player duration)
-	        if (currentMarkerIndex === markersList.length - 1 && currentTime === player.duration()) {
+	        if (currentMarkerIndex === markersList.length - 1 && currentTime === _videoDuration) {
 	          return;
 	        }
 	      }
@@ -361,6 +373,7 @@ var markersHandler = function (vjs, adMarkerStyle) {
 
 	    // setup the whole thing
 	    function initialize() {
+				_videoDuration = player.duration();
 	      if (setting.markerTip.display) {
 	        initializeMarkerTip();
 	      }

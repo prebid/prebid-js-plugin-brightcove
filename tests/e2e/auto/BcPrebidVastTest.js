@@ -2,7 +2,7 @@ var BcPrebidVast = require('./../../../src/BcPrebidVast.js');
 var logger = require('./../../../src/Logging.js');
 
 describe('BcPrebidVast unit test', function() {
-    var mock;
+    var Mock;
 	var mockObject;
 	var sinonStub;
 
@@ -18,7 +18,7 @@ describe('BcPrebidVast unit test', function() {
 			que: [],
 			requestBids: function(obj) {}
 		};
-        mock = function () {
+        Mock = function () {
             this.options = {
             		prebidPath: '//acdn.adnxs.com/prebid/not-for-prod/1/prebid.js',
             		biddersSpec: {
@@ -57,7 +57,7 @@ describe('BcPrebidVast unit test', function() {
             		enablePrebidCache: true
             };
         };
-        mockObject = new mock();
+        mockObject = new Mock();
         done();
     });
 
@@ -74,7 +74,7 @@ describe('BcPrebidVast unit test', function() {
 		setTimeout(function() {
 			var options = mockObject.options;
 			options.biddersSpec.bids[0].params.placementId = 11653264;
-			sinonStub = sinon.stub(window.pbjs, 'requestBids', function(obj) {
+			sinonStub = sinon.stub($$PREBID_GLOBAL$$.bc_pbjs, 'requestBids', function(obj) {
 				var response = {
 					'my-video-tag': {
 						bids: [
@@ -155,7 +155,7 @@ describe('BcPrebidVast unit test', function() {
 
     it('init test - registers Brightcove Prebid Plugin in videojs', function (done) {
 		sinonStub = sinon.stub(videojs, 'registerPlugin', function(name, fnc) {
-			assert.equal(name, 'bcPrebidVastPlugin');
+			assert.equal(name, 'bcPrebidVastPluginCommand');
 			assert.isTrue(typeof fnc == 'function');
 			done();
 		});
