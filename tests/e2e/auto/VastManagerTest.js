@@ -3,15 +3,15 @@ var BcPrebidVast = require('./../../../src/BcPrebidVast.js');
 var prebidCommunicator = require('./../../../src/PrebidCommunicator.js');
 
 describe('VastManager unit test', function () {
-    var mock;
+    var Mock;
     var mockObject;
 
     beforeEach(function (done) {
         console.log(this.currentTest.title);
-        mock = function () {
+        Mock = function () {
             this.duration = 900;	// 15 minuts
         };
-        mockObject = new mock();
+        mockObject = new Mock();
         done();
     });
 

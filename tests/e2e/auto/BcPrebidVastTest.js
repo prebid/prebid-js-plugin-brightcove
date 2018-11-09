@@ -2,7 +2,7 @@ var BcPrebidVast = require('./../../../src/BcPrebidVast.js');
 var logger = require('./../../../src/Logging.js');
 
 describe('BcPrebidVast unit test', function() {
-    var mock;
+    var Mock;
 	var mockObject;
 	var sinonStub;
 
@@ -18,7 +18,7 @@ describe('BcPrebidVast unit test', function() {
 			que: [],
 			requestBids: function(obj) {}
 		};
-        mock = function () {
+        Mock = function () {
             this.options = {
             		prebidPath: '//acdn.adnxs.com/prebid/not-for-prod/1/prebid.js',
             		biddersSpec: {
@@ -57,7 +57,7 @@ describe('BcPrebidVast unit test', function() {
             		enablePrebidCache: true
             };
         };
-        mockObject = new mock();
+        mockObject = new Mock();
         done();
     });
 

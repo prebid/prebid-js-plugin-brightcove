@@ -5,7 +5,7 @@ var _prebidGlobal = require('./../../../src/PrebidGlobal.js');
 var $$PREBID_GLOBAL$$ = _prebidGlobal.getGlobal();
 
 describe('PrebidCommunicator unit test', function() {
-    var mock;
+    var Mock;
 	var mockObject;
 	var sinonStub;
 
@@ -15,7 +15,7 @@ describe('PrebidCommunicator unit test', function() {
 			que: [],
 			requestBids: function(obj) {}
 		};
-        mock = function () {
+        Mock = function () {
             this.options = {
             		prebidPath: '//acdn.adnxs.com/prebid/not-for-prod/1/prebid.js',
             		biddersSpec: {
@@ -54,7 +54,7 @@ describe('PrebidCommunicator unit test', function() {
             		enablePrebidCache: true
             };
         };
-		mockObject = new mock();
+		mockObject = new Mock();
 		if (!$$PREBID_GLOBAL$$.bc_pbjs) {
 			BcPrebidVast.test().loadPrebidScript(mockObject.options, false);
 		}

@@ -3,58 +3,45 @@ var BcPrebidVast = require('../../../src/BcPrebidVast.js');
 // var prebidCommunicator = require('../../../src/PrebidCommunicator.js');
 
 describe('AdListManager unit test', function () {
-    var mock;
-    var mockObject;
+    var Mock;
+    var mockObject, adListManager, testObj;
 
     beforeEach(function (done) {
         console.log(this.currentTest.title);
-        mock = function () {
+        Mock = function () {
             this.duration = 900;	// 15 minuts
         };
-        mockObject = new mock();
+        mockObject = new Mock();
+        adListManager = new _adListManager();
+        testObj = adListManager.test();
         done();
     });
 
     it('convertStringToSeconds test - 00:10:10', function () {
-        var adListManager = new _adListManager();
-
-    	var testObj = adListManager.test();
     	var title = this.test.title;
      	var seconds = testObj.convertStringToSeconds('00:10:10', mockObject.duration);
  		assert(seconds === 610, title + ' failed. Expected - 610, got - ' + seconds);
     });
 
     it('convertStringToSeconds test - 00:10:10.600', function () {
-        var adListManager = new _adListManager();
-
-    	var testObj = adListManager.test();
     	var title = this.test.title;
     	var seconds = testObj.convertStringToSeconds('00:10:10.600', mockObject.duration);
     	assert(seconds === 611, title + ' failed. Expected - 611, got - ' + seconds);
     });
 
     it('convertStringToSeconds test - 20%', function () {
-        var adListManager = new _adListManager();
-
-    	var testObj = adListManager.test();
     	var title = this.test.title;
     	var seconds = testObj.convertStringToSeconds('20%', mockObject.duration);
     	assert(seconds === 180, title + ' failed. Expected - 180, got - ' + seconds);
     });
 
     it('convertStringToSeconds test - start', function () {
-        var adListManager = new _adListManager();
-
-    	var testObj = adListManager.test();
     	var title = this.test.title;
     	var seconds = testObj.convertStringToSeconds('start', mockObject.duration);
     	assert(seconds === 0, title + ' failed. Expected - 0, got - ' + seconds);
     });
 
     it('convertStringToSeconds test - end', function () {
-        var adListManager = new _adListManager();
-
-    	var testObj = adListManager.test();
     	var title = this.test.title;
     	var seconds = testObj.convertStringToSeconds('end', mockObject.duration);
     	assert(seconds === 900, title + ' failed. Expected - 900, got - ' + seconds);
