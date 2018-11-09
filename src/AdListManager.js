@@ -80,7 +80,12 @@ var adListManager = function () {
 
 	// restore main content after ad is finished
 	var resetContent = function resetContent() {
-		showCover(false);
+		if (!_waitPostrollEnded) {
+			showCover(false);
+		}
+		else {
+			showCover(true);
+		}
 		_options = null;
 		setTimeout(function() {
 			_adPlaying = false;
@@ -92,7 +97,7 @@ var adListManager = function () {
 			if (_waitPostrollEnded) {
 				startNextPlaylistVideo();
 			}
-		}, 1000);
+		}, 500);
 		_adIndicator.style.display = 'none';
 		var adData = _arrAdList.find(function(data) {
 			return data.status === AD_STATUS_PLAYING;
