@@ -85,12 +85,14 @@ var adListManager = function () {
 		setTimeout(function() {
 			_adPlaying = false;
 			if (_savedMarkers && _player.markers && _player.markers.reset) {
-		    	_player.markers.reset(JSON.parse(_savedMarkers));
+				if (!_waitPostrollEnded) {
+					_player.markers.reset(JSON.parse(_savedMarkers));
+				}
 			}
 			if (_waitPostrollEnded) {
 				startNextPlaylistVideo();
 			}
-		}, 200);
+		}, 1000);
 		_adIndicator.style.display = 'none';
 		var adData = _arrAdList.find(function(data) {
 			return data.status === AD_STATUS_PLAYING;
