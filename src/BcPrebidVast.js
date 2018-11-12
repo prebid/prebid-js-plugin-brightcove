@@ -18,7 +18,7 @@ var MOL_PLUGIN_URL = '//acdn.adnxs.com/video/plugins/mol/videojs_5.vast.vpaid.mi
 
 var $$PREBID_GLOBAL$$ = _prebidGlobal.getGlobal();
 
-_logger.always(_prefix, 'Version 0.2.7');
+_logger.always(_prefix, 'Version 0.2.8');
 
 var BC_prebid_in_progress = $$PREBID_GLOBAL$$.plugin_prebid_options && $$PREBID_GLOBAL$$.plugin_prebid_options.biddersSpec;
 
@@ -318,7 +318,7 @@ function loadPrebidScript(options, fromHeader) {
 			$$PREBID_GLOBAL$$.bc_pbjs_error = true;
 			dispatchPrebidDoneEvent();
 			timeout = null;
-		}, 2000);
+		}, 3000);
 
 		var iframeDoc = frame.contentWindow && frame.contentWindow.document;
 		if (iframeDoc) {
@@ -334,12 +334,13 @@ function loadPrebidScript(options, fromHeader) {
 						// prebid.js loadding timeout already happened. do nothing
 						return;
 					}
+					// check only our messages 'ready' and 'error' from ifarme
 					if (msgEvent.data === 'ready') {
 						$$PREBID_GLOBAL$$.bc_pbjs = frame.contentWindow.pbjs;
 						// after prebid.js is successfully loaded try to invoke prebid.
 						doInternalPrebid();
 					}
-					else {
+					else if (msgEvent.data === 'error') {
 						// failed to load prebid.js.
 						_logger.error(_prefix, 'Failed to load prebid.js in iframe.');
 						if (options.pageNotificationCallback) {
