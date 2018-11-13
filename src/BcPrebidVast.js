@@ -423,6 +423,7 @@ if (_vjs) {
 }
 
 function renderAd(options) {
+	options.pageNotificationCallback('message', '*** - renderAd called');
 	if (options.creative) {
 		// render ad if vast url is ready
 		_vastManagerObj = new _vastManager();
