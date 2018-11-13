@@ -265,6 +265,7 @@ var adListManager = function () {
 		}
 		_adIndicator.innerHTML = _options.adText ? _options.adText : 'Ad';
 		adData.status = AD_STATUS_PLAYING;
+		// _arrOptions[0].pageNotificationCallback('message', 'playAd - _mobilePrerollNeedClick: ' + _mobilePrerollNeedClick + ', _prerollNeedClickToPlay: ' + _prerollNeedClickToPlay);
 		_vastRendererObj.playAd(adData.adTag, _options, firstVideoPreroll, _mobilePrerollNeedClick, _prerollNeedClickToPlay, eventCallback);
 	};
 
@@ -344,11 +345,18 @@ var adListManager = function () {
 					}
 					else {
 						// android
-						_player.one('play', function() {
+						if (_player.paused()) {
+							_player.one('play', function() {
+								showCover(true);
+								adData.status = AD_STATUS_PLAYING;
+								playAd(adData);
+							});
+						}
+						else {
 							showCover(true);
 							adData.status = AD_STATUS_PLAYING;
 							playAd(adData);
-						});
+						}
 					}
 				}
 				else {
