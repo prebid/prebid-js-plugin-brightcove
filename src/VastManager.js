@@ -371,11 +371,18 @@ var vastManager = function () {
 							}
 							else {
 								// android
-								_player.one('play', function() {
+								if (_player.paused()) {
+									_player.one('play', function() {
+										showCover(true);
+										playAd(_markerXml[marker.time]);
+										delete _markerXml[marker.time];
+									});
+								}
+								else {
 									showCover(true);
 									playAd(_markerXml[marker.time]);
 									delete _markerXml[marker.time];
-								});
+								}
 							}
 						}
 						else {
@@ -483,27 +490,11 @@ var vastManager = function () {
 		showCover(true);
 
 		if (creative) {
-    		// render ad
+			options.pageNotificationCallback('message', 'PrebidVast->vastManager:play - creative');
+			// render ad
 			play(creative);
-			_player.on('playlistitem', nextListItemHandler);
     	}
-    	else {
-			// do bidding then render ad
-			_prebidCommunicatorObj = new _prebidCommunicator();
-			_prebidCommunicatorObj.doPrebid(options, function(creative) {
-				_playlistCreative = creative;
-				if (creative) {
-					play(creative);
-					setTimeout(function() {
-						_player.on('playlistitem', nextListItemHandler);
-					}, 1000);
-				}
-				else {
-					showCover(false);
-					_player.on('playlistitem', nextListItemHandler);
-				}
-			});
-    	}
+		_player.on('playlistitem', nextListItemHandler);
     };
 
 	// stop play ad
