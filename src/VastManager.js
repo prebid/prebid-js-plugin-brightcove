@@ -490,7 +490,6 @@ var vastManager = function () {
 		showCover(true);
 
 		if (creative) {
-			options.pageNotificationCallback('message', 'PrebidVast->vastManager:play - creative');
 			// render ad
 			play(creative);
     	}

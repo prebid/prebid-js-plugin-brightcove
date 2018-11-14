@@ -265,7 +265,6 @@ var adListManager = function () {
 		}
 		_adIndicator.innerHTML = _options.adText ? _options.adText : 'Ad';
 		adData.status = AD_STATUS_PLAYING;
-		// _arrOptions[0].pageNotificationCallback('message', 'playAd - _mobilePrerollNeedClick: ' + _mobilePrerollNeedClick + ', _prerollNeedClickToPlay: ' + _prerollNeedClickToPlay);
 		_vastRendererObj.playAd(adData.adTag, _options, firstVideoPreroll, _mobilePrerollNeedClick, _prerollNeedClickToPlay, eventCallback);
 	};
 
@@ -314,7 +313,6 @@ var adListManager = function () {
 
 	// callback to handle marker reached event from marker component
 	var markerReached = function markerReached(marker) {
-		_arrOptions[0].pageNotificationCallback('message', 'markerReached - time: ' + marker.time);
 		var adTime = marker.time;
 		getAdData(adTime, function(adData) {
 			if (adData) {
@@ -427,7 +425,6 @@ var adListManager = function () {
 
 	// prepares ad data array, markers data, and starts ad list renderring
 	function startRenderingPreparation() {
-		_arrOptions[0].pageNotificationCallback('message', 'startRenderingPreparation - started');
 		_contentDuration = _player.duration();	// parseInt(_player.duration()) - 0.5;
 		if (_hasPreroll) {
 			_player.pause();
@@ -567,11 +564,9 @@ var adListManager = function () {
 		}
 
     	if (_player.duration() > 0) {
-			options[0].pageNotificationCallback('message', 'this.play - duration > 0');
 			startRenderingPreparation();
     	}
     	else {
-			options[0].pageNotificationCallback('message', 'this.play - wait for loadedmetadata');
             _player.one('loadedmetadata', startRenderingPreparation);
     	}
     };

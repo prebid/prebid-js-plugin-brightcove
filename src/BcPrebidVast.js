@@ -423,8 +423,6 @@ if (_vjs) {
 }
 
 function renderAd(options) {
-	var notif = Array.isArray(options) ? options[0].pageNotificationCallback : options.pageNotificationCallback;
-	notif('message', '*** - renderAd called');
 	if (options.creative) {
 		// render ad if vast url is ready
 		_vastManagerObj = new _vastManager();
@@ -441,7 +439,6 @@ function renderAd(options) {
 					$$PREBID_GLOBAL$$.prebid_creative = null;
 					_vastManagerObj = new _vastManager();
 					options.doPrebid = null;
-					notif('message', '*** - renderAd: BC_prebid_in_progress');
 					_vastManagerObj.play(_player, options.creative, options);
 				}
 			}
@@ -454,7 +451,6 @@ function renderAd(options) {
 			$$PREBID_GLOBAL$$.prebid_creative = null;
 			_vastManagerObj = new _vastManager();
 			options.doPrebid = null;
-			notif('message', '*** - renderAd: $$PREBID_GLOBAL$$.prebid_creative');
 			_vastManagerObj.play(_player, options.creative, options);
 		}
 	}
@@ -465,7 +461,6 @@ function renderAd(options) {
 		_prebidCommunicatorObj.doPrebid(options);
 	}
 	else {
-		notif('message', '*** - renderAd: do ad list');
 		// do prebid if needed and render ad(s)
 		_adListManagerObj = new _adListManager();
 		var arrOptions;
