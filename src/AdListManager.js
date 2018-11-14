@@ -146,6 +146,14 @@ var adListManager = function () {
 		}, 1000);
 	}
 
+	// event handler for 'playlistitem' event
+	function nextListItemHandlerAuto() {
+		if (!_mainVideoEnded) {
+			// handle 'next playlist item' event when current playlist video have been interrupted
+			nextListItemHandler();
+		}
+	}
+
 	// convert string represetation of time to number represents seconds
 	function convertStringToSeconds(strTime, duration) {
 		if (!strTime || strTime === 'start') {
@@ -555,6 +563,8 @@ var adListManager = function () {
 				}
 			});
 		}
+
+		_player.on('playlistitem', nextListItemHandlerAuto);
 
     	if (_player.duration() > 0) {
 			startRenderingPreparation();
