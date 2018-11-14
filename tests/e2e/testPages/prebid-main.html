@@ -16,6 +16,7 @@ WebFont.load({
 
 <script>
 	var pages = ['prebid-body',
+				 'prebid-body-display',
 	             'prebid-body-ad-server',
 	             'prebid-header',
 	             'prebid-header-ad-server',
@@ -36,7 +37,7 @@ WebFont.load({
 </head>
 <body >
 
-<div style="background: #ff8800; color: #ffffff; overflow:scroll; width:600px; height:320px;">
+<div style="background: #ff8800; color: #ffffff; overflow:scroll; width:600px; height:350px;">
      <div class="an-html-body">
         <div class="an-hero-inner inner-wrapper">
 </div>
@@ -47,13 +48,14 @@ WebFont.load({
 		<tr>
 			<td>
 				<p onclick='startTestPage(0)' style='cursor: pointer; margin-left: 5em;'><b>Prebid in Body, Then Play</b></p>
-				<p onclick='startTestPage(1)' style='cursor: pointer; margin-left: 5em;'><b>Prebid in Body, Then Play (Using Ad Server)</b></p>
-				<p onclick='startTestPage(2)' style='cursor: pointer; margin-left: 5em;'><b>Prebid in Header, Then Play</b></p>
-				<p onclick='startTestPage(3)' style='cursor: pointer; margin-left: 5em;'><b>Prebid in Header, Then Play (Using Ad Server)</b></p>
-				<p onclick='startTestPage(4)' style='cursor: pointer; margin-left: 5em;'><b>Plugin Embedded With Options</b></p>
-				<p onclick='startTestPage(5)' style='cursor: pointer; margin-left: 5em;'><b>Prebid in Body, Then Play (Playlist)</b></p>
-				<p onclick='startTestPage(6)' style='cursor: pointer; margin-left: 5em;'><b>Plugin Embedded With Options (Playlist)</b></p>
-				<p onclick='startTestPage(7)' style='cursor: pointer; margin-left: 5em;'><b>Plugin Embedded With Options (Player 5.28.1)</b></p>
+				<p onclick='startTestPage(1)' style='cursor: pointer; margin-left: 5em;'><b>Prebid in Body and Prebid Display in Header, Then Play</b></p>
+				<p onclick='startTestPage(2)' style='cursor: pointer; margin-left: 5em;'><b>Prebid in Body, Then Play (Using Ad Server)</b></p>
+				<p onclick='startTestPage(3)' style='cursor: pointer; margin-left: 5em;'><b>Prebid in Header, Then Play</b></p>
+				<p onclick='startTestPage(4)' style='cursor: pointer; margin-left: 5em;'><b>Prebid in Header, Then Play (Using Ad Server)</b></p>
+				<p onclick='startTestPage(5)' style='cursor: pointer; margin-left: 5em;'><b>Plugin Embedded With Options</b></p>
+				<p onclick='startTestPage(6)' style='cursor: pointer; margin-left: 5em;'><b>Prebid in Body, Then Play (Playlist)</b></p>
+				<p onclick='startTestPage(7)' style='cursor: pointer; margin-left: 5em;'><b>Plugin Embedded With Options (Playlist)</b></p>
+				<p onclick='startTestPage(8)' style='cursor: pointer; margin-left: 5em;'><b>Plugin Embedded With Options (Player 5.28.1)</b></p>
 			</td>
 		</tr>
 	</table>

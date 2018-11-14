@@ -18,9 +18,22 @@ var MOL_PLUGIN_URL = '//acdn.adnxs.com/video/plugins/mol/videojs_5.vast.vpaid.mi
 
 var $$PREBID_GLOBAL$$ = _prebidGlobal.getGlobal();
 
-_logger.always(_prefix, 'Version 0.2.5');
+_logger.always(_prefix, 'Version 0.2.8');
 
 var BC_prebid_in_progress = $$PREBID_GLOBAL$$.plugin_prebid_options && $$PREBID_GLOBAL$$.plugin_prebid_options.biddersSpec;
+
+var defaultTemplate = '<!DOCTYPE html>' +
+    '<html lang="en">' +
+    '<head><meta charset="UTF-8"></head>' +
+    '<body style="margin:0;padding:0">' +
+    '<script type="text/javascript">' +
+	'function notifyParent(succ) {' +
+    'window.parent.postMessage(succ ? \'ready\' : \'error\', \'{{origin}}\');' +
+	'}' +
+    '</script>' +
+    '<script type="text/javascript" src="{{iframePrebid_JS}}" onload="notifyParent(true);" onerror="notifyParent(false);"></script>' +
+    '</body>' +
+    '</html>';
 
 // the function does bidding and returns bids thru callback
 var BC_bidders_added = false;
@@ -230,33 +243,127 @@ function loadPrebidScript(options, fromHeader) {
 			});
     	}
 	};
-	if (document.getElementById('bc-pb-script')) {
-		// if prebid.js is already loaded try to invoke prebid.
-		doInternalPrebid();
-		return;
+
+	function getOrigin() {
+		if (window.location.origin) {
+			return window.location.origin;
+		}
+		else {
+			return window.location.protocol + '//' +
+				window.location.hostname +
+				(window.location.port ? ':' + window.location.port : '');
+		}
 	}
 
-    var pbjsScr = document.createElement('script');
-    pbjsScr.onload = function() {
-		$$PREBID_GLOBAL$$.bc_pbjs = pbjs;
-		// after prebid.js is successfully loaded try to invoke prebid.
-		doInternalPrebid();
-    };
-    pbjsScr.onerror = function(e) {
-		// failed to load prebid.js.
-    	_logger.error(_prefix, 'Failed to load prebid.js. Error event: ', e);
-		if (options.pageNotificationCallback) {
-			options.pageNotificationCallback('message', 'Failed to load prebid.js');
+	if (!document.body) {
+		// plugin has been loaded in a headed (document body is not ready)
+		if (document.getElementById('bc-pb-script')) {
+			// if prebid.js is already loaded try to invoke prebid.
+			doInternalPrebid();
+			return;
 		}
-    	$$PREBID_GLOBAL$$.bc_pbjs_error = true;
-		dispatchPrebidDoneEvent();
-    };
-	pbjsScr.id = 'bc-pb-script';
-    pbjsScr.async = true;
-    pbjsScr.type = 'text/javascript';
-    pbjsScr.src = options.prebidPath ? options.prebidPath : DEFAULT_PREBID_JS_URL;
-    var node = document.getElementsByTagName('head')[0];
-    node.appendChild(pbjsScr);
+
+		var pbjsScr = document.createElement('script');
+		pbjsScr.onload = function() {
+			$$PREBID_GLOBAL$$.bc_pbjs = pbjs;
+			// after prebid.js is successfully loaded try to invoke prebid.
+			doInternalPrebid();
+		};
+		pbjsScr.onerror = function(e) {
+			// failed to load prebid.js.
+			_logger.error(_prefix, 'Failed to load prebid.js. Error event: ', e);
+			if (options.pageNotificationCallback) {
+				options.pageNotificationCallback('message', 'Failed to load prebid.js');
+			}
+			$$PREBID_GLOBAL$$.bc_pbjs_error = true;
+			dispatchPrebidDoneEvent();
+		};
+		pbjsScr.id = 'bc-pb-script';
+		pbjsScr.async = true;
+		pbjsScr.type = 'text/javascript';
+		pbjsScr.src = options.prebidPath ? options.prebidPath : DEFAULT_PREBID_JS_URL;
+		var node = document.getElementsByTagName('head')[0];
+		node.appendChild(pbjsScr);
+	}
+	else {
+		// plugin has been loaded in the document body or has been embedded in a player
+		var frame = document.createElement('iframe');
+		frame.id = 'pbjs_conainer_' + Date.now();
+		frame.src = 'about:blank';
+		frame.marginWidth = '0';
+		frame.marginHeight = '0';
+		frame.frameBorder = '0';
+		frame.width = '0%';
+		frame.height = '0%';
+		frame.style.position = 'absolute';
+		frame.style.left = '0px';
+		frame.style.top = '0px';
+		frame.style.margin = '0px';
+		frame.style.padding = '0px';
+		frame.style.border = 'none';
+		frame.style.width = '0%';
+		frame.style.height = '0%';
+		document.body.appendChild(frame);
+
+		var template = defaultTemplate;
+		template = template.replace(new RegExp('{{iframePrebid_JS}}', 'g'), options.prebidPath ? options.prebidPath : DEFAULT_PREBID_JS_URL);
+		template = template.replace(new RegExp('{{origin}}', 'g'), getOrigin());
+
+		var timeout = setTimeout(function() {
+			// failed to load prebid.js in iframe.
+			_logger.error(_prefix, 'Failed to load prebid.js in iframe (timeout).');
+			if (options.pageNotificationCallback) {
+				options.pageNotificationCallback('message', 'Failed to load prebid.js in iframe (timeout)');
+			}
+			$$PREBID_GLOBAL$$.bc_pbjs_error = true;
+			dispatchPrebidDoneEvent();
+			timeout = null;
+		}, 3000);
+
+		var iframeDoc = frame.contentWindow && frame.contentWindow.document;
+		if (iframeDoc) {
+			try {
+				iframeDoc.open();
+				iframeDoc.write(template);
+				iframeDoc.close();
+				var onLoad = function(msgEvent) {
+					if (timeout) {
+						clearTimeout(timeout);
+					}
+					else {
+						// prebid.js loadding timeout already happened. do nothing
+						return;
+					}
+					// check only our messages 'ready' and 'error' from ifarme
+					if (msgEvent.data === 'ready') {
+						$$PREBID_GLOBAL$$.bc_pbjs = frame.contentWindow.pbjs;
+						// after prebid.js is successfully loaded try to invoke prebid.
+						doInternalPrebid();
+					}
+					else if (msgEvent.data === 'error') {
+						// failed to load prebid.js.
+						_logger.error(_prefix, 'Failed to load prebid.js in iframe.');
+						if (options.pageNotificationCallback) {
+							options.pageNotificationCallback('message', 'Failed to load prebid.js inframe');
+						}
+						$$PREBID_GLOBAL$$.bc_pbjs_error = true;
+						dispatchPrebidDoneEvent();
+					}
+				};
+
+				window.addEventListener('message', onLoad);
+			}
+			catch (e) {
+				// failed to load prebid.js.
+				_logger.error(_prefix, 'Failed to load prebid.js.');
+				if (options.pageNotificationCallback) {
+					options.pageNotificationCallback('message', 'Failed to load prebid.js. Error: ' + e);
+				}
+				$$PREBID_GLOBAL$$.bc_pbjs_error = true;
+				dispatchPrebidDoneEvent();
+			}
+		}
+	}
 }
 
 // this function loads MailOnline Plugin
