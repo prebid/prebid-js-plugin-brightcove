@@ -295,7 +295,7 @@ function loadPrebidScript(options, fromHeader) {
 	else {
 		// plugin has been loaded in the document body or has been embedded in a player
 		var frame = document.createElement('iframe');
-		frame.id = 'pbjs_conainer_' + Date.now();
+		frame.id = 'pbjs_container_' + Date.now();
 		frame.src = 'about:blank';
 		frame.marginWidth = '0';
 		frame.marginHeight = '0';
