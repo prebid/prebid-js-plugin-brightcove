@@ -207,7 +207,7 @@ describe('AdListManager unit test', function () {
             adListManager.play(player, [{}]);
             player.trigger('loadedmetadata');
             setTimeout(function() {
-                assert.equal(spy.callCount, 0);
+                assert.equal(spy.callCount, 1);
                 done();
             }, 1000);
         });
