@@ -325,7 +325,7 @@ var markersHandler = function (vjs, adMarkerStyle) {
 				var nextMarkerTime;
 
 				// post-roll support
-				if (currentTime === player.duration()) {
+				if (Math.abs(player.duration() - currentTime) < 0.1) {
 					if (setting.markerTip.time(markersList[markersList.length - 1]) === _videoDuration) {
 						if (options.onMarkerReached) {
 							options.onMarkerReached(markersList[markersList.length - 1]);

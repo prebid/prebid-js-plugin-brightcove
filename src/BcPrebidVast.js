@@ -453,6 +453,9 @@ function regPrebidVastPlugin(vjs) {
 			if (_vastManagerObj) {
 				_vastManagerObj.stop();
 			}
+			else if (_adListManagerObj) {
+				_adListManagerObj.stop();
+			}
 		}
 	});
 }
