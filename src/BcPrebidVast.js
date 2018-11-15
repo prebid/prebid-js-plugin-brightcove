@@ -19,7 +19,7 @@ var MOL_PLUGIN_URL = '//acdn.adnxs.com/video/plugins/mol/videojs_5.vast.vpaid.mi
 
 var $$PREBID_GLOBAL$$ = _prebidGlobal.getGlobal();
 
-_logger.always(_prefix, 'Version 0.3.2');
+_logger.always(_prefix, 'Version 0.3.3');
 
 var BC_prebid_in_progress = $$PREBID_GLOBAL$$.plugin_prebid_options && $$PREBID_GLOBAL$$.plugin_prebid_options.biddersSpec;
 
@@ -580,7 +580,17 @@ function renderAd(options) {
 			arrOptions = options;
 		}
 		else {
-			arrOptions = [options];
+			// array in brightcove studio converted to object {0: {...}, 1: {...}, ...}
+			if (options.hasOwnProperty('0')) {
+				// options parameter is array of options from plugin embedded in player in studio
+				arrOptions = [];
+				for (var i = 0; options.hasOwnProperty(i); i++) {
+					arrOptions.push(options[i]);
+				}
+			}
+			else {
+				arrOptions = [options];
+			}
 		}
 		arrOptions.forEach(function(opt) {
 			opt.doPrebid = doPrebid;
