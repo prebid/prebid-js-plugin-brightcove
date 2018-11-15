@@ -334,6 +334,7 @@ var adListManager = function () {
 						if (isIPhone()) {
 							// iPhone
 							_player.one('play', function() {
+								_mobilePrerollNeedClick = false;	// don't need more click for preroll on iPhone
 								adData.status = AD_STATUS_PLAYING;
 								playAd(adData);
 							});

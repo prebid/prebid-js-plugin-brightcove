@@ -203,7 +203,7 @@ var vastRenderer = function (player) {
 
         // preroll for first video (event playlistitem did not triggered)
         if (firstVideoPreroll) {
-            if (isMobileSafari()) {
+            if (isMobileSafari() && mobilePrerollNeedClick) {
                 // the special code to force player start preroll by click for safari version 10 or less for iOS.
                 var ver = getMobileSafariVersion();
                 if (ver != null && ver < 11) {
