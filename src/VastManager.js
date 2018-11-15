@@ -322,7 +322,7 @@ var vastManager = function () {
     		if (_markersHandler && _player.markers) {
 				_savedMarkers = JSON.stringify(_player.markers.getMarkers());
 			}
-			var firstVideoPreroll = _player.currentTime() < 0.5 && _playlistIdx === -1;
+			var firstVideoPreroll = _player.currentTime() < 0.5 && _playlistIdx <= 0;
 			_vastRendererObj.playAd(xml, _options, firstVideoPreroll, _mobilePrerollNeedClick, prerollNeedClickToPlay, eventCallback);
 		};
 

@@ -1,5 +1,6 @@
 var defaultOptions = {
 	"prebidPath" : "//acdn.adnxs.com/prebid/not-for-prod/1/prebid.js",
+    "scriptLoadTimeout": 3000,
     "bidderAliases": [
         {
             "bidderName": "appnexus",
