@@ -352,11 +352,18 @@ var adListManager = function () {
 					}
 					else {
 						// android
-						_player.one('play', function() {
+						if (_player.paused()) {
+							_player.one('play', function() {
+								showCover(true);
+								adData.status = AD_STATUS_PLAYING;
+								playAd(adData);
+							});
+						}
+						else {
 							showCover(true);
 							adData.status = AD_STATUS_PLAYING;
 							playAd(adData);
-						});
+						}
 					}
 				}
 				else {
