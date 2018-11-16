@@ -199,6 +199,9 @@ describe('VastManager unit test', function () {
             testObj.setOptions({});
             testObj.play('http://bla_bla');
             player.trigger('loadeddata');
+            setTimeout(function() {
+                player.trigger('play');
+            }, 300);
         });
 
         it('play test - prepares data to render VAST creative as mid-roll', function (done) {

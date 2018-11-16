@@ -55,6 +55,8 @@ describe('VastRenderer unit test', function () {
         };
         vastRenderer.playAd('http://bla_bla', {}, true, false, false, function() {});
         player.trigger('loadeddata');
-        player.trigger('play');
+        setTimeout(function() {
+            player.trigger('play');
+        }, 300);
     });
 });
