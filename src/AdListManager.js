@@ -260,7 +260,7 @@ var adListManager = function () {
 			_savedMarkers = JSON.stringify(_player.markers.getMarkers());
 			_player.markers.removeAll();
 		}
-		var firstVideoPreroll = _player.currentTime() < 0.5 && _playlistIdx === -1;
+		var firstVideoPreroll = _player.currentTime() < 0.5 && _playlistIdx <= 0;
 		_options = adData.options;
 		if (!_adIndicator) {
 			// prepare ad indicator overlay
