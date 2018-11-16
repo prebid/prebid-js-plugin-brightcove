@@ -107,6 +107,33 @@ var adListManager = function () {
 		}
 	};
 
+	if (!Array.prototype.find) {
+		// Because IE 11 does not support Array.find we add Array.find to Array prototype
+		Object.defineProperty(Array.prototype, 'find', {
+			value: function (predicate) {
+				if (this == null) {
+					throw new TypeError('this is null or not defined');
+				}
+				var obj = Object(this);
+				var len = obj.length >>> 0;
+
+				if (typeof predicate !== 'function') {
+					throw new TypeError('predicate must be a function');
+				}
+				var thisArg = arguments[1];
+				var index = 0;
+				while (index < len) {
+					var iValue = obj[index];
+					if (predicate.call(thisArg, iValue, index, obj)) {
+						return iValue;
+					}
+					index++;
+				}
+				return undefined;
+			}
+		});
+	}
+
 	// check frequency capping rules
 	function needPlayAdForPlaylistItem(plIdx) {
 		if (_frequencyRules && _frequencyRules.playlistClips && _frequencyRules.playlistClips > 1) {
@@ -220,6 +247,15 @@ var adListManager = function () {
 	function eventCallback(event) {
 		var arrResetEvents = ['vast.adError', 'vast.adsCancel', 'vast.adSkip', 'vast.reset',
 							  'vast.contentEnd', 'adFinished'];
+		var isResetEvent = function(name) {
+			for (var i = 0; i < arrResetEvents.length; i++) {
+				if (arrResetEvents[i] === name) {
+					return true;
+				}
+			}
+			return false;
+		};
+
 		var name = event.type;
 		if (name === 'vast.adStart') {
 			_adIndicator.style.display = 'block';
@@ -232,7 +268,7 @@ var adListManager = function () {
 		else if (name === 'trace.event') {
 			traceEvent(event);
 		}
-		else if (arrResetEvents.includes(name)) {
+		else if (isResetEvent(name)) {
 			if (_pageNotificationCallback) {
 				_pageNotificationCallback('message', 'renderer event name - ' + name);
 			}

@@ -269,6 +269,15 @@ var vastManager = function () {
 	function eventCallback(event) {
 		var arrResetEvents = ['vast.adError', 'vast.adsCancel', 'vast.adSkip', 'vast.reset',
 							  'vast.contentEnd', 'adFinished'];
+		var isResetEvent = function(name) {
+			for (var i = 0; i < arrResetEvents.length; i++) {
+				if (arrResetEvents[i] === name) {
+					return true;
+				}
+			}
+			return false;
+		};
+
 		var name = event.type;
 		if (name === 'vast.adStart') {
 			_adIndicator.style.display = 'block';
@@ -281,7 +290,7 @@ var vastManager = function () {
 		else if (name === 'trace.event') {
 			traceEvent(event);
 		}
-		else if (arrResetEvents.includes(name)) {
+		else if (isResetEvent(name)) {
 			resetContent();
 		}
 		else if (name === 'internal') {
