@@ -387,10 +387,10 @@ var markersHandler = function (vjs, adMarkerStyle) {
 	      }
 	      onTimeUpdate();
 	      player.on('timeupdate', onTimeUpdate);
-	      player.off('loadedmetadata', onLoadedMetadata);
+	      player.off('loadedmetadata', loadedMetadataHandler);
 	    }
 
-	    function onLoadedMetadata () {
+	    function loadedMetadataHandler () {
 	    	initialize();
 		}
 
@@ -401,7 +401,7 @@ var markersHandler = function (vjs, adMarkerStyle) {
 	    }
 	    else {
 		    // setup the plugin after we loaded video's meta data
-		    player.one('loadedmetadata', onLoadedMetadata);
+		    player.one('loadedmetadata', loadedMetadataHandler);
 	    }
 
 	    // exposed plugin API
