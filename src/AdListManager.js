@@ -24,6 +24,7 @@ var adListManager = function () {
 	var _hasPostroll = false;
 	var _waitPostrollEnded = false;
 	var _adPlaying = false;
+	var _firstAd = true;
 	var _mainVideoEnded = false;
     var _savedMarkers;
     var _markersHandler;
@@ -260,7 +261,7 @@ var adListManager = function () {
 			_savedMarkers = JSON.stringify(_player.markers.getMarkers());
 			_player.markers.removeAll();
 		}
-		var firstVideoPreroll = _player.currentTime() < 0.5 && _playlistIdx <= 0;
+		var firstVideoPreroll = _firstAd && _player.currentTime() < 0.5 && _playlistIdx <= 0;
 		_options = adData.options;
 		if (!_adIndicator) {
 			// prepare ad indicator overlay
@@ -273,6 +274,7 @@ var adListManager = function () {
 		}
 		_adIndicator.innerHTML = _options.adText ? _options.adText : 'Ad';
 		adData.status = AD_STATUS_PLAYING;
+		_firstAd = false;
 		_vastRendererObj.playAd(adData.adTag, _options, firstVideoPreroll, _mobilePrerollNeedClick, _prerollNeedClickToPlay, eventCallback);
 	};
 
@@ -341,13 +343,20 @@ var adListManager = function () {
 						}
 						else {
 							// iPad
-							_player.pause();
-							_player.one('play', function() {
-								traceMessage({data: {message: 'Main content - play event'}});
-								_player.pause();
+							if (_player.paused()) {
+								_player.one('play', function() {
+									traceMessage({data: {message: 'Main content - play event'}});
+									_mobilePrerollNeedClick = false;	// don't need more click for preroll on iPad
+									showCover(true);
+									adData.status = AD_STATUS_PLAYING;
+									playAd(adData);
+								});
+							}
+							else {
+								showCover(true);
 								adData.status = AD_STATUS_PLAYING;
 								playAd(adData);
-							});
+							}
 						}
 					}
 					else {
