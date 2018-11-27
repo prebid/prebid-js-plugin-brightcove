@@ -22,7 +22,8 @@ var adListManager = function () {
 	var _frequencyRules;
 	var _hasPreroll = false;
 	var _hasPostroll = false;
-	var _waitPostrollEnded = false;
+	var _waitPostrollEndedForPlaylist = false;
+	var _isPostroll = false;
 	var _adPlaying = false;
 	var _firstAd = true;
 	var _mainVideoEnded = false;
@@ -81,21 +82,33 @@ var adListManager = function () {
 
 	// restore main content after ad is finished
 	var resetContent = function resetContent() {
-		if (!_waitPostrollEnded) {
-			showCover(false);
-		}
-		else {
+		if (_waitPostrollEndedForPlaylist) {
 			showCover(true);
 		}
+		else {
+			if (_isPostroll) {
+				var state = _player.muted();
+				_player.muted(true);
+				showCover(true);
+				_player.one('ended', function() {
+					showCover(false);
+					_player.muted(state);
+				});
+			}
+			else {
+				showCover(false);
+			}
+		}
+		_isPostroll = false;
 		_options = null;
 		setTimeout(function() {
 			_adPlaying = false;
 			if (_savedMarkers && _player.markers && _player.markers.reset) {
-				if (!_waitPostrollEnded) {
+				if (!_waitPostrollEndedForPlaylist) {
 					_player.markers.reset(JSON.parse(_savedMarkers));
 				}
 			}
-			if (_waitPostrollEnded) {
+			if (_waitPostrollEndedForPlaylist) {
 				startNextPlaylistVideo();
 			}
 		}, 500);
@@ -150,7 +163,7 @@ var adListManager = function () {
 		_savedMarkers = null;
 		_prerollNeedClickToPlay = false;
 		_hasPostroll = false;
-		_waitPostrollEnded = false;
+		_waitPostrollEndedForPlaylist = false;
 		showCover(true);
 		_playlistIdx++;
 		_contentDuration = 0;
@@ -362,6 +375,7 @@ var adListManager = function () {
 		var adTime = marker.time;
 		getAdData(adTime, function(adData) {
 			if (adData) {
+				_isPostroll = adTime === _contentDuration;
 				adData.status = AD_STATUS_READY_PLAY;
 				_mobilePrerollNeedClick = isMobile() && adTime === 0;
 				if (_mobilePrerollNeedClick && _playlistIdx < 0) {
@@ -607,7 +621,7 @@ var adListManager = function () {
 					_mainVideoEnded = true;
 					if (_player.playlist.currentIndex() < _player.playlist.lastIndex()) {
 						if (_hasPostroll) {
-							_waitPostrollEnded = true;
+							_waitPostrollEndedForPlaylist = true;
 						}
 						else {
 							startNextPlaylistVideo();

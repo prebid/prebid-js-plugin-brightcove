@@ -33,6 +33,7 @@ var markersHandler = function (vjs, adMarkerStyle) {
 	var _player = null;
 	var _adMarkerStyle = adMarkerStyle;
 	var _videoDuration = 0;
+	var _waitingVideoEnd = false;
 
 	// default setting
 	var defaultSetting = {
@@ -326,10 +327,13 @@ var markersHandler = function (vjs, adMarkerStyle) {
 
 				// post-roll support
 				// the interval between 'timeupdate' events may be up to 0.3 second
-				if (Math.abs(player.duration() - currentTime) < 0.3) {
+				if (Math.abs(player.duration() - currentTime) < 0.5 && !_waitingVideoEnd) {
 					if (setting.markerTip.time(markersList[markersList.length - 1]) === _videoDuration) {
 						if (options.onMarkerReached) {
-							options.onMarkerReached(markersList[markersList.length - 1]);
+							_waitingVideoEnd = true;
+							player.one('ended', function() {
+								options.onMarkerReached(markersList[markersList.length - 1]);
+							});
 						}
 					}
 					return;
@@ -374,6 +378,7 @@ var markersHandler = function (vjs, adMarkerStyle) {
 
 	    // setup the whole thing
 	    function initialize() {
+				_waitingVideoEnd = false;
 				_videoDuration = player.duration();
 	      if (setting.markerTip.display) {
 	        initializeMarkerTip();
