@@ -21,8 +21,6 @@ var adListManager = function () {
 	var _adMarkerStyle;
 	var _frequencyRules;
 	var _hasPreroll = false;
-	var _hasPostroll = false;
-	var _waitPostrollEndedForPlaylist = false;
 	var _isPostroll = false;
 	var _adPlaying = false;
 	var _firstAd = true;
@@ -82,34 +80,38 @@ var adListManager = function () {
 
 	// restore main content after ad is finished
 	var resetContent = function resetContent() {
-		if (_waitPostrollEndedForPlaylist) {
+		if (_isPostroll) {
+			var state = _player.muted();
+			_player.muted(true);
 			showCover(true);
+			_mainVideoEnded = true;
+			_player.one('ended', function() {
+				_player.muted(state);
+				if (_player.playlist && _player.playlist.autoadvance) {
+					if (_markersHandler && _player.markers && _player.markers.destroy) {
+						_player.markers.destroy();
+					}
+					if (_player.playlist.currentIndex() < _player.playlist.lastIndex()) {
+						startNextPlaylistVideo();
+					}
+					else {
+						showCover(false);
+					}
+				}
+				else {
+					showCover(false);
+				}
+			});
 		}
 		else {
-			if (_isPostroll) {
-				var state = _player.muted();
-				_player.muted(true);
-				showCover(true);
-				_player.one('ended', function() {
-					showCover(false);
-					_player.muted(state);
-				});
-			}
-			else {
-				showCover(false);
-			}
+			showCover(false);
 		}
 		_isPostroll = false;
 		_options = null;
 		setTimeout(function() {
 			_adPlaying = false;
-			if (_savedMarkers && _player.markers && _player.markers.reset) {
-				if (!_waitPostrollEndedForPlaylist) {
-					_player.markers.reset(JSON.parse(_savedMarkers));
-				}
-			}
-			if (_waitPostrollEndedForPlaylist) {
-				startNextPlaylistVideo();
+			if (!_mainVideoEnded && _savedMarkers && _player.markers && _player.markers.reset) {
+				_player.markers.reset(JSON.parse(_savedMarkers));
 			}
 		}, 500);
 		_adIndicator.style.display = 'none';
@@ -162,19 +164,20 @@ var adListManager = function () {
 		_player.off('timeupdate', checkPrepareTime);
 		_savedMarkers = null;
 		_prerollNeedClickToPlay = false;
-		_hasPostroll = false;
-		_waitPostrollEndedForPlaylist = false;
 		showCover(true);
 		_playlistIdx++;
 		_contentDuration = 0;
 		_player.one('loadedmetadata', function() {
 			_mainVideoEnded = false;
+			if (needPlayAdForPlaylistItem(_player.playlist.currentIndex())) {
+				// for first video in playlist we already handle loadedmatadata event
+				if (_player.playlist.currentIndex() > 0) {
+					startRenderingPreparation();
+				}
+				return;
+			}
 			if (_markersHandler && _player.markers && _player.markers.destroy) {
 				_player.markers.destroy();
-			}
-			if (needPlayAdForPlaylistItem(_player.playlist.currentIndex())) {
-				startRenderingPreparation();
-				return;
 			}
 			showCover(false);
 			_logger.log(_prefix, 'Ad did not play due to frequency settings');
@@ -300,6 +303,7 @@ var adListManager = function () {
 	var playAd = function(adData) {
 		if (_adPlaying) {
 			// not interrupt playing ad
+			showCover(false);
 			return;
 		}
 		if (!_vastRendererObj) {
@@ -375,6 +379,7 @@ var adListManager = function () {
 		var adTime = marker.time;
 		getAdData(adTime, function(adData) {
 			if (adData) {
+				traceMessage({data: {message: 'Play Ad at time = ' + adTime}});
 				_isPostroll = adTime === _contentDuration;
 				adData.status = AD_STATUS_READY_PLAY;
 				_mobilePrerollNeedClick = isMobile() && adTime === 0;
@@ -518,9 +523,6 @@ var adListManager = function () {
 				if (!timeVal) {
 					_arrAdList.push({adTag: null, options: options, adTime: adTime, status: AD_STATUS_NOT_PLAYED});
 					arrTimes.push(adTime);
-					if (adTime === _contentDuration) {
-						_hasPostroll = true;
-					}
 				}
 			}
 		});
@@ -561,6 +563,10 @@ var adListManager = function () {
 		}
 		if (needRegMarkers) {
 			_markersHandler.init(_player);
+		}
+		// remove old markers from previous video
+		if (_player.markers) {
+			_player.markers.removeAll();
 		}
 		_markersHandler.markers(timeMarkers);
 
@@ -610,25 +616,6 @@ var adListManager = function () {
 		_hasPreroll = optionsHavePreroll();
 		if (_hasPreroll) {
 			showCover(true);
-		}
-
-		if (_player.playlist && _player.playlist.autoadvance) {
-			_player.on('ended', function() {
-				if (_player.playlist && _player.playlist.autoadvance) {
-					if (_adPlaying) {
-						return;
-					}
-					_mainVideoEnded = true;
-					if (_player.playlist.currentIndex() < _player.playlist.lastIndex()) {
-						if (_hasPostroll) {
-							_waitPostrollEndedForPlaylist = true;
-						}
-						else {
-							startNextPlaylistVideo();
-						}
-					}
-				}
-			});
 		}
 
 		_player.on('playlistitem', nextListItemHandlerAuto);
