@@ -102,7 +102,6 @@ var vastRenderer = function (player) {
     this.playAd = function(xml, options, firstVideoPreroll, mobilePrerollNeedClick, prerollNeedClickToPlay, eventCallback) {
         _eventCallback = eventCallback;
         _options = options;
-        _player = player;
 
 		// player event listeners
 		addListeners();
