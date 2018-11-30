@@ -531,6 +531,12 @@ var prebidVastPlugin = function(player) {
 			else {
 				renderAd(options);
 			}
+		},
+
+		stop: function() {
+			if (_vastManagerObj) {
+				_vastManagerObj.stop();
+			}
 		}
 	};
 };
