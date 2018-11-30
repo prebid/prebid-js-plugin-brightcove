@@ -1,5 +1,5 @@
 var _vastManager = require('../../../src/VastManager.js');
-var BcPrebidVast = require('./../../../src/BcPrebidVast.js');
+var BcPrebidVast = require('./../../../src/BcPrebidLoader.js');
 var prebidCommunicator = require('./../../../src/PrebidCommunicator.js');
 
 describe('VastManager unit test', function () {

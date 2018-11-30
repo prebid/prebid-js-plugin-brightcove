@@ -5,7 +5,6 @@
 
 // CONSTANTS
 
-var _vjs = window.videojs !== undefined ? window.videojs : null;
 var _prebidGlobal = require('./PrebidGlobal.js');
 var _vastManager = require('./VastManager.js');
 var _prebidCommunicator = require('./PrebidCommunicator.js');
@@ -18,7 +17,7 @@ var MOL_PLUGIN_URL = '//acdn.adnxs.com/video/plugins/mol/videojs_5.vast.vpaid.mi
 
 var $$PREBID_GLOBAL$$ = _prebidGlobal.getGlobal();
 
-_logger.always(_prefix, 'Version 0.2.8');
+_logger.always(_prefix, 'Version 0.4.1');
 
 var BC_prebid_in_progress = $$PREBID_GLOBAL$$.plugin_prebid_options && $$PREBID_GLOBAL$$.plugin_prebid_options.biddersSpec;
 
@@ -429,97 +428,9 @@ function loadMolPlugin(callback) {
 	loadMolPlugin(function() {});
 })();
 
-// register videojs prebid plugins
-function regPrebidVastPlugin(vjs) {
-	_vjs = vjs;
-	// getPlugins not exist in Brightcove Player v5.28.1
-	if (!vjs.getPlugins || !_vjs.getPlugins().bcPrebidVastPlugin) {
-		registerPrebidVastPlugin();
-	}
-
-	// Brightcove Player v5.28.1 uses 'plugin' function to register plugin
-	var regFn = !!_vjs.registerPlugin ? _vjs.registerPlugin : _vjs.plugin;
-	regFn('bcPrebidVastPluginCommand', function(command) {
-		if (command === 'stop') {
-			if (_vastManagerObj) {
-				_vastManagerObj.stop();
-			}
-		}
-	});
-}
-
-var prebidVastPlugin = {
-	// @exclude
-	// Method exposed only for unit Testing Purpose
-	// Gets stripped off in the actual build artifact
-	test: function() {
-		return {
-			doPrebid: function(options, callback) {
-				if ($$PREBID_GLOBAL$$.bc_pbjs === undefined) {
-					loadPrebidScript(options, false);
-					var waitReady = setInterval(function() {
-						if ($$PREBID_GLOBAL$$.bc_pbjs !== undefined) {
-							clearInterval(waitReady);
-							doPrebid(options, callback);
-						}
-					}, 50);
-				}
-				else {
-					doPrebid(options, callback);
-				}
-			},
-			specifyBidderAliases: specifyBidderAliases,
-			prepareBidderSettings: prepareBidderSettings,
-			loadPrebidScript: loadPrebidScript,
-			bcPrebidInProgress: function() { return BC_prebid_in_progress; },
-			loadMolPlugin: loadMolPlugin,
-			renderAd: renderAd,
-			player: _player
-		};
-	},
-	// @endexclude
-
-	init: function () {
-		regPrebidVastPlugin(videojs);
-	},
-
-	id: null,
-
-	doPrebid: function(options, id) {
-		this.id = id;
-		options.onlyPrebid = true;
-		_vjs(id).bcPrebidVastPlugin(options);
-	},
-
-	stop: function() {
-		if (this.id) {
-			_vjs(this.id).bcPrebidVastPluginCommand('stop');
-		}
-		else {
-			// getPlugins not exist in Brightcove Player v5.28.1
-			if (_vjs.getPlugins) {
-				_vjs.getPlugins().bcPrebidVastPluginCommand('stop');
-			}
-		}
-	},
-
-	renderAd: function(renderOptions, id, creative) {
-		this.id = id;
-		renderOptions.creative = creative;
-		renderOptions.onlyPrebid = false;
-		_vjs(id).bcPrebidVastPlugin(renderOptions);
-	}
-};
-// ////////////////////////////////////////////////////////////////////
-// EXPORTS
-module.exports = prebidVastPlugin;
-
 var _player;
 var _vastManagerObj;
 var _prebidCommunicatorObj;
-if (_vjs) {
-	registerPrebidVastPlugin();
-}
 
 function renderAd(options) {
 	if (options.creative) {
@@ -567,30 +478,62 @@ function renderAd(options) {
 	}
 }
 
-function registerPrebidVastPlugin() {
-	// Brightcove Player v5.28.1 uses 'plugin' function to register plugin
-	var regFn = !!_vjs.registerPlugin ? _vjs.registerPlugin : _vjs.plugin;
-	regFn('bcPrebidVastPlugin', function(options) {
-		if (!$$PREBID_GLOBAL$$.bc_pbjs && !BC_prebid_in_progress && !options.creative) {
-			loadPrebidScript(options, false);
-		}
-		_player = this;
-		// Brightcove Player v5.28.1 issues alert on every tech() call
-		if (videojs.VERSION.substr(0, 2) <= '5.') {
-			_player.tech = function() {
-				return _player.tech_;
+var prebidVastPlugin = function(player) {
+	_player = player;
+	return {
+		// @exclude
+		// Method exposed only for unit Testing Purpose
+		// Gets stripped off in the actual build artifact
+		test: function() {
+			return {
+				doPrebid: function(options, callback) {
+					if ($$PREBID_GLOBAL$$.bc_pbjs === undefined) {
+						loadPrebidScript(options, false);
+						var waitReady = setInterval(function() {
+							if ($$PREBID_GLOBAL$$.bc_pbjs !== undefined) {
+								clearInterval(waitReady);
+								doPrebid(options, callback);
+							}
+						}, 50);
+					}
+					else {
+						doPrebid(options, callback);
+					}
+				},
+				specifyBidderAliases: specifyBidderAliases,
+				prepareBidderSettings: prepareBidderSettings,
+				loadPrebidScript: loadPrebidScript,
+				bcPrebidInProgress: function() { return BC_prebid_in_progress; },
+				loadMolPlugin: loadMolPlugin,
+				renderAd: renderAd,
+				player: _player
 			};
+		},
+		// @endexclude
+
+		run: function(options) {
+			if (!$$PREBID_GLOBAL$$.bc_pbjs && !BC_prebid_in_progress && !options.creative) {
+				loadPrebidScript(options, false);
+			}
+			// Brightcove Player v5.28.1 issues alert on every tech() call
+			if (videojs.VERSION.substr(0, 2) <= '5.') {
+				_player.tech = function() {
+					return _player.tech_;
+				};
+			}
+			if (!options.onlyPrebid) {
+				loadMolPlugin(function(succ) {
+					if (succ) {
+						renderAd(options);
+					}
+				});
+			}
+			else {
+				renderAd(options);
+			}
 		}
-		if (!options.onlyPrebid) {
-			loadMolPlugin(function(succ) {
-				if (succ) {
-					renderAd(options);
-				}
-			});
-		}
-		else {
-			renderAd(options);
-		}
-	});
-}
-window.BCVideo_PrebidVastPlugin = prebidVastPlugin;
+	};
+};
+// ////////////////////////////////////////////////////////////////////
+// EXPORTS
+module.exports = prebidVastPlugin;
