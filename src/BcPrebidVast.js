@@ -8,6 +8,7 @@
 var _vjs = window.videojs !== undefined ? window.videojs : null;
 var _prebidGlobal = require('./PrebidGlobal.js');
 var _vastManager = require('./VastManager.js');
+var _adListManager = require('./AdListManager.js');
 var _prebidCommunicator = require('./PrebidCommunicator.js');
 var _logger = require('./Logging.js');
 var _prefix = 'PrebidVast->';
@@ -18,7 +19,7 @@ var MOL_PLUGIN_URL = '//acdn.adnxs.com/video/plugins/mol/videojs_5.vast.vpaid.mi
 
 var $$PREBID_GLOBAL$$ = _prebidGlobal.getGlobal();
 
-_logger.always(_prefix, 'Version 0.2.8');
+_logger.always(_prefix, 'Version 0.3.7');
 
 var BC_prebid_in_progress = $$PREBID_GLOBAL$$.plugin_prebid_options && $$PREBID_GLOBAL$$.plugin_prebid_options.biddersSpec;
 
@@ -33,12 +34,19 @@ var defaultTemplate = '<!DOCTYPE html>' +
     '</script>' +
     '<script type="text/javascript" src="{{iframePrebid_JS}}" onload="notifyParent(true);" onerror="notifyParent(false);"></script>' +
     '</body>' +
-    '</html>';
+	'</html>';
+var DEFAULT_SCRIPT_LOAD_TIMEOUT = 3000;
 
 // the function does bidding and returns bids thru callback
 var BC_bidders_added = false;
 function doPrebid(options, callback) {
 	if ($$PREBID_GLOBAL$$.bc_pbjs && options.biddersSpec) {
+		if (options.clearPrebid) {
+			$$PREBID_GLOBAL$$.bc_pbjs.adUnits = [];
+			$$PREBID_GLOBAL$$.bc_pbjs.bidderSettings = {};
+			$$PREBID_GLOBAL$$.bc_pbjs.medianetGlobals = {};
+			BC_bidders_added = false;
+		}
 		$$PREBID_GLOBAL$$.bc_pbjs.que = $$PREBID_GLOBAL$$.bc_pbjs.que || [];
 
 		//
@@ -255,6 +263,18 @@ function loadPrebidScript(options, fromHeader) {
 		}
 	}
 
+	var arrOptions = convertOptionsToArray(options);
+	var prebidPath;
+	var scriptLoadTimeout;
+	for (var i = 0; i < arrOptions.length; i++) {
+		if (arrOptions[i].prebidPath && !prebidPath) {
+			prebidPath = arrOptions[i].prebidPath;
+		}
+		if (!scriptLoadTimeout && arrOptions[i].scriptLoadTimeout && arrOptions[i].scriptLoadTimeout > 0) {
+			scriptLoadTimeout = arrOptions[i].scriptLoadTimeout;
+		}
+	}
+
 	if (!document.body) {
 		// plugin has been loaded in a headed (document body is not ready)
 		if (document.getElementById('bc-pb-script')) {
@@ -281,14 +301,14 @@ function loadPrebidScript(options, fromHeader) {
 		pbjsScr.id = 'bc-pb-script';
 		pbjsScr.async = true;
 		pbjsScr.type = 'text/javascript';
-		pbjsScr.src = options.prebidPath ? options.prebidPath : DEFAULT_PREBID_JS_URL;
+		pbjsScr.src = !!prebidPath ? prebidPath : DEFAULT_PREBID_JS_URL;
 		var node = document.getElementsByTagName('head')[0];
 		node.appendChild(pbjsScr);
 	}
 	else {
 		// plugin has been loaded in the document body or has been embedded in a player
 		var frame = document.createElement('iframe');
-		frame.id = 'pbjs_conainer_' + Date.now();
+		frame.id = 'pbjs_container_' + Date.now();
 		frame.src = 'about:blank';
 		frame.marginWidth = '0';
 		frame.marginHeight = '0';
@@ -306,7 +326,7 @@ function loadPrebidScript(options, fromHeader) {
 		document.body.appendChild(frame);
 
 		var template = defaultTemplate;
-		template = template.replace(new RegExp('{{iframePrebid_JS}}', 'g'), options.prebidPath ? options.prebidPath : DEFAULT_PREBID_JS_URL);
+		template = template.replace(new RegExp('{{iframePrebid_JS}}', 'g'), !!prebidPath ? prebidPath : DEFAULT_PREBID_JS_URL);
 		template = template.replace(new RegExp('{{origin}}', 'g'), getOrigin());
 
 		var timeout = setTimeout(function() {
@@ -318,7 +338,7 @@ function loadPrebidScript(options, fromHeader) {
 			$$PREBID_GLOBAL$$.bc_pbjs_error = true;
 			dispatchPrebidDoneEvent();
 			timeout = null;
-		}, 3000);
+		}, !!scriptLoadTimeout ? scriptLoadTimeout : DEFAULT_SCRIPT_LOAD_TIMEOUT);
 
 		var iframeDoc = frame.contentWindow && frame.contentWindow.document;
 		if (iframeDoc) {
@@ -326,7 +346,7 @@ function loadPrebidScript(options, fromHeader) {
 				iframeDoc.open();
 				iframeDoc.write(template);
 				iframeDoc.close();
-				var onLoad = function(msgEvent) {
+				var onLoadIFrame = function(msgEvent) {
 					if (timeout) {
 						clearTimeout(timeout);
 					}
@@ -339,6 +359,7 @@ function loadPrebidScript(options, fromHeader) {
 						$$PREBID_GLOBAL$$.bc_pbjs = frame.contentWindow.pbjs;
 						// after prebid.js is successfully loaded try to invoke prebid.
 						doInternalPrebid();
+						window.removeEventListener('message', onLoadIFrame);
 					}
 					else if (msgEvent.data === 'error') {
 						// failed to load prebid.js.
@@ -348,10 +369,11 @@ function loadPrebidScript(options, fromHeader) {
 						}
 						$$PREBID_GLOBAL$$.bc_pbjs_error = true;
 						dispatchPrebidDoneEvent();
+						window.removeEventListener('message', onLoadIFrame);
 					}
 				};
 
-				window.addEventListener('message', onLoad);
+				window.addEventListener('message', onLoadIFrame);
 			}
 			catch (e) {
 				// failed to load prebid.js.
@@ -364,6 +386,27 @@ function loadPrebidScript(options, fromHeader) {
 			}
 		}
 	}
+}
+
+function convertOptionsToArray(options) {
+	var arrOptions;
+	if (Array.isArray(options)) {
+		arrOptions = options;
+	}
+	else {
+		// array in brightcove studio converted to object {0: {...}, 1: {...}, ...}
+		if (options.hasOwnProperty('0')) {
+			// options parameter is array of options from plugin embedded in player in studio
+			arrOptions = [];
+			for (var i = 0; options.hasOwnProperty(i); i++) {
+				arrOptions.push(options[i]);
+			}
+		}
+		else {
+			arrOptions = [options];
+		}
+	}
+	return arrOptions;
 }
 
 // this function loads MailOnline Plugin
@@ -444,6 +487,9 @@ function regPrebidVastPlugin(vjs) {
 			if (_vastManagerObj) {
 				_vastManagerObj.stop();
 			}
+			else if (_adListManagerObj) {
+				_adListManagerObj.stop();
+			}
 		}
 	});
 }
@@ -516,6 +562,7 @@ module.exports = prebidVastPlugin;
 
 var _player;
 var _vastManagerObj;
+var _adListManagerObj;
 var _prebidCommunicatorObj;
 if (_vjs) {
 	registerPrebidVastPlugin();
@@ -560,10 +607,13 @@ function renderAd(options) {
 		_prebidCommunicatorObj.doPrebid(options);
 	}
 	else {
-		// do prebid if needed and render ad
-		_vastManagerObj = new _vastManager();
-		options.doPrebid = doPrebid;
-		_vastManagerObj.play(_player, options.creative, options);
+		// do prebid if needed and render ad(s)
+		_adListManagerObj = new _adListManager();
+		var arrOptions = convertOptionsToArray(options);
+		arrOptions.forEach(function(opt) {
+			opt.doPrebid = doPrebid;
+		});
+		_adListManagerObj.play(_player, arrOptions);
 	}
 }
 
