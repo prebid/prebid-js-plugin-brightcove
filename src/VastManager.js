@@ -3,23 +3,23 @@
  * @module vastManager
  */
 
- var _logger = require('./Logging.js');
+var _logger = require('./Logging.js');
 var _prebidCommunicator = require('./PrebidCommunicator.js');
 var _MarkersHandler = require('./MarkersHandler.js');
+var _vastRenderer = require('./VastRenderer.js');
 var _prefix = 'PrebidVast->vastManager';
 
 var vastManager = function () {
 	'use strict';
 	var _prebidCommunicatorObj;
+	var _vastRendererObj;
 	var _player;
 	var _playlist = [];
 	var _playlistIdx = -1;
 	var _playlistCreative;
 	var _nextPlaylistItemFired = false;
-	var _creative;
 	var _options;
 	var _adPlaying = false;
-	var _defaultAdCancelTimeout = 3000;
     var _savedMarkers;
     var _markersHandler;
     var _contentDuration = 0;
@@ -40,10 +40,6 @@ var vastManager = function () {
 
     var isIPhone = function isIPhone() {
     	return /iP(hone|od)/.test(navigator.userAgent);
-	};
-
-	var isMobileSafari = function isMobileSafari() {
-		return /version\/([\w\.]+).+?mobile\/\w+\s(safari)/i.test(navigator.userAgent);
 	};
 
 	// show/hide black div witrh spinner
@@ -77,8 +73,6 @@ var vastManager = function () {
 			}
 		}, 1000);
 		_adIndicator.style.display = 'none';
-		removeListeners();
-		showNextOverlay(true);
 		_nextPlaylistItemFired = false;
 		if (_playlistCreative && _playlist.length > 0) {
 			_player.one('ended', function() {
@@ -89,14 +83,7 @@ var vastManager = function () {
 				}, 500);
 			});
 		}
-	};
-
-	// show/hide brightcove controls activated for next clip within playlist
-	var showNextOverlay = function showNextOverlay(show) {
-		var nextOverlays = document.getElementsByClassName('vjs-next-overlay');
-		if (nextOverlays && nextOverlays.length > 0) {
-			nextOverlays[0].style.display = show ? '' : 'none';
-		}
+		doPrebidForNextPlaylistItem();
 	};
 
 	// check frequency capping rules
@@ -279,61 +266,39 @@ var vastManager = function () {
 		}
 	}
 
-	// set ad playback options base on main content state
-	function setPlaybackMethodData() {
-		var initPlayback = 'auto';
-    	if (_player.currentTime() === 0) {
-    		initPlayback = _player.autoplay() ? 'auto' : 'click';
-    	}
-		var initAudio = _player.muted() ? 'off' : 'on';
-		_options.initialPlayback = initPlayback;
-		_options.initialAudio = initAudio;
-	}
+	function eventCallback(event) {
+		var arrResetEvents = ['vast.adError', 'vast.adsCancel', 'vast.adSkip', 'vast.reset',
+							  'vast.contentEnd', 'adFinished'];
+		var isResetEvent = function(name) {
+			for (var i = 0; i < arrResetEvents.length; i++) {
+				if (arrResetEvents[i] === name) {
+					return true;
+				}
+			}
+			return false;
+		};
 
-	// add listeners for renderer events
-    function addListeners() {
-    	_player.one('vast.adStart', function() {
+		var name = event.type;
+		if (name === 'vast.adStart') {
 			_adIndicator.style.display = 'block';
 			_adPlaying = true;
 			showCover(false);
-		});
-
-    	_player.on('vast.adError', resetContent);
-    	_player.on('vast.adsCancel', resetContent);
-    	_player.on('vast.adSkip', resetContent);
-    	_player.on('vast.reset', resetContent);
-    	_player.on('vast.contentEnd', resetContent);
-    	_player.on('adFinished', resetContent);
-
-    	_player.on('trace.message', traceMessage);
-    	_player.on('trace.event', traceEvent);
-    }
-
-	// remove listeners for renderer events
-    function removeListeners() {
-    	_player.off('vast.adError', resetContent);
-    	_player.off('vast.adsCancel', resetContent);
-    	_player.off('vast.adSkip', resetContent);
-    	_player.off('vast.reset', resetContent);
-    	_player.off('vast.contentEnd', resetContent);
-    	_player.off('adFinished', resetContent);
-
-    	_player.off('trace.message', traceMessage);
-    	_player.off('trace.event', traceEvent);
-	}
-
-	function getMobileSafariVersion() {
-		var nVer = null;
-		var nPos = navigator.userAgent.indexOf('Version');
-		if (nPos > 0) {
-			var temp = navigator.userAgent.substring(nPos + 8);
-			nPos = temp.indexOf('.');
-			if (nPos > 0) {
-				temp = temp.substr(0, nPos);
-				nVer = parseInt(temp);
+		}
+		else if (name === 'trace.message') {
+			traceMessage(event);
+		}
+		else if (name === 'trace.event') {
+			traceEvent(event);
+		}
+		else if (isResetEvent(name)) {
+			resetContent();
+		}
+		else if (name === 'internal') {
+			var internalName = event.data.name;
+			if (internalName === 'cover') {
+				showCover(event.data.cover);
 			}
 		}
-		return nVer;
 	}
 
 	// function to play ad
@@ -341,12 +306,8 @@ var vastManager = function () {
 		if (!creative) {
 			return;
 		}
-		removeListeners();
-    	_creative = creative;
 
     	var prerollNeedClickToPlay = false;
-
-    	var creativeIsVast = _creative.indexOf('<VAST') >= 0;
 
     	// prepare ad indicator overlay
 		_adIndicator = document.createElement('p');
@@ -356,185 +317,22 @@ var vastManager = function () {
 		_adIndicator.style.left = '10px';
 		_player.el().appendChild(_adIndicator);
 
-		// player event listeners
-		addListeners();
-
     	// function to play vast xml
     	var playAd = function(xml) {
     		if (_adPlaying) {
     			// not interrupt playing ad
     			return;
 			}
+			if (!_vastRendererObj) {
+				_vastRendererObj = new _vastRenderer(_player);
+			}
 			_playlistCreative = null;
-        	setPlaybackMethodData();
-    		// pause main content and save markers
-    		var needPauseAndPlay = !isMobile() || !_player.paused();
-    		if (needPauseAndPlay) {
-        		_player.pause();
-    		}
     		_adPlaying = true;
     		if (_markersHandler && _player.markers) {
 				_savedMarkers = JSON.stringify(_player.markers.getMarkers());
-    		}
-    		// prepare parameters for MailOnline plugin
-    		var clientParams = {
-          	  		// VAST xml
-          	  		adTagXML: function(callback) {
-          	  			setTimeout(function() {
-          	  				callback(null, xml);
-          	  			}, 0);
-          	  		},
-          	  		playAdAlways: false,
-          	  		adCancelTimeout: (_options && _options.adStartTimeout) ? _options.adStartTimeout : _defaultAdCancelTimeout,
-          	  		adsEnabled: true,
-          	  		initialPlayback: _options.initialPlayback,
-          	  		initialAudio: _options.initialAudio
-                };
-    		if (creativeIsVast) {
-    			// creative is VAST
-    			clientParams.adTagXML = function(callback) {
-      	  			setTimeout(function() {
-      	  				callback(null, _creative);
-      	  			}, 0);
-      	  		};
-    		}
-    		else {
-    			// creative is VAST URL
-    			clientParams.adTagUrl = _creative;
-    		}
-    		if (_options && _options.skippable && _options.skippable.skipText) {
-    			clientParams.skipText = _options.skippable.skipText;
-    		}
-    		if (_options && _options.skippable && _options.skippable.skipButtonText) {
-    			clientParams.skipButtonText = _options.skippable.skipButtonText;
-    		}
-    		if (_options && _options.skippable && _options.skippable.hasOwnProperty('enabled')) {
-    			clientParams.skippable = {};
-    			clientParams.skippable.enabled = _options.skippable.enabled;
-    			clientParams.skippable.videoThreshold = _options.skippable.videoThreshold * 1000;
-    			clientParams.skippable.videoOffset = _options.skippable.videoOffset * 1000;
 			}
-			if (_options && _options.wrapperLimit && _options.wrapperLimit > 0) {
-				clientParams.wrapperLimit = _options.wrapperLimit;
-			}
-
-			var renderAd = function (clientParams, canAutoplay) {
-				if (_options.initialPlayback !== 'click' || _mobilePrerollNeedClick) {
-					if (!prerollNeedClickToPlay) {
-						setTimeout(function() {
-							if (canAutoplay) {
-								// start MailOnline plugin for render the ad
-								_player.vastClient(clientParams);
-								traceMessage({data: {message: 'Video main content - play()'}});
-								_player.play();
-							}
-							else {
-								// hide black cover before show play button
-								showCover(false);
-								// pause main content just in case
-								_player.pause();
-								traceMessage({data: {message: 'Video main content - activate play button'}});
-								_player.bigPlayButton.el_.style.display = 'block';
-								_player.bigPlayButton.el_.style.opacity = 1;
-								_player.bigPlayButton.el_.style.zIndex = 99999;
-								_player.one('play', function() {
-									_player.bigPlayButton.el_.style.display = 'none';
-									showCover(true);
-									// start MailOnline plugin for render the ad
-									_player.vastClient(clientParams);
-									setTimeout(function() {
-										// trigger play event to MailOnline plugin to force render pre-roll
-										_player.trigger('play');
-									}, 0);
-								});
-							}
-						}, 0);
-					}
-					else {
-						// start MailOnline plugin for render the ad
-						_player.vastClient(clientParams);
-					}
-				}
-				else {
-					// start MailOnline plugin for render the ad
-					_player.vastClient(clientParams);
-				}
-				showNextOverlay(false);
-				doPrebidForNextPlaylistItem();
-			};
-
-			var preroll = _player.currentTime() < 0.5;
-			// preroll for first video (event playlistitem did not triggered)
-			if (preroll && _playlistIdx === -1) {
-				if (isMobileSafari()) {
-					// the special code to force player start preroll by click for safari version 10 or less for iOS.
-					var ver = getMobileSafariVersion();
-					if (ver != null && ver < 11) {
-						_logger.log(_prefix, 'Do not autoplay preroll on mobile safari version 10 or less');
-						traceMessage({data: {message: 'Do not autoplay preroll on mobile safari version 10 or less'}});
-						// give player the time to finish initialization
-						setTimeout(function() {
-							_player.pause();
-							renderAd(clientParams, false);
-						}, 1000);
-						return;
-					}
-				}
-				try {
-					var playPromise = _player.tech().el().play();
-					if (playPromise !== undefined && typeof playPromise.then === 'function') {
-						playPromise.then(function() {
-							_player.pause();
-							_logger.log(_prefix, 'Video can play with sound (allowed by browser)');
-							traceMessage({data: {message: 'Video can play with sound (allowed by browser)'}});
-							renderAd(clientParams, true);
-						}).catch(function() {
-							setTimeout(function() {
-								_player.pause();
-								_logger.log(_prefix, 'Video cannot play with sound (browser restriction)');
-								traceMessage({data: {message: 'Video cannot play with sound (browser restriction)'}});
-								renderAd(clientParams, false);
-							}, 200);
-						});
-					}
-					else {
-						_logger.log(_prefix, 'Video can play with sound (promise undefined)');
-						traceMessage({data: {message: 'Video can play with sound (promise undefined)'}});
-						if (_player.paused()) {
-							traceMessage({data: {message: 'Main video paused before preroll'}});
-							renderAd(clientParams, false);
-						}
-						else {
-							traceMessage({data: {message: 'Main video is auto-playing. Pause it.'}});
-							_player.pause();
-							if (_options.initialPlayback === 'click') {
-								setTimeout(function() {
-									_player.one('play', function() {
-										// we already did click, now we can play automatically.
-										_options.initialPlayback = 'auto';
-										prerollNeedClickToPlay = false;
-										_player.pause();
-										renderAd(clientParams, true);
-									});
-								}, 0);
-							}
-							else {
-								renderAd(clientParams, true);
-							}
-						}
-					}
-				}
-				catch (ex) {
-					_logger.log(_prefix, 'Video can play with sound (exception)');
-					traceMessage({data: {message: 'Video can play with sound (exception)'}});
-					renderAd(clientParams, false);
-				}
-			}
-			else {
-				_logger.log(_prefix, 'Video can play with sound (not preroll)');
-				traceMessage({data: {message: 'Video can play with sound (not preroll)'}});
-				renderAd(clientParams, true);
-			}
+			var firstVideoPreroll = _player.currentTime() < 0.5 && _playlistIdx <= 0;
+			_vastRendererObj.playAd(xml, _options, firstVideoPreroll, _mobilePrerollNeedClick, prerollNeedClickToPlay, eventCallback);
 		};
 
     	if (_player.duration() > 0) {
@@ -582,11 +380,18 @@ var vastManager = function () {
 							}
 							else {
 								// android
-								_player.one('play', function() {
+								if (_player.paused()) {
+									_player.one('play', function() {
+										showCover(true);
+										playAd(_markerXml[marker.time]);
+										delete _markerXml[marker.time];
+									});
+								}
+								else {
 									showCover(true);
 									playAd(_markerXml[marker.time]);
 									delete _markerXml[marker.time];
-								});
+								}
 							}
 						}
 						else {
@@ -694,27 +499,10 @@ var vastManager = function () {
 		showCover(true);
 
 		if (creative) {
-    		// render ad
+			// render ad
 			play(creative);
-			_player.on('playlistitem', nextListItemHandler);
     	}
-    	else {
-			// do bidding then render ad
-			_prebidCommunicatorObj = new _prebidCommunicator();
-			_prebidCommunicatorObj.doPrebid(options, function(creative) {
-				_playlistCreative = creative;
-				if (creative) {
-					play(creative);
-					setTimeout(function() {
-						_player.on('playlistitem', nextListItemHandler);
-					}, 1000);
-				}
-				else {
-					showCover(false);
-					_player.on('playlistitem', nextListItemHandler);
-				}
-			});
-    	}
+		_player.on('playlistitem', nextListItemHandler);
     };
 
 	// stop play ad
@@ -755,7 +543,6 @@ var vastManager = function () {
 			setCommunicator: function(comm) { _prebidCommunicatorObj = comm; },
 			doPrebidForNextPlaylistItem: doPrebidForNextPlaylistItem,
 			setAdIndicator: function(indic) { _adIndicator = indic; },
-			setPlaybackMethodData: setPlaybackMethodData,
 			play: play
 		};
 	};

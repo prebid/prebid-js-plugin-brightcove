@@ -9,6 +9,7 @@ var gulpWebpack = require('gulp-webpack');
 var preprocess = require('gulp-preprocess');
 var header = require('gulp-header');
 var cp = require('child_process');
+var replace = require('gulp-replace');
 var webpackConfig = require('./webpack.conf.js');
 var webpackConfigPlugin = require('./webpack.conf.plugin.js');
 var pkg = require('./package.json');
@@ -26,6 +27,7 @@ var bannerText = '/*! ' + copyrightText + ' ' + versionText + '\n' + licenseHead
 // start build shim
 gulp.task('webpack:build', function(callback) {
     return gulpWebpack(require('./webpack.conf.js'))
+        .pipe(replace('</script>', '<\\/script>'))
     	.pipe(preprocess())
         .pipe(gulp.dest('dist/'));
 });
@@ -36,6 +38,7 @@ gulp.task('webpack:build-min', function(callback) {
       sourceMap: false
     }));
    return gulpWebpack(webpackConfig)
+       .pipe(replace('</script>', '<\\/script>'))
        .pipe(preprocess())
        .pipe(header(bannerText))
        .pipe(rename({suffix: '.min'}))

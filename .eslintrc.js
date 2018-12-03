@@ -26,6 +26,7 @@ module.exports = {
     "one-var": "off",
     "no-extra-boolean-cast": "off",
     "new-cap": "off",
-    "handle-callback-err": 'off'
+    "handle-callback-err": 'off',
+    "no-extend-native": "off"
   }
 };
