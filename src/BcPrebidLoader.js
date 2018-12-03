@@ -129,7 +129,7 @@ if (_vjs) {
 }
 else {
 	// load prebid plugin if doing header bidding
-	if ($$PREBID_GLOBAL$$.plugin_prebid_options && $$PREBID_GLOBAL$$.plugin_prebid_options.prebidPluginPath) {
+	if ($$PREBID_GLOBAL$$.plugin_prebid_options) {
 		var prebidPluginPath = $$PREBID_GLOBAL$$.plugin_prebid_options.prebidPluginPath ? $$PREBID_GLOBAL$$.plugin_prebid_options.prebidPluginPath : DEFAULT_PLUGIN_JS_URL;
 		loadPrebidPlugin(prebidPluginPath);
 	}
