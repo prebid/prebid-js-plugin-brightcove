@@ -1,5 +1,5 @@
 var _vastRenderer = require('../../../src/VastRenderer.js');
-var BcPrebidVast = require('./../../../src/BcPrebidVast.js');
+var BcPrebidVast = require('./../../../src/BcPrebidLoader.js');
 
 describe('VastRenderer unit test', function () {
     before(function(done) {

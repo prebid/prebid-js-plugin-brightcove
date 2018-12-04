@@ -1,5 +1,5 @@
 var PrebidCommunicator = require('./../../../src/PrebidCommunicator.js');
-var BcPrebidVast = require('./../../../src/BcPrebidVast.js');
+var bcPrebidVast = require('./../../../src/BcPrebidVast.js');
 var _prebidGlobal = require('./../../../src/PrebidGlobal.js');
 
 var $$PREBID_GLOBAL$$ = _prebidGlobal.getGlobal();
@@ -8,6 +8,7 @@ describe('PrebidCommunicator unit test', function() {
     var Mock;
 	var mockObject;
 	var sinonStub;
+	var BcPrebidVast = new bcPrebidVast({});
 
     beforeEach(function (done) {
 		console.log(this.currentTest.title);

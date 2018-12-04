@@ -1,10 +1,11 @@
-var BcPrebidVast = require('./../../../src/BcPrebidVast.js');
+var bcPrebidVast = require('./../../../src/BcPrebidVast.js');
 var logger = require('./../../../src/Logging.js');
 
 describe('BcPrebidVast unit test', function() {
     var Mock;
 	var mockObject;
 	var sinonStub;
+	var BcPrebidVast = new bcPrebidVast({});
 
 	before(function(done) {
 		setTimeout(function() {
@@ -151,14 +152,5 @@ describe('BcPrebidVast unit test', function() {
 			assert.isTrue(succ);
 			done();
 		});
-    });
-
-    it('init test - registers Brightcove Prebid Plugin in videojs', function (done) {
-		sinonStub = sinon.stub(videojs, 'registerPlugin', function(name, fnc) {
-			assert.equal(name, 'bcPrebidVastPluginCommand');
-			assert.isTrue(typeof fnc == 'function');
-			done();
-		});
-		BcPrebidVast.init();
     });
 });

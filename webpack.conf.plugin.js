@@ -4,12 +4,12 @@ var plugin = require('./package.json');
 
 // webpack.config.js for build
 module.exports = {
-    entry: './src/BcPrebidLoader.js',
+    entry: './src/BcPrebidVast.js',
     output: {
         path: path.join(__dirname, 'dist'),
-        filename: 'bc_prebid_vast.js',
+        filename: 'bc_prebid_vast_plugin.js',
         chunkFilename: '[chunkhash].js',
-        library: 'BCVideo_PrebidVastPlugin',
+        library: 'BCVideo_PrebidVastMainPlugin',
         libraryTarget: 'var'
     },
     plugins: [
