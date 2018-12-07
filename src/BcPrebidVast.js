@@ -11,6 +11,8 @@ var _adListManager = require('./AdListManager.js');
 var _prebidCommunicator = require('./PrebidCommunicator.js');
 var _logger = require('./Logging.js');
 var _prefix = 'PrebidVast->';
+var _pbjsIFrame = null;
+var _molIFrame = null;
 
 var DEFAULT_PREBID_JS_URL = '//acdn.adnxs.com/prebid/not-for-prod/1/prebid.js';
 var DEFAULT_PREBID_CACHE_URL = '//prebid.adnxs.com/pbc/v1/cache';
@@ -22,18 +24,18 @@ _logger.always(_prefix, 'Version 0.4.1');
 
 var BC_prebid_in_progress = $$PREBID_GLOBAL$$.plugin_prebid_options && $$PREBID_GLOBAL$$.plugin_prebid_options.biddersSpec;
 
-var defaultTemplate = '<!DOCTYPE html>' +
-    '<html lang="en">' +
-    '<head><meta charset="UTF-8"></head>' +
-    '<body style="margin:0;padding:0">' +
-    '<script type="text/javascript">' +
-	'function notifyParent(succ) {' +
-    'window.parent.postMessage(succ ? \'ready\' : \'error\', \'{{origin}}\');' +
-	'}' +
-    '</script>' +
-    '<script type="text/javascript" src="{{iframePrebid_JS}}" onload="notifyParent(true);" onerror="notifyParent(false);"></script>' +
-    '</body>' +
-	'</html>';
+// var defaultTemplate = '<!DOCTYPE html>' +
+//     '<html lang="en">' +
+//     '<head><meta charset="UTF-8"></head>' +
+//     '<body style="margin:0;padding:0">' +
+//     '<script type="text/javascript">' +
+// 	'function notifyParent(succ) {' +
+//     'window.parent.postMessage(succ ? \'ready\' : \'error\', \'{{origin}}\');' +
+// 	'}' +
+//     '</script>' +
+//     '<script type="text/javascript" src="{{iframePrebid_JS}}" onload="notifyParent(true);" onerror="notifyParent(false);"></script>' +
+//     '</body>' +
+// 	'</html>';
 var DEFAULT_SCRIPT_LOAD_TIMEOUT = 3000;
 
 // the function does bidding and returns bids thru callback
@@ -306,27 +308,29 @@ function loadPrebidScript(options, fromHeader) {
 	}
 	else {
 		// plugin has been loaded in the document body or has been embedded in a player
-		var frame = document.createElement('iframe');
-		frame.id = 'pbjs_container_' + Date.now();
-		frame.src = 'about:blank';
-		frame.marginWidth = '0';
-		frame.marginHeight = '0';
-		frame.frameBorder = '0';
-		frame.width = '0%';
-		frame.height = '0%';
-		frame.style.position = 'absolute';
-		frame.style.left = '0px';
-		frame.style.top = '0px';
-		frame.style.margin = '0px';
-		frame.style.padding = '0px';
-		frame.style.border = 'none';
-		frame.style.width = '0%';
-		frame.style.height = '0%';
+		// var frame = document.createElement('iframe');
+		// frame.id = 'pbjs_container_' + Date.now();
+		// frame.src = 'about:blank';
+		// frame.marginWidth = '0';
+		// frame.marginHeight = '0';
+		// frame.frameBorder = '0';
+		// frame.width = '0%';
+		// frame.height = '0%';
+		// frame.style.position = 'absolute';
+		// frame.style.left = '0px';
+		// frame.style.top = '0px';
+		// frame.style.margin = '0px';
+		// frame.style.padding = '0px';
+		// frame.style.border = 'none';
+		// frame.style.width = '0%';
+		// frame.style.height = '0%';
+
+		var frameID = 'pbjs_container_' + Date.now().valueOf();
+		var frame = _pbjsIFrame = createEmptyIframe(frameID);
 		document.body.appendChild(frame);
 
-		var template = defaultTemplate;
-		template = template.replace(new RegExp('{{iframePrebid_JS}}', 'g'), !!prebidPath ? prebidPath : DEFAULT_PREBID_JS_URL);
-		template = template.replace(new RegExp('{{origin}}', 'g'), getOrigin());
+		var prebidJSSrc = (!!prebidPath ? prebidPath : DEFAULT_PREBID_JS_URL);
+		var frameDocStr = createIFrameDocString(prebidJSSrc, getOrigin());
 
 		var timeout = setTimeout(function() {
 			// failed to load prebid.js in iframe.
@@ -343,7 +347,7 @@ function loadPrebidScript(options, fromHeader) {
 		if (iframeDoc) {
 			try {
 				iframeDoc.open();
-				iframeDoc.write(template);
+				iframeDoc.write(frameDocStr);
 				iframeDoc.close();
 				var onLoadIFrame = function(msgEvent) {
 					if (timeout) {
@@ -372,7 +376,8 @@ function loadPrebidScript(options, fromHeader) {
 					}
 				};
 
-				window.addEventListener('message', onLoadIFrame);
+				// window.addEventListener('message', onLoadIFrame);
+                frame.contentWindow.addEventListener('message', onLoadIFrame);
 			}
 			catch (e) {
 				// failed to load prebid.js.
@@ -385,6 +390,53 @@ function loadPrebidScript(options, fromHeader) {
 			}
 		}
 	}
+}
+
+function createEmptyIframe (id) {
+    var frame = document.createElement('iframe');
+    frame.id = id;
+    frame.src = 'javascript:false';
+    frame.marginWidth = '0';
+    frame.marginHeight = '0';
+    frame.frameBorder = '0';
+    frame.width = '0%';
+    frame.height = '0%';
+    frame.style.position = 'absolute';
+    frame.style.left = '0px';
+    frame.style.top = '0px';
+    frame.style.margin = '0px';
+    frame.style.padding = '0px';
+    frame.style.border = 'none';
+    frame.style.width = '0%';
+    frame.style.height = '0%';
+    frame.tabIndex = '-1';
+    // frame.sandbox = 'allow-forms allow-pointer-lock allow-popups allow-same-origin allow-scripts allow-top-navigation';
+
+    return frame;
+}
+
+function createIFrameDocString (jsPath, origin, includeVJS) {
+
+    var docString = '<!DOCTYPE html>' +
+        '<html lang="en">' +
+        '<head><meta charset="UTF-8"></head>' +
+        '<body style="margin:0;padding:0">' +
+        '<script type="text/javascript">\n';
+
+		if (includeVJS) {
+            docString += 'var vjs = videojs = parent.videojs;\n';
+            // 'console.log("=============================>>>> VJS: " + vjs);\n' +
+            // 'debugger;';
+        }
+    	docString += 'function notifyParent(succ) {' +
+        '  window.postMessage(succ ? "ready" : "error", "' + origin + '");' +
+        '}' +
+        '<\/script>' +
+        '<script type="text/javascript" src="' + jsPath + '" onload="notifyParent(true);" onerror="notifyParent(false);"><\/script>' +
+        '</body>' +
+        '</html>';
+
+    return docString;
 }
 
 function convertOptionsToArray(options) {
@@ -411,56 +463,180 @@ function convertOptionsToArray(options) {
 // this function loads MailOnline Plugin
 var molLoadingInProgress = false;
 var molLoaded = false;
+
 function loadMolPlugin(callback) {
-	var vjs = window.videojs || false;
-	if (!vjs) {
-    	_logger.warn(_prefix, 'Videojs is not loaded yet');
-		callback(false);
-		return;
-	}
-	// getPlugins not exist in Brightcove Player v5.28.1
-	if (!vjs.getPlugins || !vjs.getPlugins().vastClient) {
-		if (document.getElementById('mol-script')) {
-			if (!molLoadingInProgress) {
-		    	_logger.log(_prefix, 'MailOnline Plugin ' + (molLoaded ? '' : 'not ') + 'loaded successfully already');
-				callback(molLoaded);
-			}
-			else {
-				var waitMolLoaded = setInterval(function() {
-					if (!molLoadingInProgress) {
-						clearInterval(waitMolLoaded);
-				    	_logger.log(_prefix, 'MailOnline Plugin ' + (molLoaded ? '' : 'not ') + 'loaded successfully already');
-						callback(molLoaded);
-					}
-				}, 50);
-			}
-			return;
-		}
-		molLoadingInProgress = true;
-	    var molScr = document.createElement('script');
-	    molScr.id = 'mol-script';
-	    molScr.onload = function() {
-	    	_logger.log(_prefix, 'MailOnline Plugin loaded successfully');
-	    	molLoaded = true;
-	    	molLoadingInProgress = false;
-	    	callback(true);
-	    };
-	    molScr.onerror = function(e) {
-	    	_logger.error(_prefix, 'Failed to load MailOnline Plugin. Error event: ', e);
-	    	molLoadingInProgress = false;
-	    	callback(false);
-	    };
-	    molScr.async = true;
-	    molScr.type = 'text/javascript';
-	    molScr.src = MOL_PLUGIN_URL;
-	    var node = document.getElementsByTagName('head')[0];
-	    node.appendChild(molScr);
-	}
-	else {
-    	_logger.log(_prefix, 'MailOnline Plugin already loaded');
-		callback(true);
-	}
+
+    function getOrigin() {
+        if (window.location.origin) {
+            return window.location.origin;
+        }
+        else {
+            return window.location.protocol + '//' +
+                window.location.hostname +
+                (window.location.port ? ':' + window.location.port : '');
+        }
+    }
+
+    var vjs = window.videojs || false;
+    if (!vjs) {
+        _logger.warn(_prefix, 'Videojs is not loaded yet');
+        callback(false);
+        return;
+    }
+    // getPlugins not exist in Brightcove Player v5.28.1
+    if (!vjs.getPlugins || !vjs.getPlugins().vastClient) {
+        // if (document.getElementById('mol-script')) {
+        if (_molIFrame) {
+            if (!molLoadingInProgress) {
+                _logger.log(_prefix, 'MailOnline Plugin ' + (molLoaded ? '' : 'not ') + 'loaded successfully already');
+                callback(molLoaded);
+            }
+            else {
+                var waitMolLoaded = setInterval(function() {
+                    if (!molLoadingInProgress) {
+                        clearInterval(waitMolLoaded);
+                        _logger.log(_prefix, 'MailOnline Plugin ' + (molLoaded ? '' : 'not ') + 'loaded successfully already');
+                        callback(molLoaded);
+                    }
+                }, 50);
+            }
+            return;
+        }
+        molLoadingInProgress = true;
+
+        var frameID = 'mol_container_' + Date.now();
+        var frame = _molIFrame = createEmptyIframe(frameID);
+
+        document.body.appendChild(frame);
+
+        var frameDocStr = createIFrameDocString(MOL_PLUGIN_URL, getOrigin(), true);
+
+        // var timeout = setTimeout(function() {
+        //     // failed to load prebid.js in iframe.
+        //     _logger.error(_prefix, 'Failed to load prebid.js in iframe (timeout).');
+        //     if (options.pageNotificationCallback) {
+        //         options.pageNotificationCallback('message', 'Failed to load prebid.js in iframe (timeout)');
+        //     }
+        //     $$PREBID_GLOBAL$$.bc_pbjs_error = true;
+        //     dispatchPrebidDoneEvent();
+        //     timeout = null;
+        // }, !!scriptLoadTimeout ? scriptLoadTimeout : DEFAULT_SCRIPT_LOAD_TIMEOUT);
+
+        var iframeDoc = frame.contentWindow && frame.contentWindow.document;
+        if (iframeDoc) {
+            try {
+                iframeDoc.open();
+                iframeDoc.write(frameDocStr);
+                iframeDoc.close();
+                var onLoadIFrame = function(msgEvent) {
+                    // if (timeout) {
+                    //     clearTimeout(timeout);
+                    // }
+                    // else {
+                    //     // prebid.js loadding timeout already happened. do nothing
+                    //     return;
+                    // }
+                    // check only our messages 'ready' and 'error' from ifarme
+                    if (msgEvent.data === 'ready') {
+                        window.removeEventListener('message', onLoadIFrame);
+                        _logger.log(_prefix, 'MailOnline Plugin loaded successfully');
+                        molLoaded = true;
+                        molLoadingInProgress = false;
+                        callback(true);
+                    }
+                    else if (msgEvent.data === 'error') {
+                        window.removeEventListener('message', onLoadIFrame);
+                        _logger.error(_prefix, 'Failed to load MailOnline Plugin. Error event: ', e);
+                        molLoadingInProgress = false;
+                        callback(false);
+                    }
+                };
+
+                // window.addEventListener('message', onLoadIFrame);
+                frame.contentWindow.addEventListener('message', onLoadIFrame);
+            }
+            catch (e) {
+                // failed to load MOL.
+                _logger.error(_prefix, 'Failed to load Mail Online Plugin.');
+            }
+        }
+
+        ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+        // var molScr = document.createElement('script');
+        // molScr.id = 'mol-script';
+        // molScr.onload = function() {
+        //     _logger.log(_prefix, 'MailOnline Plugin loaded successfully');
+        //     molLoaded = true;
+        //     molLoadingInProgress = false;
+        //     callback(true);
+        // };
+        // molScr.onerror = function(e) {
+        //     _logger.error(_prefix, 'Failed to load MailOnline Plugin. Error event: ', e);
+        //     molLoadingInProgress = false;
+        //     callback(false);
+        // };
+        // molScr.async = true;
+        // molScr.type = 'text/javascript';
+        // molScr.src = MOL_PLUGIN_URL;
+        // var node = document.getElementsByTagName('head')[0];
+        // node.appendChild(molScr);
+    }
+    else {
+        _logger.log(_prefix, 'MailOnline Plugin already loaded');
+        callback(true);
+    }
 }
+// function loadMolPlugin(callback) {
+// 	var vjs = window.videojs || false;
+// 	if (!vjs) {
+//     	_logger.warn(_prefix, 'Videojs is not loaded yet');
+// 		callback(false);
+// 		return;
+// 	}
+// 	// getPlugins not exist in Brightcove Player v5.28.1
+// 	if (!vjs.getPlugins || !vjs.getPlugins().vastClient) {
+// 		if (document.getElementById('mol-script')) {
+// 			if (!molLoadingInProgress) {
+// 		    	_logger.log(_prefix, 'MailOnline Plugin ' + (molLoaded ? '' : 'not ') + 'loaded successfully already');
+// 				callback(molLoaded);
+// 			}
+// 			else {
+// 				var waitMolLoaded = setInterval(function() {
+// 					if (!molLoadingInProgress) {
+// 						clearInterval(waitMolLoaded);
+// 				    	_logger.log(_prefix, 'MailOnline Plugin ' + (molLoaded ? '' : 'not ') + 'loaded successfully already');
+// 						callback(molLoaded);
+// 					}
+// 				}, 50);
+// 			}
+// 			return;
+// 		}
+// 		molLoadingInProgress = true;
+// 	    var molScr = document.createElement('script');
+// 	    molScr.id = 'mol-script';
+// 	    molScr.onload = function() {
+// 	    	_logger.log(_prefix, 'MailOnline Plugin loaded successfully');
+// 	    	molLoaded = true;
+// 	    	molLoadingInProgress = false;
+// 	    	callback(true);
+// 	    };
+// 	    molScr.onerror = function(e) {
+// 	    	_logger.error(_prefix, 'Failed to load MailOnline Plugin. Error event: ', e);
+// 	    	molLoadingInProgress = false;
+// 	    	callback(false);
+// 	    };
+// 	    molScr.async = true;
+// 	    molScr.type = 'text/javascript';
+// 	    molScr.src = MOL_PLUGIN_URL;
+// 	    var node = document.getElementsByTagName('head')[0];
+// 	    node.appendChild(molScr);
+// 	}
+// 	else {
+//     	_logger.log(_prefix, 'MailOnline Plugin already loaded');
+// 		callback(true);
+// 	}
+// }
 
 (function () {
 	// if bidders settings are present in the $$PREBID_GLOBAL$$.plugin_prebid_options variable load prebid.js and do the bidding
@@ -468,7 +644,7 @@ function loadMolPlugin(callback) {
 		BC_prebid_in_progress = true;
 		loadPrebidScript($$PREBID_GLOBAL$$.plugin_prebid_options, true);
 	}
-	loadMolPlugin(function() {});
+	// loadMolPlugin(function() {});
 })();
 
 var _player;
