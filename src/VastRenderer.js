@@ -25,7 +25,6 @@ var vastRenderer = function (player) {
 		var initPlayback = 'auto';
     	if (_player.currentTime() === 0) {
             initPlayback = _player.autoplay() ? 'auto' : 'click';
-            console.log('****** 4: _player.autoplay() = ' + _player.autoplay());
     	}
 		var initAudio = _player.muted() ? 'off' : 'on';
 		_options.initialPlayback = initPlayback;
@@ -158,12 +157,7 @@ var vastRenderer = function (player) {
         }
 
         var renderAd = function (clientParams, canAutoplay) {
-            console.log('****** 2: _options.initialPlayback = ' + _options.initialPlayback +
-                ', mobilePrerollNeedClick = ' + mobilePrerollNeedClick);
             if (_options.initialPlayback !== 'click' || mobilePrerollNeedClick) {
-                console.log('****** 3: canAutoplay = ' + canAutoplay +
-                    ', mobilePrerollNeedClick = ' + mobilePrerollNeedClick +
-                    ', prerollNeedClickToPlay = ' + prerollNeedClickToPlay);
                 if (!prerollNeedClickToPlay) {
                     setTimeout(function() {
                         if (canAutoplay) {

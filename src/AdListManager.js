@@ -386,7 +386,6 @@ var adListManager = function () {
 						if (isIPhone()) {
 							// iPhone
 							_player.one('play', function() {
-								console.log('****** 1');
 								_mobilePrerollNeedClick = false;	// don't need more click for preroll on iPhone
 								adData.status = AD_STATUS_PLAYING;
 								// force player to autoplay after user click play button
