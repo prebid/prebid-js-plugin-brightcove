@@ -388,6 +388,8 @@ var adListManager = function () {
 							_player.one('play', function() {
 								_mobilePrerollNeedClick = false;	// don't need more click for preroll on iPhone
 								adData.status = AD_STATUS_PLAYING;
+								// force player to autoplay after user click play button
+								_player.autoplay(true);
 								playAd(adData);
 							});
 						}
