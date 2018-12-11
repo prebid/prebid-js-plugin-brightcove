@@ -362,7 +362,7 @@ function loadPrebidScript(options, fromHeader) {
 						$$PREBID_GLOBAL$$.bc_pbjs = frame.contentWindow.pbjs;
 						// after prebid.js is successfully loaded try to invoke prebid.
 						doInternalPrebid();
-						window.removeEventListener('message', onLoadIFrame);
+						frame.contentWindow.removeEventListener('message', onLoadIFrame);
 					}
 					else if (msgEvent.data === 'error') {
 						// failed to load prebid.js.
@@ -372,7 +372,7 @@ function loadPrebidScript(options, fromHeader) {
 						}
 						$$PREBID_GLOBAL$$.bc_pbjs_error = true;
 						dispatchPrebidDoneEvent();
-						window.removeEventListener('message', onLoadIFrame);
+						frame.contentWindow.removeEventListener('message', onLoadIFrame);
 					}
 				};
 
@@ -538,14 +538,14 @@ function loadMolPlugin(callback) {
                     // }
                     // check only our messages 'ready' and 'error' from ifarme
                     if (msgEvent.data === 'ready') {
-                        window.removeEventListener('message', onLoadIFrame);
+						frame.contentWindow.removeEventListener('message', onLoadIFrame);
                         _logger.log(_prefix, 'MailOnline Plugin loaded successfully');
                         molLoaded = true;
                         molLoadingInProgress = false;
                         callback(true);
                     }
                     else if (msgEvent.data === 'error') {
-                        window.removeEventListener('message', onLoadIFrame);
+						frame.contentWindow.removeEventListener('message', onLoadIFrame);
                         _logger.error(_prefix, 'Failed to load MailOnline Plugin. Error event: ', e);
                         molLoadingInProgress = false;
                         callback(false);
@@ -766,3 +766,7 @@ var prebidVastPlugin = function(player) {
 // ////////////////////////////////////////////////////////////////////
 // EXPORTS
 module.exports = prebidVastPlugin;
+
+if (window.BCVideo_PrebidPluginApiQue) {
+	BCVideo_PrebidPluginApiQue.push(prebidVastPlugin);
+}
