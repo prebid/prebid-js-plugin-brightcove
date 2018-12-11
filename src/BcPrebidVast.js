@@ -19,6 +19,7 @@ var DEFAULT_PREBID_CACHE_URL = '//prebid.adnxs.com/pbc/v1/cache';
 var MOL_PLUGIN_URL = '//acdn.adnxs.com/video/plugins/mol/videojs_5.vast.vpaid.min.js';
 
 var $$PREBID_GLOBAL$$ = _prebidGlobal.getGlobal();
+var _localPBJS = _prebidGlobal.getLocal();
 
 _logger.always(_prefix, 'Version 0.4.1');
 
@@ -41,14 +42,14 @@ var DEFAULT_SCRIPT_LOAD_TIMEOUT = 3000;
 // the function does bidding and returns bids thru callback
 var BC_bidders_added = false;
 function doPrebid(options, callback) {
-	if ($$PREBID_GLOBAL$$.bc_pbjs && options.biddersSpec) {
+	if (_localPBJS.bc_pbjs && options.biddersSpec) {
 		if (options.clearPrebid) {
-			$$PREBID_GLOBAL$$.bc_pbjs.adUnits = [];
-			$$PREBID_GLOBAL$$.bc_pbjs.bidderSettings = {};
-			$$PREBID_GLOBAL$$.bc_pbjs.medianetGlobals = {};
+			_localPBJS.bc_pbjs.adUnits = [];
+			_localPBJS.bc_pbjs.bidderSettings = {};
+			_localPBJS.bc_pbjs.medianetGlobals = {};
 			BC_bidders_added = false;
 		}
-		$$PREBID_GLOBAL$$.bc_pbjs.que = $$PREBID_GLOBAL$$.bc_pbjs.que || [];
+		_localPBJS.bc_pbjs.que = _localPBJS.bc_pbjs.que || [];
 
 		//
 		// Prebid Video adUnit
@@ -57,15 +58,15 @@ function doPrebid(options, callback) {
 			_logger.log(_prefix, 'MESSAGE: got bids back: ', bids);
 		};
 
-		$$PREBID_GLOBAL$$.bc_pbjs.que.push(function() {
+		_localPBJS.bc_pbjs.que.push(function() {
 			if (!BC_bidders_added) {
 				BC_bidders_added = true;
-				specifyBidderAliases(options.bidderAliases, $$PREBID_GLOBAL$$.bc_pbjs);
+				specifyBidderAliases(options.bidderAliases, _localPBJS.bc_pbjs);
 				prepareBidderSettings(options);
 				if (options.bidderSettings) {
-					$$PREBID_GLOBAL$$.bc_pbjs.bidderSettings = options.bidderSettings;
+					_localPBJS.bc_pbjs.bidderSettings = options.bidderSettings;
 				}
-				$$PREBID_GLOBAL$$.bc_pbjs.addAdUnits(options.biddersSpec); // add your ad units to the bid request
+				_localPBJS.bc_pbjs.addAdUnits(options.biddersSpec); // add your ad units to the bid request
 			}
 
 			if (options.prebidConfigOptions) {
@@ -87,10 +88,10 @@ function doPrebid(options, callback) {
                         delete options.prebidConfigOptions.cache;
                     }
                 }
-				$$PREBID_GLOBAL$$.bc_pbjs.setConfig(options.prebidConfigOptions);
+				_localPBJS.bc_pbjs.setConfig(options.prebidConfigOptions);
 			}
 
-			$$PREBID_GLOBAL$$.bc_pbjs.requestBids({
+			_localPBJS.bc_pbjs.requestBids({
 				timeout: (options.prebidTimeout && options.prebidTimeout > 0) ? options.prebidTimeout : 700,
 				bidsBackHandler: function(bids) { // this function will be called once bids are returned
 					logBids(bids);
@@ -204,10 +205,10 @@ function loadPrebidScript(options, fromHeader) {
 							dfpOpts.bid = options.dfpParameters.bid;
 						}
 						_logger.log(_prefix, 'DFP buildVideoUrl options: ', dfpOpts);
-						$$PREBID_GLOBAL$$.prebid_creative = $$PREBID_GLOBAL$$.bc_pbjs.adServers.dfp.buildVideoUrl(dfpOpts);
+						_localPBJS.prebid_creative = _localPBJS.bc_pbjs.adServers.dfp.buildVideoUrl(dfpOpts);
 						BC_prebid_in_progress = false;
 						dispatchPrebidDoneEvent();
-						_logger.log(_prefix, 'Selected VAST url: ' + $$PREBID_GLOBAL$$.prebid_creative);
+						_logger.log(_prefix, 'Selected VAST url: ' + _localPBJS.prebid_creative);
 					}
 	    			else if (options.adServerCallback) {
 	    				// use 3rd party ad server if ad server callback present in options
@@ -223,15 +224,15 @@ function loadPrebidScript(options, fromHeader) {
 						}
 						if (func) {
 							func(arrBids, function(creative) {
-	    						$$PREBID_GLOBAL$$.prebid_creative = creative;
+								_localPBJS.prebid_creative = creative;
 	    		            	BC_prebid_in_progress = false;
 								dispatchPrebidDoneEvent();
-								_logger.log(_prefix, 'Selected VAST url: ' + $$PREBID_GLOBAL$$.prebid_creative);
+								_logger.log(_prefix, 'Selected VAST url: ' + _localPBJS.prebid_creative);
 							});
 						}
 						else {
 							_logger.log(_prefix, 'Select winner by CPM because 3rd party callback is invalid');
-							$$PREBID_GLOBAL$$.prebid_creative = selectWinnerByCPM(arrBids);
+							_localPBJS.prebid_creative = selectWinnerByCPM(arrBids);
 							BC_prebid_in_progress = false;
 							dispatchPrebidDoneEvent();
 						}
@@ -239,7 +240,7 @@ function loadPrebidScript(options, fromHeader) {
 	    			else {
 	    				// select vast url from bid with higher cpm
 	        			_logger.log(_prefix, 'Select winner by CPM');
-	    				$$PREBID_GLOBAL$$.prebid_creative = selectWinnerByCPM(arrBids);
+						_localPBJS.prebid_creative = selectWinnerByCPM(arrBids);
 	    	            BC_prebid_in_progress = false;
 						dispatchPrebidDoneEvent();
 	    			}
@@ -247,7 +248,7 @@ function loadPrebidScript(options, fromHeader) {
     			else {
     				// no bids
     	            BC_prebid_in_progress = false;
-					_logger.log(_prefix, 'Selected VAST url: ' + $$PREBID_GLOBAL$$.prebid_creative);
+					_logger.log(_prefix, 'Selected VAST url: ' + _localPBJS.prebid_creative);
 				}
 			});
     	}
@@ -286,7 +287,7 @@ function loadPrebidScript(options, fromHeader) {
 
 		var pbjsScr = document.createElement('script');
 		pbjsScr.onload = function() {
-			$$PREBID_GLOBAL$$.bc_pbjs = pbjs;
+			_localPBJS.bc_pbjs = pbjs;
 			// after prebid.js is successfully loaded try to invoke prebid.
 			doInternalPrebid();
 		};
@@ -296,7 +297,7 @@ function loadPrebidScript(options, fromHeader) {
 			if (options.pageNotificationCallback) {
 				options.pageNotificationCallback('message', 'Failed to load prebid.js');
 			}
-			$$PREBID_GLOBAL$$.bc_pbjs_error = true;
+			_localPBJS.bc_pbjs_error = true;
 			dispatchPrebidDoneEvent();
 		};
 		pbjsScr.id = 'bc-pb-script';
@@ -307,24 +308,6 @@ function loadPrebidScript(options, fromHeader) {
 		node.appendChild(pbjsScr);
 	}
 	else {
-		// plugin has been loaded in the document body or has been embedded in a player
-		// var frame = document.createElement('iframe');
-		// frame.id = 'pbjs_container_' + Date.now();
-		// frame.src = 'about:blank';
-		// frame.marginWidth = '0';
-		// frame.marginHeight = '0';
-		// frame.frameBorder = '0';
-		// frame.width = '0%';
-		// frame.height = '0%';
-		// frame.style.position = 'absolute';
-		// frame.style.left = '0px';
-		// frame.style.top = '0px';
-		// frame.style.margin = '0px';
-		// frame.style.padding = '0px';
-		// frame.style.border = 'none';
-		// frame.style.width = '0%';
-		// frame.style.height = '0%';
-
 		var frameID = 'pbjs_container_' + Date.now().valueOf();
 		var frame = _pbjsIFrame = createEmptyIframe(frameID);
 		document.body.appendChild(frame);
@@ -338,7 +321,7 @@ function loadPrebidScript(options, fromHeader) {
 			if (options.pageNotificationCallback) {
 				options.pageNotificationCallback('message', 'Failed to load prebid.js in iframe (timeout)');
 			}
-			$$PREBID_GLOBAL$$.bc_pbjs_error = true;
+			_localPBJS.bc_pbjs_error = true;
 			dispatchPrebidDoneEvent();
 			timeout = null;
 		}, !!scriptLoadTimeout ? scriptLoadTimeout : DEFAULT_SCRIPT_LOAD_TIMEOUT);
@@ -359,7 +342,7 @@ function loadPrebidScript(options, fromHeader) {
 					}
 					// check only our messages 'ready' and 'error' from ifarme
 					if (msgEvent.data === 'ready') {
-						$$PREBID_GLOBAL$$.bc_pbjs = frame.contentWindow.pbjs;
+						_localPBJS.bc_pbjs = frame.contentWindow.pbjs;
 						// after prebid.js is successfully loaded try to invoke prebid.
 						doInternalPrebid();
 						frame.contentWindow.removeEventListener('message', onLoadIFrame);
@@ -370,7 +353,7 @@ function loadPrebidScript(options, fromHeader) {
 						if (options.pageNotificationCallback) {
 							options.pageNotificationCallback('message', 'Failed to load prebid.js inframe');
 						}
-						$$PREBID_GLOBAL$$.bc_pbjs_error = true;
+						_localPBJS.bc_pbjs_error = true;
 						dispatchPrebidDoneEvent();
 						frame.contentWindow.removeEventListener('message', onLoadIFrame);
 					}
@@ -385,7 +368,7 @@ function loadPrebidScript(options, fromHeader) {
 				if (options.pageNotificationCallback) {
 					options.pageNotificationCallback('message', 'Failed to load prebid.js. Error: ' + e);
 				}
-				$$PREBID_GLOBAL$$.bc_pbjs_error = true;
+				_localPBJS.bc_pbjs_error = true;
 				dispatchPrebidDoneEvent();
 			}
 		}
@@ -662,11 +645,11 @@ function renderAd(options) {
 	else if (BC_prebid_in_progress) {
 		// wait until prebid done
 		document.addEventListener('prebid_done_loading_script', function() {
-			if ($$PREBID_GLOBAL$$.prebid_creative) {
+			if (_localPBJS.prebid_creative) {
 				// render ad
 				if (!options.onlyPrebid) {
-					options.creative = $$PREBID_GLOBAL$$.prebid_creative;
-					$$PREBID_GLOBAL$$.prebid_creative = null;
+					options.creative = _localPBJS.prebid_creative;
+					_localPBJS.prebid_creative = null;
 					_vastManagerObj = new _vastManager();
 					options.doPrebid = null;
 					_vastManagerObj.play(_player, options.creative, options);
@@ -674,11 +657,11 @@ function renderAd(options) {
 			}
 		});
 	}
-	else if ($$PREBID_GLOBAL$$.prebid_creative) {
+	else if (_localPBJS.prebid_creative) {
 		// render ad if vast url from prebid is ready
 		if (!options.onlyPrebid) {
-			options.creative = $$PREBID_GLOBAL$$.prebid_creative;
-			$$PREBID_GLOBAL$$.prebid_creative = null;
+			options.creative = _localPBJS.prebid_creative;
+			_localPBJS.prebid_creative = null;
 			_vastManagerObj = new _vastManager();
 			options.doPrebid = null;
 			_vastManagerObj.play(_player, options.creative, options);
@@ -735,7 +718,7 @@ var prebidVastPlugin = function(player) {
 		// @endexclude
 
 		run: function(options) {
-			if (!$$PREBID_GLOBAL$$.bc_pbjs && !BC_prebid_in_progress && !options.creative) {
+			if (!_localPBJS.bc_pbjs && !BC_prebid_in_progress && !options.creative) {
 				loadPrebidScript(options, false);
 			}
 			// Brightcove Player v5.28.1 issues alert on every tech() call

@@ -108,7 +108,7 @@ function loadPrebidPlugin(path, loadedCallback) {
 	// _prebidPluginLoadState = LOAD_IN_PROGRESS;
 
 	_pluginScrEl = document.createElement('script');
-	_pluginScrEl.id = 'bc-prebid-plugin-script';
+	_pluginScrEl.id = 'bc-prebid-plugin-script-' + _loaderId;
 	_pluginScrEl.async = true;
 	_pluginScrEl.type = 'text/javascript';
 	_pluginScrEl.src = path;
