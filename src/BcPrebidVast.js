@@ -10,6 +10,8 @@ var _vastManager = require('./VastManager.js');
 var _adListManager = require('./AdListManager.js');
 var _prebidCommunicator = require('./PrebidCommunicator.js');
 var _logger = require('./Logging.js');
+
+var PLUGIN_VERSION = '0.4.1';
 var _prefix = 'PrebidVast->';
 var _pbjsIFrame = null;
 var _molIFrame = null;
@@ -21,26 +23,72 @@ var MOL_PLUGIN_URL = '//acdn.adnxs.com/video/plugins/mol/videojs_5.vast.vpaid.mi
 var $$PREBID_GLOBAL$$ = _prebidGlobal.getGlobal();
 var _localPBJS = _prebidGlobal.getLocal();
 
-_logger.always(_prefix, 'Version 0.4.1');
+_logger.always(_prefix, 'Prebid Plugin Version: ' + PLUGIN_VERSION);
 
 var BC_prebid_in_progress = $$PREBID_GLOBAL$$.plugin_prebid_options && $$PREBID_GLOBAL$$.plugin_prebid_options.biddersSpec;
 
-// var defaultTemplate = '<!DOCTYPE html>' +
-//     '<html lang="en">' +
-//     '<head><meta charset="UTF-8"></head>' +
-//     '<body style="margin:0;padding:0">' +
-//     '<script type="text/javascript">' +
-// 	'function notifyParent(succ) {' +
-//     'window.parent.postMessage(succ ? \'ready\' : \'error\', \'{{origin}}\');' +
-// 	'}' +
-//     '</script>' +
-//     '<script type="text/javascript" src="{{iframePrebid_JS}}" onload="notifyParent(true);" onerror="notifyParent(false);"></script>' +
-//     '</body>' +
-// 	'</html>';
 var DEFAULT_SCRIPT_LOAD_TIMEOUT = 3000;
+
+// UTIL FUNCTIONS FOR LOADING JS IFRAMES
+function getOrigin() {
+    if (window.location.origin) {
+        return window.location.origin;
+    }
+    else {
+        return window.location.protocol + '//' + window.location.hostname + (window.location.port ? ':' + window.location.port : '');
+    }
+}
+
+function insertHiddenIframe (id) {
+    var iframe = document.createElement('iframe');
+    iframe.id = id;
+    iframe.src = 'javascript:false';
+    iframe.marginWidth = '0';
+    iframe.marginHeight = '0';
+    iframe.frameBorder = '0';
+    iframe.width = '0%';
+    iframe.height = '0%';
+    iframe.style.position = 'absolute';
+    iframe.style.left = '0px';
+    iframe.style.top = '0px';
+    iframe.style.margin = '0px';
+    iframe.style.padding = '0px';
+    iframe.style.border = 'none';
+    iframe.style.width = '0%';
+    iframe.style.height = '0%';
+    iframe.tabIndex = '-1';
+
+    document.body.appendChild(iframe);
+
+    return iframe;
+}
+
+function writeAsyncScriptToFrame (targetFrame, jsPath, includeVJS, origin) {
+    var doc = targetFrame.contentWindow.document;
+    var docString = '<body onload="' +
+        'var myjs = document.createElement(\'script\');' +
+        ' myjs.src = \'' + jsPath + '\';' +
+        ' myjs.onload = function () { notifyParent(true); };' +
+        ' myjs.onerror = function () { notifyParent(false); };' +
+        ' document.body.appendChild(myjs);">';
+    docString += '<script type="text/javascript">' + '\n' +
+        'function notifyParent(succ) {' + '\n' +
+        '  window.postMessage(succ ? "ready" : "error", "' + origin + '");' + '\n' +
+        '}' + '\n';
+    if (includeVJS) {
+        docString += 'var vjs = videojs = parent.videojs;' + '\n';
+    }
+    docString += '<\/script>' + '\n' + '</body>';
+
+    doc.open().write(docString);
+    doc.close();
+}
+
+// PREBID FUNCTIONS
 
 // the function does bidding and returns bids thru callback
 var BC_bidders_added = false;
+
 function doPrebid(options, callback) {
 	if (_localPBJS.bc_pbjs && options.biddersSpec) {
 		if (options.clearPrebid) {
@@ -266,8 +314,9 @@ function loadPrebidScript(options, fromHeader) {
 		}
 	}
 
+	var debugMsg;
 	if (!document.body) {
-		// plugin has been loaded in a headed (document body is not ready)
+		// plugin has been loaded in the html page <head> (document body is not ready)
 		if (document.getElementById('bc-pb-script')) {
 			// if prebid.js is already loaded try to invoke prebid.
 			doInternalPrebid();
@@ -276,148 +325,112 @@ function loadPrebidScript(options, fromHeader) {
 
 		var pbjsScr = document.createElement('script');
 		pbjsScr.onload = function() {
-			_localPBJS.bc_pbjs = pbjs;
 			// after prebid.js is successfully loaded try to invoke prebid.
-			doInternalPrebid();
+			_localPBJS.bc_pbjs = frame.contentWindow.pbjs;
+
+            _logger.log(_prefix, 'Prebid.js loaded successfully');
+
+            doInternalPrebid();
 		};
 		pbjsScr.onerror = function(e) {
 			// failed to load prebid.js.
-			_logger.error(_prefix, 'Failed to load prebid.js. Error event: ', e);
-			if (options.pageNotificationCallback) {
-				options.pageNotificationCallback('message', 'Failed to load prebid.js');
-			}
 			_localPBJS.bc_pbjs_error = true;
+
+            debugMsg = 'Failed to load prebid.js in header.';
+			_logger.error(_prefix, debugMsg + ' Error event: ', e);
+
+			if (options.pageNotificationCallback) {
+				options.pageNotificationCallback('message', debugMsg);
+			}
+
 			dispatchPrebidDoneEvent();
 		};
-		pbjsScr.id = 'bc-pb-script';
+
+		pbjsScr.id = 'bc-pb-script-' + Date.now.valueOf();
 		pbjsScr.async = true;
 		pbjsScr.type = 'text/javascript';
 		pbjsScr.src = !!prebidPath ? prebidPath : DEFAULT_PREBID_JS_URL;
+
 		var node = document.getElementsByTagName('head')[0];
 		node.appendChild(pbjsScr);
 	}
 	else {
-		var frameID = 'pbjs_container_' + Date.now().valueOf();
-		var frame = _pbjsIFrame = createEmptyIframe(frameID);
-		document.body.appendChild(frame);
-
-		var prebidJSSrc = (!!prebidPath ? prebidPath : DEFAULT_PREBID_JS_URL);
-		var frameDocStr = createIFrameDocString(prebidJSSrc, getOrigin());
-
-		var timeout = setTimeout(function() {
+        var timeout = setTimeout(function() {
 			// failed to load prebid.js in iframe.
-			_logger.error(_prefix, 'Failed to load prebid.js in iframe (timeout).');
-			if (options.pageNotificationCallback) {
-				options.pageNotificationCallback('message', 'Failed to load prebid.js in iframe (timeout)');
-			}
 			_localPBJS.bc_pbjs_error = true;
-			dispatchPrebidDoneEvent();
 			timeout = null;
+
+            debugMsg = 'Failed to load prebid.js in iframe (timeout).';
+			_logger.error(_prefix, debugMsg);
+
+			if (options.pageNotificationCallback) {
+				options.pageNotificationCallback('message', debugMsg);
+			}
+
+			dispatchPrebidDoneEvent();
 		}, !!scriptLoadTimeout ? scriptLoadTimeout : DEFAULT_SCRIPT_LOAD_TIMEOUT);
 
-		var iframeDoc = frame.contentWindow && frame.contentWindow.document;
-		if (iframeDoc) {
-			try {
-				iframeDoc.open();
-				iframeDoc.write(frameDocStr);
-				iframeDoc.close();
-				var onLoadIFrame = function(msgEvent) {
-					if (timeout) {
-						clearTimeout(timeout);
-					}
-					else {
-						// prebid.js loadding timeout already happened. do nothing
-						return;
-					}
-					// check only our messages 'ready' and 'error' from ifarme
-					if (msgEvent.data === 'ready') {
-						_localPBJS.bc_pbjs = frame.contentWindow.pbjs;
-						// after prebid.js is successfully loaded try to invoke prebid.
-						doInternalPrebid();
-						frame.contentWindow.removeEventListener('message', onLoadIFrame);
-					}
-					else if (msgEvent.data === 'error') {
-						// failed to load prebid.js.
-						_logger.error(_prefix, 'Failed to load prebid.js in iframe.');
-						if (options.pageNotificationCallback) {
-							options.pageNotificationCallback('message', 'Failed to load prebid.js inframe');
-						}
-						_localPBJS.bc_pbjs_error = true;
-						dispatchPrebidDoneEvent();
-						frame.contentWindow.removeEventListener('message', onLoadIFrame);
-					}
-				};
+        var onLoadIFrame = function (msgEvent) {
+            if (timeout) {
+                clearTimeout(timeout);
+                timeout = null;
+            }
+            else {
+                // prebid.js loading timeout already happened. do nothing
+                return;
+            }
+            // check only our messages 'ready' and 'error' from ifarme
+            if (msgEvent.data === 'ready') {
+                frame.contentWindow.removeEventListener('message', onLoadIFrame);
 
-				// window.addEventListener('message', onLoadIFrame);
-                frame.contentWindow.addEventListener('message', onLoadIFrame);
-			}
-			catch (e) {
-				// failed to load prebid.js.
-				_logger.error(_prefix, 'Failed to load prebid.js.');
-				if (options.pageNotificationCallback) {
-					options.pageNotificationCallback('message', 'Failed to load prebid.js. Error: ' + e);
-				}
-				_localPBJS.bc_pbjs_error = true;
-				dispatchPrebidDoneEvent();
-			}
-		}
-	}
-}
+                // after prebid.js is successfully loaded try to invoke prebid.
+                _localPBJS.bc_pbjs = frame.contentWindow.pbjs;
 
-function getOrigin() {
-    if (window.location.origin) {
-        return window.location.origin;
-    }
-    else {
-        return window.location.protocol + '//' +
-            window.location.hostname +
-            (window.location.port ? ':' + window.location.port : '');
-    }
-}
+                _logger.log(_prefix, 'Prebid.js loaded successfully');
 
-function createEmptyIframe (id) {
-    var frame = document.createElement('iframe');
-    frame.id = id;
-    frame.src = 'javascript:false';
-    frame.marginWidth = '0';
-    frame.marginHeight = '0';
-    frame.frameBorder = '0';
-    frame.width = '0%';
-    frame.height = '0%';
-    frame.style.position = 'absolute';
-    frame.style.left = '0px';
-    frame.style.top = '0px';
-    frame.style.margin = '0px';
-    frame.style.padding = '0px';
-    frame.style.border = 'none';
-    frame.style.width = '0%';
-    frame.style.height = '0%';
-    frame.tabIndex = '-1';
-    // frame.sandbox = 'allow-forms allow-pointer-lock allow-popups allow-same-origin allow-scripts allow-top-navigation';
+                doInternalPrebid();
+            }
+            else if (msgEvent.data === 'error') {
+                frame.contentWindow.removeEventListener('message', onLoadIFrame);
 
-    return frame;
-}
+                // failed to load prebid.js.
+                _localPBJS.bc_pbjs_error = true;
 
-function createIFrameDocString (jsPath, origin, includeVJS) {
+                debugMsg = 'Failed to load prebid.js in iframe.';
+                _logger.error(_prefix, debugMsg);
 
-    var docString = '<!DOCTYPE html>' +
-        '<html lang="en">' +
-        '<head><meta charset="UTF-8"></head>' +
-        '<body style="margin:0;padding:0">' +
-        '<script type="text/javascript">\n';
+                if (options.pageNotificationCallback) {
+                    options.pageNotificationCallback('message', debugMsg);
+                }
 
-		if (includeVJS) {
-            docString += 'var vjs = videojs = parent.videojs;\n';
+                dispatchPrebidDoneEvent();
+            }
+        };
+
+        try {
+            var frameID = 'bc-pbjs-frame-' + Date.now().valueOf();
+            var prebidJSSrc = (!!prebidPath ? prebidPath : DEFAULT_PREBID_JS_URL);
+
+            var frame = _pbjsIFrame = insertHiddenIframe(frameID);
+
+            writeAsyncScriptToFrame(frame, prebidJSSrc, false, getOrigin());
+
+            frame.contentWindow.addEventListener('message', onLoadIFrame);
         }
-    	docString += 'function notifyParent(succ) {' +
-        '  window.postMessage(succ ? "ready" : "error", "' + origin + '");' +
-        '}' +
-        '<\/script>' +
-        '<script type="text/javascript" src="' + jsPath + '" onload="notifyParent(true);" onerror="notifyParent(false);"><\/script>' +
-        '</body>' +
-        '</html>';
+        catch (e) {
+            // failed to load prebid.js.
+            _localPBJS.bc_pbjs_error = true;
 
-    return docString;
+            debugMsg = 'Failed to load prebid.js - caught error writing iFrame.';
+            _logger.error(_prefix, debugMsg);
+
+            if (options.pageNotificationCallback) {
+                options.pageNotificationCallback('message', debugMsg + ' Error: ' + e);
+            }
+
+            dispatchPrebidDoneEvent();
+        }
+    }
 }
 
 function convertOptionsToArray(options) {
@@ -449,7 +462,7 @@ function loadMolPlugin(callback) {
 
     var vjs = window.videojs || false;
     if (!vjs) {
-        _logger.warn(_prefix, 'Videojs is not loaded yet');
+        _logger.warn(_prefix, 'Can\'t load MOL Plugin now - Videojs isn\'t loaded yet.');
         callback(false);
         return;
     }
@@ -460,55 +473,55 @@ function loadMolPlugin(callback) {
             var waitMolLoaded = setInterval(function() {
                 if (!_molLoadingInProgress) {
                     clearInterval(waitMolLoaded);
-                    _logger.log(_prefix, 'MailOnline Plugin ' + (_molLoaded ? '' : 'not ') + 'loaded successfully - interval cleared');
+                    _logger.log(_prefix, 'MailOnline Plugin ' + (_molLoaded ? '' : 'not ') + 'loaded successfully - wait interval cleared');
                     callback(_molLoaded);
                 }
             }, 50);
             return;
         }
 
+        var onLoadIFrame = function (msgEvent) {
+            // check only our messages 'ready' and 'error' from ifarme
+            if (msgEvent.data === 'ready') {
+                frame.contentWindow.removeEventListener('message', onLoadIFrame);
+
+                _molLoaded = true;
+                _molLoadingInProgress = false;
+
+                _logger.log(_prefix, 'MailOnline Plugin loaded successfully');
+
+                // VIDLA-4391 - Add support for multiple players on the same page, each with a unique MOL plugin loaded from an iFrames
+                if (_molIFrame && _molIFrame.contentWindow && _molIFrame.contentWindow.bc_vastClientFunc) {
+                    _player.vastClient = _molIFrame.contentWindow.bc_vastClientFunc;
+                }
+
+                callback(true);
+            }
+            else if (msgEvent.data === 'error') {
+                frame.contentWindow.removeEventListener('message', onLoadIFrame);
+
+                _molLoadingInProgress = false;
+
+                _logger.error(_prefix, 'Failed to load MailOnline Plugin. Error event: ', e);
+                callback(false);
+            }
+        };
+
         _molLoadingInProgress = true;
 
-        var frameID = 'mol_container_' + Date.now();
-        var frame = _molIFrame = createEmptyIframe(frameID);
+        var frameID = 'bc-mol-frame-' + Date.now();
+        var frame = _molIFrame = insertHiddenIframe(frameID);
 
-        document.body.appendChild(frame);
+        try {
+            writeAsyncScriptToFrame(frame, MOL_PLUGIN_URL, true, getOrigin() );
 
-        var frameDocStr = createIFrameDocString(MOL_PLUGIN_URL, getOrigin(), true);
+            frame.contentWindow.addEventListener('message', onLoadIFrame);
+        }
+        catch (e) {
+            // failed to load MOL.
+            _logger.error(_prefix, 'Failed to load Mail Online Plugin - caught error writing iFrame.');
 
-        var iframeDoc = frame.contentWindow && frame.contentWindow.document;
-
-        if (iframeDoc) {
-            try {
-                iframeDoc.open();
-                iframeDoc.write(frameDocStr);
-                iframeDoc.close();
-                var onLoadIFrame = function(msgEvent) {
-                    // check only our messages 'ready' and 'error' from ifarme
-                    if (msgEvent.data === 'ready') {
-                        frame.contentWindow.removeEventListener('message', onLoadIFrame);
-                        _logger.log(_prefix, 'MailOnline Plugin loaded successfully');
-                        _molLoaded = true;
-                        _molLoadingInProgress = false;
-                        // VIDLA-4391 - Add support for multiple players on the same page, each with a unique MOL plugin loaded from an iFrames
-                        if (_molIFrame && _molIFrame.contentWindow && _molIFrame.contentWindow.bc_vastClientFunc) {
-                            _player.vastClient = _molIFrame.contentWindow.bc_vastClientFunc;
-                        }
-                        callback(true);
-                    }
-                    else if (msgEvent.data === 'error') {
-                        frame.contentWindow.removeEventListener('message', onLoadIFrame);
-                        _logger.error(_prefix, 'Failed to load MailOnline Plugin. Error event: ', e);
-                        _molLoadingInProgress = false;
-                        callback(false);
-                    }
-                };
-                frame.contentWindow.addEventListener('message', onLoadIFrame);
-            }
-            catch (e) {
-                // failed to load MOL.
-                _logger.error(_prefix, 'Failed to load Mail Online Plugin.');
-            }
+            callback(false);
         }
     }
     else {
@@ -638,7 +651,9 @@ var prebidVastPlugin = function(player) {
 		stop: function() {
 			if (_vastManagerObj) {
 				_vastManagerObj.stop();
-			}
+			} else if (_adListManagerObj) {
+                _adListManagerObj.stop();
+            }
 		}
 	};
 };
