@@ -24,7 +24,7 @@ var vastRenderer = function (player) {
 	function setPlaybackMethodData() {
 		var initPlayback = 'auto';
     	if (_player.currentTime() === 0) {
-    		initPlayback = _player.autoplay() ? 'auto' : 'click';
+            initPlayback = _player.autoplay() ? 'auto' : 'click';
     	}
 		var initAudio = _player.muted() ? 'off' : 'on';
 		_options.initialPlayback = initPlayback;
