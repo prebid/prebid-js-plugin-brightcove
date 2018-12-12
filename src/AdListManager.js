@@ -23,6 +23,7 @@ var adListManager = function () {
 	var _hasPreroll = false;
 	var _isPostroll = false;
 	var _adPlaying = false;
+	var _adTime;
 	var _firstAd = true;
 	var _mainVideoEnded = false;
     var _savedMarkers;
@@ -78,6 +79,19 @@ var adListManager = function () {
 		}
 	};
 
+	// force next playlist video
+	var forceNextVideoForLastAd = function forceNextVideoForLastAd() {
+		// after ad played brightcove player stopped to fire 'playlistitem' events !?!?
+		var isLastAd = _arrAdList[_arrAdList.length - 1].adTime === _adTime;
+		if (isLastAd && _player.playlist.currentIndex() < _player.playlist.lastIndex()) {
+			// when last ad done, and main video is ended, and main video is not last video in playlist
+			// force to play next video in playlist
+			_player.one('ended', function() {
+				startNextPlaylistVideo();
+			});
+		}
+	};
+
 	// restore main content after ad is finished
 	var resetContent = function resetContent() {
 		if (_isPostroll) {
@@ -106,7 +120,6 @@ var adListManager = function () {
 		else {
 			showCover(false);
 		}
-		_isPostroll = false;
 		_options = null;
 		setTimeout(function() {
 			_adPlaying = false;
@@ -121,6 +134,12 @@ var adListManager = function () {
 		if (adData) {
 			adData.status = AD_STATUS_DONE;
 		}
+		if (!_isPostroll) {
+			if (_player.playlist && _player.playlist.autoadvance) {
+				forceNextVideoForLastAd();
+			}
+		}
+		_isPostroll = false;
 	};
 
 	if (!Array.prototype.find) {
@@ -161,11 +180,17 @@ var adListManager = function () {
 
 	// event handler for 'playlistitem' event
 	function nextListItemHandler() {
+		if (_playlistIdx === _player.playlist.currentIndex()) {
+			// ignore second call event handler for same playlist item
+			return;
+		}
 		_player.off('timeupdate', checkPrepareTime);
 		_savedMarkers = null;
 		_prerollNeedClickToPlay = false;
 		showCover(true);
-		_playlistIdx++;
+		if (_player.playlist && _player.playlist.currentIndex) {
+			_playlistIdx = _player.playlist.currentIndex();
+		}
 		_contentDuration = 0;
 		_player.one('loadedmetadata', function() {
 			_mainVideoEnded = false;
@@ -328,6 +353,7 @@ var adListManager = function () {
 		_adIndicator.innerHTML = _options.adText ? _options.adText : 'Ad';
 		adData.status = AD_STATUS_PLAYING;
 		_firstAd = false;
+		_adTime = adData.adTime;
 		_vastRendererObj.playAd(adData.adTag, _options, firstVideoPreroll, _mobilePrerollNeedClick, _prerollNeedClickToPlay, eventCallback);
 	};
 
@@ -351,7 +377,7 @@ var adListManager = function () {
 					}
 					else {
 						adData.status = AD_STATUS_DONE;
-						callback(null);
+						callback(null, adData.status);
 					}
 				});
 			}
@@ -364,7 +390,7 @@ var adListManager = function () {
 				var interval = setInterval(function() {
 					if (adData.status != AD_STATUS_TAG_REQUEST) {
 						clearInterval(interval);
-						callback(adData.adTag ? adData : null);
+						callback(adData.adTag ? adData : null, adData.status);
 					}
 				}, 50);
 			}
@@ -377,7 +403,7 @@ var adListManager = function () {
 	// callback to handle marker reached event from marker component
 	var markerReached = function markerReached(marker) {
 		var adTime = marker.time;
-		getAdData(adTime, function(adData) {
+		getAdData(adTime, function(adData, status) {
 			if (adData) {
 				traceMessage({data: {message: 'Play Ad at time = ' + adTime}});
 				_isPostroll = adTime === _contentDuration;
@@ -455,6 +481,11 @@ var adListManager = function () {
 			else {
 				if (!_mainVideoEnded) {
 					showCover(false);
+				}
+				if (status === AD_STATUS_DONE && _player.playlist && _player.playlist.currentIndex() >= 0) {
+					_player.play();
+					_adTime = adTime;
+					forceNextVideoForLastAd();
 				}
 			}
 		});
