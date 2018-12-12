@@ -24,7 +24,7 @@ var _prebidPluginObj;
 var _pluginScrEl;
 
 // STATE
-window.BCVideo_PrebidPluginApiQue = null;
+$$PREBID_GLOBAL$$.BCVideo_PrebidPluginApiQue = null;
 var _isLoadedFromPage = false;
 var _playerElId;
 
@@ -55,11 +55,11 @@ function start () {
 }
 
 function getLoadedPluginAPI () {
-    if (!BCVideo_PrebidPluginApiQue || !BCVideo_PrebidPluginApiQue.length) {
+    if (!$$PREBID_GLOBAL$$.BCVideo_PrebidPluginApiQue || !$$PREBID_GLOBAL$$.BCVideo_PrebidPluginApiQue.length) {
         _logger.log(LOGGER_PREFIX, 'ERROR - No loaded Plugin API available to run!');
         return { run: function () {} };
     }
-    return BCVideo_PrebidPluginApiQue.shift();
+    return $$PREBID_GLOBAL$$.BCVideo_PrebidPluginApiQue.shift();
 }
 
 function loadPrebidPlugin(path, loadedCallback, errorCallback) {
@@ -97,16 +97,19 @@ function apiInit() {
         return;
     }
     // Second, make sure we only initialize the API once
-    if (!!window.BCVideo_PrebidPluginApiQue) {
+    if (!!$$PREBID_GLOBAL$$.BCVideo_PrebidPluginApiQue) {
         return;
     }
 
     // Create que to store plugin API objects as each one loads
-    window.BCVideo_PrebidPluginApiQue = [];
+    $$PREBID_GLOBAL$$.BCVideo_PrebidPluginApiQue = [];
 
     var prebidPluginFunc = function (options) {
         var player = _player = this;
         _options = options;
+
+        // load prebid plugin and run it when it is loaded
+        var path = options && options.prebidPluginPath ? options.prebidPluginPath : DEFAULT_PLUGIN_JS_URL;
 
         var runPlugin = function () {
             var apiFunc = getLoadedPluginAPI();
@@ -114,12 +117,8 @@ function apiInit() {
             _prebidPluginObj.run(options);						// uses local var options
         };
 
-        var handleError = function () {
-            // TODO: Error handling for main plugin loading error
-        };
-
-        // load prebid plugin and run it when it is loaded
-        var path = options && options.prebidPluginPath ? options.prebidPluginPath : DEFAULT_PLUGIN_JS_URL;
+        // Can add more robust error handling here
+        var handleError = function () {};
 
         if (!_isLoadedFromPage) {
             loadPrebidPlugin(path, runPlugin, handleError);
@@ -128,7 +127,6 @@ function apiInit() {
 
 	var commandPluginFunc = function(command) {
         if (command === 'stop') {
-            // TODO: This reference will be ambiguous for multiple non-embedded player + Loader configurations on the same page.
             if (_prebidPluginObj) {
                 _prebidPluginObj.stop();
             }

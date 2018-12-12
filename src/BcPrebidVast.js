@@ -661,6 +661,6 @@ var prebidVastPlugin = function(player) {
 // EXPORTS
 module.exports = prebidVastPlugin;
 
-if (window.BCVideo_PrebidPluginApiQue) {
-	BCVideo_PrebidPluginApiQue.push(prebidVastPlugin);
+if ($$PREBID_GLOBAL$$.BCVideo_PrebidPluginApiQue) {
+    $$PREBID_GLOBAL$$.BCVideo_PrebidPluginApiQue.push(prebidVastPlugin);
 }
