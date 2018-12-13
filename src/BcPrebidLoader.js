@@ -105,7 +105,8 @@ function apiInit() {
     $$PREBID_GLOBAL$$.BCVideo_PrebidPluginApiQue = [];
 
     var prebidPluginFunc = function (options) {
-        var player = _player = this;
+		var player = this;
+		_player = this;
         _options = options;
 
         // load prebid plugin and run it when it is loaded
@@ -130,8 +131,8 @@ function apiInit() {
             if (_prebidPluginObj) {
                 _prebidPluginObj.stop();
             }
-        };
-    }
+        }
+    };
 
     // ONLY register plugins ONCE with global videojs
     if (_vjs.registerPlugin) {

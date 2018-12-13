@@ -7,7 +7,6 @@ var _prebidGlobal = require('./PrebidGlobal.js');
 var _logger = require('./Logging.js');
 var _prefix = 'PrebidVast->PrebidCommunicator';
 
-var $$PREBID_GLOBAL$$ = _prebidGlobal.getGlobal();
 var _localPBJS = _prebidGlobal.getLocal();
 
 var prebidCommunicator = function () {

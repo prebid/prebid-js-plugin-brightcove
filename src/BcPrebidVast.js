@@ -13,7 +13,6 @@ var _logger = require('./Logging.js');
 
 var PLUGIN_VERSION = '0.4.1';
 var _prefix = 'PrebidVast->';
-var _pbjsIFrame = null;
 var _molIFrame = null;
 
 var DEFAULT_PREBID_JS_URL = '//acdn.adnxs.com/prebid/not-for-prod/1/prebid.js';
@@ -411,7 +410,7 @@ function loadPrebidScript(options, fromHeader) {
             var frameID = 'bc-pbjs-frame-' + Date.now().valueOf();
             var prebidJSSrc = (!!prebidPath ? prebidPath : DEFAULT_PREBID_JS_URL);
 
-            var frame = _pbjsIFrame = insertHiddenIframe(frameID);
+            var frame = insertHiddenIframe(frameID);
 
             writeAsyncScriptToFrame(frame, prebidJSSrc, false, getOrigin());
 
@@ -459,7 +458,6 @@ var _molLoadingInProgress = false;
 var _molLoaded = false;
 
 function loadMolPlugin(callback) {
-
     var vjs = window.videojs || false;
     if (!vjs) {
         _logger.warn(_prefix, 'Can\'t load MOL Plugin now - Videojs isn\'t loaded yet.');
@@ -510,10 +508,11 @@ function loadMolPlugin(callback) {
         _molLoadingInProgress = true;
 
         var frameID = 'bc-mol-frame-' + Date.now();
-        var frame = _molIFrame = insertHiddenIframe(frameID);
+		var frame = insertHiddenIframe(frameID);
+		_molIFrame = frame;
 
         try {
-            writeAsyncScriptToFrame(frame, MOL_PLUGIN_URL, true, getOrigin() );
+            writeAsyncScriptToFrame(frame, MOL_PLUGIN_URL, true, getOrigin());
 
             frame.contentWindow.addEventListener('message', onLoadIFrame);
         }
