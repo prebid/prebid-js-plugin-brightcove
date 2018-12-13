@@ -8,6 +8,7 @@ var _logger = require('./Logging.js');
 var _prefix = 'PrebidVast->PrebidCommunicator';
 
 var $$PREBID_GLOBAL$$ = _prebidGlobal.getGlobal();
+var _localPBJS = _prebidGlobal.getLocal();
 
 var prebidCommunicator = function () {
 	var _options;
@@ -48,13 +49,13 @@ var prebidCommunicator = function () {
 							dfpOpts.bid = _options.dfpParameters.bid;
 						}
 						_logger.log(_prefix, 'DFP buildVideoUrl options: ', dfpOpts);
-						creative = $$PREBID_GLOBAL$$.bc_pbjs.adServers.dfp.buildVideoUrl(dfpOpts);
+						creative = _localPBJS.bc_pbjs.adServers.dfp.buildVideoUrl(dfpOpts);
             			_logger.log(_prefix, 'Selected VAST url: ' + creative);
 						if (_callback) {
 							_callback(creative);
         				}
         				else {
-        					$$PREBID_GLOBAL$$.prebid_creative = creative;
+							_localPBJS.prebid_creative = creative;
         				}
         			}
         			else if (_options.adServerCallback) {
@@ -87,7 +88,7 @@ var prebidCommunicator = function () {
 								_callback(creative);
 							}
 							else {
-								$$PREBID_GLOBAL$$.prebid_creative = creative;
+								_localPBJS.prebid_creative = creative;
 							}
 						}
         			}
@@ -99,7 +100,7 @@ var prebidCommunicator = function () {
         					_callback(creative);
         				}
         				else {
-        					$$PREBID_GLOBAL$$.prebid_creative = creative;
+							_localPBJS.prebid_creative = creative;
         				}
         			}
     			}
@@ -123,19 +124,19 @@ var prebidCommunicator = function () {
     	_callback = callback;
 
     	if (_options.doPrebid) {
-    		if ($$PREBID_GLOBAL$$.bc_pbjs) {
+    		if (_localPBJS.bc_pbjs) {
     			// do prebid if prebid.js is loaded
     			doPrebid();
     		}
     		else {
     			// wait until prebid.js is loaded
     			var waitPbjs = setInterval(function() {
-    	    		if ($$PREBID_GLOBAL$$.bc_pbjs) {
+    	    		if (_localPBJS.bc_pbjs) {
     	    			clearInterval(waitPbjs);
     	    			waitPbjs = null;
     	    			doPrebid();
     	    		}
-    	    		else if ($$PREBID_GLOBAL$$.bc_pbjs_error) {
+    	    		else if (_localPBJS.bc_pbjs_error) {
     	    			clearInterval(waitPbjs);
     	    			waitPbjs = null;
     	    			callback(null);

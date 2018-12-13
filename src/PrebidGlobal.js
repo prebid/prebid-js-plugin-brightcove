@@ -2,8 +2,13 @@
 // global definition should happen BEFORE imports to avoid global undefined errors.
 window.$$PREBID_GLOBAL$$ = (window.$$PREBID_GLOBAL$$ || {});
 
+var _localPBJS = {};
+
 module.exports = {
   getGlobal: function() {
     return window.$$PREBID_GLOBAL$$;
+  },
+  getLocal: function() {
+    return _localPBJS;
   }
 };

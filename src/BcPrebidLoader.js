@@ -3,171 +3,221 @@
  * Header Bidding Plugin Brightcove module.
  */
 
-// CONSTANTS
-
-var _vjs = window.videojs !== undefined ? window.videojs : null;
+// DEPENDENCIES
 var _prebidGlobal = require('./PrebidGlobal.js');
 var _logger = require('./Logging.js');
-var _prefix = 'PrebidPluginLoader->';
 
-var $$PREBID_GLOBAL$$ = _prebidGlobal.getGlobal();
-
+// CONSTANTS
+var LOADER_VERSION = '0.4.1';
+var PREBID_PLUGIN_ID = 'bcPrebidVastPlugin';
+var COMMAND_PLUGIN_ID = 'bcPrebidVastPluginCommand';
 var DEFAULT_PLUGIN_JS_URL = '//acdn.adnxs.com/video/plugins/bc/prebid/bc_prebid_vast_plugin.min.js';
 
-_logger.always(_prefix, 'Plugin loader version 0.4.1');
+var LOGGER_PREFIX = 'PrebidPluginLoader->';
 
+// OBJECT REFS
+var $$PREBID_GLOBAL$$ = _prebidGlobal.getGlobal();
+var _vjs;
 var _player;
+var _options;
 var _prebidPluginObj;
+var _pluginScrEl;
+
+// STATE
+$$PREBID_GLOBAL$$.BCVideo_PrebidPluginApiQue = null;
+var _isLoadedFromPage = false;
+var _playerElId;
+
+// PRIVATE FUNCTIONS
+
+function start () {
+	_logger.always(LOGGER_PREFIX, 'Prebid Plugin Loader Version: ' + LOADER_VERSION);
+
+	apiInit();
+
+	if (!_vjs) {
+		// load prebid plugin if doing header bidding
+		if ($$PREBID_GLOBAL$$.plugin_prebid_options) {
+			var prebidPluginPath = $$PREBID_GLOBAL$$.plugin_prebid_options.prebidPluginPath ? $$PREBID_GLOBAL$$.plugin_prebid_options.prebidPluginPath : DEFAULT_PLUGIN_JS_URL;
+
+			var runPlugin = function () {
+				// var prebidPluginObj = new BCVideo_PrebidVastMainPlugin(playerRef);
+				var apiFunc = getLoadedPluginAPI();
+                    var _prebidPluginObj = apiFunc(_player);					// uses private closure var _player
+                _prebidPluginObj.run(_options);							// uses private closure var _optionsPluginObj;
+			};
+
+            _isLoadedFromPage = true;
+
+			loadPrebidPlugin(prebidPluginPath, runPlugin);
+		}
+	}
+}
+
+function getLoadedPluginAPI () {
+    if (!$$PREBID_GLOBAL$$.BCVideo_PrebidPluginApiQue || !$$PREBID_GLOBAL$$.BCVideo_PrebidPluginApiQue.length) {
+        _logger.log(LOGGER_PREFIX, 'ERROR - No loaded Plugin API available to run!');
+        return { run: function () {} };
+    }
+    return $$PREBID_GLOBAL$$.BCVideo_PrebidPluginApiQue.shift();
+}
+
+function loadPrebidPlugin(path, loadedCallback, errorCallback) {
+	// _prebidPluginLoadState = LOAD_IN_PROGRESS;
+	_loaderId = Date.now().valueOf();
+
+    _pluginScrEl = document.createElement('script');
+	_pluginScrEl.id = 'bc-prebid-plugin-script-' + _loaderId;
+	_pluginScrEl.async = true;
+	_pluginScrEl.type = 'text/javascript';
+	_pluginScrEl.src = path;
+
+	_pluginScrEl.onload = function () {
+		_logger.log(LOGGER_PREFIX, path + ' loaded successfully');
+
+		loadedCallback();
+	};
+	_pluginScrEl.onerror = function (e) {
+		_logger.error(LOGGER_PREFIX, 'Failed to load Prebid Plugin from: ' + path + ' -- Error: ', e);
+
+		errorCallback();
+	};
+
+	var node = document.getElementsByTagName('head')[0];
+	node.appendChild(_pluginScrEl);
+}
+
+// PUBLIC API
 
 // register videojs prebid plugins
-function regPrebidVastPlugin(vjs) {
-	_vjs = vjs;
-	// getPlugins not exist in Brightcove Player v5.28.1
-	if (!vjs.getPlugins || !_vjs.getPlugins().bcPrebidVastPlugin) {
-		registerPrebidVastPlugin();
-	}
+function apiInit() {
+    // First check for videojs - and only continue if it's already loaded
+    _vjs = _vjs || window.videojs || null;
+    if (!_vjs) {
+        return;
+    }
+    // Second, make sure we only initialize the API once
+    if (!!$$PREBID_GLOBAL$$.BCVideo_PrebidPluginApiQue) {
+        return;
+    }
 
-	// Brightcove Player v5.28.1 uses 'plugin' function to register plugin
-	var regFn = !!_vjs.registerPlugin ? _vjs.registerPlugin : _vjs.plugin;
-	regFn('bcPrebidVastPluginCommand', function(command) {
-		if (command === 'stop') {
-			if (_prebidPluginObj) {
-				_prebidPluginObj.stop();
-			}
-		}
-	});
+    // Create que to store plugin API objects as each one loads
+    $$PREBID_GLOBAL$$.BCVideo_PrebidPluginApiQue = [];
+
+    var prebidPluginFunc = function (options) {
+        var player = _player = this;
+        _options = options;
+
+        // load prebid plugin and run it when it is loaded
+        var path = options && options.prebidPluginPath ? options.prebidPluginPath : DEFAULT_PLUGIN_JS_URL;
+
+        var runPlugin = function () {
+            var apiFunc = getLoadedPluginAPI();
+            _prebidPluginObj = apiFunc(player);					// uses local var player
+            _prebidPluginObj.run(options);						// uses local var options
+        };
+
+        // Can add more robust error handling here
+        var handleError = function () {};
+
+        if (!_isLoadedFromPage) {
+            loadPrebidPlugin(path, runPlugin, handleError);
+        }
+    };
+
+	var commandPluginFunc = function(command) {
+        if (command === 'stop') {
+            if (_prebidPluginObj) {
+                _prebidPluginObj.stop();
+            }
+        };
+    }
+
+    // ONLY register plugins ONCE with global videojs
+    if (_vjs.registerPlugin) {
+        // Brightcove v6.x.x Players have the registerPlugin() and getPlugin() methods
+        if (!_vjs.getPlugins()[PREBID_PLUGIN_ID]) {
+            _vjs.registerPlugin(PREBID_PLUGIN_ID, prebidPluginFunc);
+        }
+        if (!_vjs.getPlugins()[COMMAND_PLUGIN_ID]) {
+            _vjs.registerPlugin(COMMAND_PLUGIN_ID, commandPluginFunc);
+        }
+    }
+    else {
+        // Brightcove v5.x.x Players don't have a getPlugins() method, so we must check their internal Player prototype
+        // Also, v5 used the deprecated plugin() method to register new plugins
+        if (!_vjs.Player.prototype[PREBID_PLUGIN_ID]) {
+            _vjs.plugin(PREBID_PLUGIN_ID, prebidPluginFunc);
+        }
+        if (!_vjs.Player.prototype[COMMAND_PLUGIN_ID]) {
+            _vjs.plugin(COMMAND_PLUGIN_ID, commandPluginFunc);
+        }
+    }
 }
 
-var prebidVastPlugin = {
-	// @exclude
-	// Method exposed only for unit Testing Purpose
-	// Gets stripped off in the actual build artifact
-	test: function() {
-		return {
-			loadPrebidPlugin: loadPrebidPlugin,
-			player: _player
-		};
-	},
-	// @endexclude
+function apiDoPrebid (options, id) {
+	_playerElID = id;
+	options.onlyPrebid = true;
+	options.loaderObj = this;
+	_vjs(_playerElID)[PREBID_PLUGIN_ID](options);
+}
 
-	init: function () {
-		regPrebidVastPlugin(videojs);
-	},
-
-	id: null,
-
-	doPrebid: function(options, id) {
-		this.id = id;
-		options.onlyPrebid = true;
-		_vjs(id).bcPrebidVastPlugin(options);
-	},
-
-	stop: function() {
-		if (this.id) {
-			_vjs(this.id).bcPrebidVastPluginCommand('stop');
-		}
-		else {
-			// getPlugins not exist in Brightcove Player v5.28.1
-			if (_vjs.getPlugins) {
-				_vjs.getPlugins().bcPrebidVastPluginCommand('stop');
-			}
-		}
-	},
-
-	renderAd: function(renderOptions, id, creative) {
-		this.id = id;
-		renderOptions.creative = creative;
-		renderOptions.onlyPrebid = false;
-		_vjs(id).bcPrebidVastPlugin(renderOptions);
-	}
-};
-
-function dispatchPluginLoadEvent(name) {
-	var event;
-	if (typeof Event === 'function') {
-		event = new Event(name);
+function apiStop () {
+	if (_playerElID) {
+		_vjs(_playerElID).bcPrebidVastPluginCommand('stop');
 	}
 	else {
-		event = document.createEvent('Event');
-		event.initEvent(name, true, true);
+		// getPlugins not exist in Brightcove Player v5.28.1
+		if (_vjs.getPlugins) {
+			_vjs.getPlugins().bcPrebidVastPluginCommand('stop');
+		}
 	}
-	document.dispatchEvent(event);
 }
 
-var NOT_STARTED = 0;
-var IN_PROGRESS = 1;
-var LOADED = 2;
-var FAILED = 3;
-var prebidPluginLoaded = NOT_STARTED;
-function loadPrebidPlugin(path) {
-	prebidPluginLoaded = IN_PROGRESS;
-	var pluginScr = document.createElement('script');
-	pluginScr.id = 'bc-prebid-plugin-script';
-	pluginScr.onload = function() {
-		_logger.log(_prefix, path + ' loaded successfully');
-		prebidPluginLoaded = LOADED;
-		dispatchPluginLoadEvent('prebidPluginLoaded');
-	};
-	pluginScr.onerror = function(e) {
-		_logger.error(_prefix, 'Failed to load ' + path + '. Error event: ', e);
-		prebidPluginLoaded = FAILED;
-		dispatchPluginLoadEvent('prebidPluginLoadFailed');
-	};
-	pluginScr.async = true;
-	pluginScr.type = 'text/javascript';
-	pluginScr.src = path;
-	var node = document.getElementsByTagName('head')[0];
-	node.appendChild(pluginScr);
+function apiRenderAd (renderOptions, id, creative) {
+	_playerElID = id;
+	renderOptions.creative = creative;
+	renderOptions.onlyPrebid = false;
+	renderOptions.loaderObj = this;
+	_vjs(_playerElID)[PREBID_PLUGIN_ID](renderOptions);
 }
 
-// ////////////////////////////////////////////////////////////////////
+// @exclude
+// Method exposed for Unit Testing - Gets stripped out of the actual build artifact
+function apiTest () {
+	return {
+		loadPrebidPlugin: loadPrebidPlugin,
+		player: _player
+	};
+}
+// @endexclude
+
 // EXPORTS
-module.exports = prebidVastPlugin;
 
-if (_vjs) {
-	registerPrebidVastPlugin();
-}
-else {
-	// load prebid plugin if doing header bidding
-	if ($$PREBID_GLOBAL$$.plugin_prebid_options) {
-		var prebidPluginPath = $$PREBID_GLOBAL$$.plugin_prebid_options.prebidPluginPath ? $$PREBID_GLOBAL$$.plugin_prebid_options.prebidPluginPath : DEFAULT_PLUGIN_JS_URL;
-		loadPrebidPlugin(prebidPluginPath);
-	}
-}
+var pluginLoaderAPI = {
+	// @exclude
+	// Method exposed for Unit Testing - Gets stripped out of the actual build artifact
+	test: apiTest,
+	// @endexclude
 
-function registerPrebidVastPlugin() {
-	// Brightcove Player v5.28.1 uses 'plugin' function to register plugin
-	var regFn = !!_vjs.registerPlugin ? _vjs.registerPlugin : _vjs.plugin;
-	regFn('bcPrebidVastPlugin', function(options) {
-		_player = this;
-		var opts = options;
-		var runPlugin = function() {
-			if (!_prebidPluginObj) {
-				_prebidPluginObj = new BCVideo_PrebidVastMainPlugin(_player);
-			}
-			_prebidPluginObj.run(opts);
-		};
-		var loadListener = function() {
-			document.removeEventListener('prebidPluginLoaded', loadListener);
-			runPlugin();
-		};
-		if (document.getElementById('bc-prebid-plugin-script')) {
-			// script tag already in document
-			if (prebidPluginLoaded === IN_PROGRESS) {
-				// wait id prebid plugin loading is in progress
-				document.addEventListener('prebidPluginLoaded', loadListener);
-			}
-			else if (prebidPluginLoaded === LOADED) {
-				// run plugin if it is successfully loaded
-				runPlugin();
-			}
-		}
-		else {
-			// load prebid plugin and run it when it is loaded
-			var path = options && options.prebidPluginPath ? options.prebidPluginPath : DEFAULT_PLUGIN_JS_URL;
-			document.addEventListener('prebidPluginLoaded', loadListener);
-			loadPrebidPlugin(path);
-		}
-	});
-}
-window.BCVideo_PrebidVastPlugin = prebidVastPlugin;
+	get id () {
+		return _playerElId;
+	},
+	set id (id) {
+		_playerElId = id;
+	},
+
+	init: apiInit,
+
+	doPrebid: apiDoPrebid,
+
+	stop: apiStop,
+
+	renderAd: apiRenderAd
+};
+
+module.exports = pluginLoaderAPI;
+
+window.BCVideo_PrebidVastPlugin = pluginLoaderAPI;
+
+start();
