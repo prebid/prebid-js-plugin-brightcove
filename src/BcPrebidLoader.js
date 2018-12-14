@@ -42,7 +42,7 @@ function start () {
 			var runPlugin = function () {
 				var apiFunc = getLoadedPluginAPI(true);								// keep PluginAPI in que for future call
                 var _prebidPluginObj = apiFunc(_player);							// uses private closure var _player
-                _prebidPluginObj.run($$PREBID_GLOBAL$$.plugin_prebid_options);		// uses private closure var _optionsPluginObj;
+                _prebidPluginObj.run($$PREBID_GLOBAL$$.plugin_prebid_options);		// uses $$PREBID_GLOBAL$$.plugin_prebid_options (set from page)
 			};
 
             _isLoadedFromPage = true;
