@@ -164,7 +164,6 @@ function apiInit() {
             loadPrebidPlugin(path, runPlugin, handleError);
 		}
 		else {
-			registerPlugins(prebidPluginFunc, commandPluginFunc);
 			runPlugin();
 		}
     };
