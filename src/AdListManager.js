@@ -504,7 +504,7 @@ var adListManager = function () {
 				if (!_arrAdList[i].adTag && _arrAdList[i].status === AD_STATUS_NOT_PLAYED) {
 					_arrAdList[i].status = AD_STATUS_TAG_REQUEST;
 					_arrAdList[i].options.clearPrebid = _arrOptions && _arrOptions.length > 1;
-					_prebidCommunicatorObj.doPrebid(_arrAdList[i].options, function(creative) {
+					_prebidCommunicatorObj.doPrebid(_arrAdList[i].options, function(creative) {		// jshint ignore:line
 						_arrAdList[i].status = !!creative ? AD_STATUS_READY_PLAY : AD_STATUS_DONE;
 						_arrAdList[i].adTag = creative;
 					});

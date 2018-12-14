@@ -41,7 +41,7 @@ function getOrigin() {
 function insertHiddenIframe (id) {
     var iframe = document.createElement('iframe');
     iframe.id = id;
-    iframe.src = 'javascript:false';
+    iframe.src = 'javascript:false';	// jshint ignore:line
     iframe.marginWidth = '0';
     iframe.marginHeight = '0';
     iframe.frameBorder = '0';
@@ -630,7 +630,7 @@ var prebidVastPlugin = function(player) {
 				loadPrebidScript(options, false);
 			}
 			// Brightcove Player v5.28.1 issues alert on every tech() call
-			if (videojs.VERSION.substr(0, 2) <= '5.') {
+			if (window.videojs && window.videojs.VERSION.substr(0, 2) <= '5.') {
 				_player.tech = function() {
 					return _player.tech_;
 				};
