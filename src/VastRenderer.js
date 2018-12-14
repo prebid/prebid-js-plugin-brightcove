@@ -100,6 +100,14 @@ var vastRenderer = function (player) {
 
     // play single ad
     this.playAd = function(xml, options, firstVideoPreroll, mobilePrerollNeedClick, prerollNeedClickToPlay, eventCallback) {
+        // if MOL plugin is not registered in videojs immediatelly notify caller and return
+        if (!_player.vastClient || typeof _player.vastClient != 'function') {
+            if (eventCallback) {
+                eventCallback({type: 'internal', data: {name: 'resetContent'}});
+            }
+            return;
+        }
+
         _eventCallback = eventCallback;
         _options = options;
 

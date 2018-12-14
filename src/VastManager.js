@@ -298,6 +298,9 @@ var vastManager = function () {
 			if (internalName === 'cover') {
 				showCover(event.data.cover);
 			}
+			else if (internalName === 'resetContent') {
+				resetContent();
+			}
 		}
 	}
 

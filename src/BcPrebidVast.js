@@ -512,7 +512,9 @@ function loadMolPlugin(callback) {
 		_molIFrame = frame;
 
         try {
-            writeAsyncScriptToFrame(frame, MOL_PLUGIN_URL, true, getOrigin());
+			// make sure for every new plugin version we reload MOL plugin
+			var molPath = MOL_PLUGIN_URL + '?rand=' + PLUGIN_VERSION;
+            writeAsyncScriptToFrame(frame, molPath, true, getOrigin());
 
             frame.contentWindow.addEventListener('message', onLoadIFrame);
         }
