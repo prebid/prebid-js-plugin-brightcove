@@ -84,7 +84,7 @@
 		}
 		
 		BCVideo_PrebidVastPlugin.init();
-		BCVideo_PrebidVastPlugin.renderAd(opts, 'test_player1');
+		BCVideo_PrebidVastPlugin.renderAd(opts, 'test_player_1');
 		
 		var tmp2 = JSON.stringify(_popUpOptions2);
 		var opts2 = JSON.parse(tmp2);
@@ -92,11 +92,11 @@
 		for (var i = 0; i < opts2.length; i++) {
 			opts2[i].pageNotificationCallback = pageNotification2;
 		}
-		BCVideo_PrebidVastPlugin.renderAd(opts2, 'test_player2');
+		BCVideo_PrebidVastPlugin.renderAd(opts2, 'test_player_2');
 
 		function appendStatistics(text, idx) {
-	    	document.getElementById('statistics' + idx).value = document.getElementById('statistics').value + '\r\n' + text;
-	    	document.getElementById('statistics' + idx).scrollTop = document.getElementById('statistics').scrollHeight;
+	    	document.getElementById('statistics' + idx).value = document.getElementById('statistics' + idx).value + '\r\n' + text;
+	    	document.getElementById('statistics' + idx).scrollTop = document.getElementById('statistics' + idx).scrollHeight;
 	    }
 
 	    function pageNotification(type, data) {
