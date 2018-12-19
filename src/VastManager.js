@@ -14,6 +14,7 @@ var vastManager = function () {
 	var _prebidCommunicatorObj;
 	var _vastRendererObj;
 	var _player;
+	var _playerId;
 	var _playlist = [];
 	var _playlistIdx = -1;
 	var _playlistCreative;
@@ -473,13 +474,14 @@ var vastManager = function () {
 
 	// main entry point to start play ad
     this.play = function (vjsPlayer, creative, options) {
-    	_player = vjsPlayer;
+		_player = vjsPlayer;
+		_playerId = _player.el_.id;
 		_options = options;
 
-    	_cover = document.getElementById('plugin-break-cover');
+    	_cover = document.getElementById('plugin-break-cover' + _playerId);
     	if (!_cover) {
     		_cover = document.createElement('div');
-    		_cover.id = 'plugin-break-cover';
+    		_cover.id = 'plugin-break-cover' + _playerId;
     		_cover.style.width = '100%';
     		_cover.style.height = '100%';
     		_cover.style.backgroundColor = 'black';
@@ -489,10 +491,10 @@ var vastManager = function () {
     		_cover.style.display = 'none';
     	}
 
-    	_spinnerDiv = document.getElementById('plugin-vast-spinner');
+    	_spinnerDiv = document.getElementById('plugin-vast-spinner' + _playerId);
     	if (!_spinnerDiv) {
 			_spinnerDiv = document.createElement('div');
-			_spinnerDiv.id = 'plugin-vast-spinner';
+			_spinnerDiv.id = 'plugin-vast-spinner' + _playerId;
 			_spinnerDiv.className = 'vjs-loading-spinner';
 			_spinnerDiv.style.display = 'none';
 			_spinnerDiv.style.zIndex = 101;

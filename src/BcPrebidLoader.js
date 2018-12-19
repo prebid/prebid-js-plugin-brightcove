@@ -29,6 +29,25 @@ var _playerElId;
 
 // PRIVATE FUNCTIONS
 
+function getPluginPath(options) {
+	if (options) {
+		if (Array.isArray(options)) {
+			for (var i = 0; i < options.length; i++) {
+				if (options[i].prebidPluginPath && options[i].prebidPluginPath.length > 0) {
+					return options[i].prebidPluginPath;
+				}
+			}
+			return DEFAULT_PLUGIN_JS_URL;
+		}
+		else {
+			return options.prebidPluginPath ? options.prebidPluginPath : DEFAULT_PLUGIN_JS_URL;
+		}
+	}
+	else {
+		return DEFAULT_PLUGIN_JS_URL;
+	}
+}
+
 function start () {
 	_logger.always(LOGGER_PREFIX, 'Prebid Plugin Loader Version: ' + LOADER_VERSION);
 
@@ -37,7 +56,7 @@ function start () {
 	if (!_vjs) {
 		// load prebid plugin if doing header bidding
 		if ($$PREBID_GLOBAL$$.plugin_prebid_options) {
-			var prebidPluginPath = $$PREBID_GLOBAL$$.plugin_prebid_options.prebidPluginPath ? $$PREBID_GLOBAL$$.plugin_prebid_options.prebidPluginPath : DEFAULT_PLUGIN_JS_URL;
+			var prebidPluginPath = getPluginPath($$PREBID_GLOBAL$$.plugin_prebid_options);
 
 			var runPlugin = function () {
 				var apiFunc = getLoadedPluginAPI(true);								// keep PluginAPI in que for future call
@@ -162,7 +181,7 @@ function apiInit() {
     	}
 
 		// load prebid plugin and run it when it is loaded
-        var path = options && options.prebidPluginPath ? options.prebidPluginPath : DEFAULT_PLUGIN_JS_URL;
+        var path = getPluginPath(options);
 
         var runPlugin = function () {
             var apiFunc = getLoadedPluginAPI();
