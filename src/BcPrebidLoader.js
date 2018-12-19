@@ -8,7 +8,7 @@ var _prebidGlobal = require('./PrebidGlobal.js');
 var _logger = require('./Logging.js');
 
 // CONSTANTS
-var LOADER_VERSION = '0.4.1';
+var LOADER_VERSION = '0.4.2';
 var PREBID_PLUGIN_ID = 'bcPrebidVastPlugin';
 var COMMAND_PLUGIN_ID = 'bcPrebidVastPluginCommand';
 var DEFAULT_PLUGIN_JS_URL = '//acdn.adnxs.com/video/plugins/bc/prebid/bc_prebid_vast_plugin.min.js';
@@ -148,7 +148,20 @@ function apiInit() {
 		var player = this;
 		_player = this;
 
-        // load prebid plugin and run it when it is loaded
+		// cover player with black div to avoid video flickering (do it only at very begging of the main content video)
+		var playerId = _player.el_.id;
+    	if (!document.getElementById('plugin-break-cover' + playerId) && _player.currentTime() < 1) {
+    		var cover = document.createElement('div');
+    		cover.id = 'plugin-break-cover' + playerId;
+    		cover.style.width = '100%';
+    		cover.style.height = '100%';
+    		cover.style.backgroundColor = 'black';
+    		cover.style.position = 'absolute';
+    		cover.style.zIndex = 101;
+    		_player.el().appendChild(cover);
+    	}
+
+		// load prebid plugin and run it when it is loaded
         var path = options && options.prebidPluginPath ? options.prebidPluginPath : DEFAULT_PLUGIN_JS_URL;
 
         var runPlugin = function () {
@@ -157,8 +170,13 @@ function apiInit() {
             _prebidPluginObj.run(options);						// uses local var options
         };
 
-        // Can add more robust error handling here
-        var handleError = function () {};
+        // error handling here
+        var handleError = function () {
+			var cover = document.getElementById('plugin-break-cover' + playerId);
+			if (cover) {
+				player.el().removeChild(cover);
+			}
+		};
 
         if (!_isLoadedFromPage) {
             loadPrebidPlugin(path, runPlugin, handleError);

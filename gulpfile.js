@@ -15,6 +15,7 @@ var webpackConfigPlugin = require('./webpack.conf.plugin.js');
 var pkg = require('./package.json');
 
 var versionText = 'v' + pkg.version;
+var loaderVersionText = 'v' + pkg.loaderVersion;
 
 var licenseHeaders = fs.readFileSync('license-bc-prebid.txt');
 
@@ -23,6 +24,7 @@ var curDateObj = new Date();
 var copyrightText = '(c)' + curDateObj.getUTCFullYear() + ' PREBID.ORG, INC.';
 
 var bannerText = '/*! ' + copyrightText + ' ' + versionText + '\n' + licenseHeaders + '*/\n';
+var loaderBannerText = '/*! ' + copyrightText + ' ' + loaderVersionText + '\n' + licenseHeaders + '*/\n';
 
 // start build shim
 gulp.task('webpack:build', function(callback) {
@@ -40,7 +42,7 @@ gulp.task('webpack:build-min', function(callback) {
    return gulpWebpack(webpackConfig)
        .pipe(replace('</script>', '<\\/script>'))
        .pipe(preprocess())
-       .pipe(header(bannerText))
+       .pipe(header(loaderBannerText))
        .pipe(rename({suffix: '.min'}))
        .pipe(gulp.dest('dist/'));
 });
