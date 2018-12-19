@@ -14,6 +14,7 @@ var adListManager = function () {
 	var _prebidCommunicatorObj = new _prebidCommunicator();
 	var _vastRendererObj;
 	var _player;
+	var _playerId;
 	var _playlistIdx = -1;
 	var _arrOptions;
 	var _options;
@@ -413,12 +414,12 @@ var adListManager = function () {
 				adData.status = AD_STATUS_READY_PLAY;
 				_mobilePrerollNeedClick = isMobile() && adTime === 0;
 				if (_mobilePrerollNeedClick && _playlistIdx < 0) {
-					showCover(false);
 					_player.bigPlayButton.el_.style.opacity = 1;
 					if (isIDevice()) {
 						// iOS
 						if (isIPhone()) {
 							// iPhone
+							showCover(false);
 							_player.one('play', function() {
 								_mobilePrerollNeedClick = false;	// don't need more click for preroll on iPhone
 								adData.status = AD_STATUS_PLAYING;
@@ -430,6 +431,7 @@ var adListManager = function () {
 						else {
 							// iPad
 							if (_player.paused()) {
+								showCover(false);
 								_player.one('play', function() {
 									traceMessage({data: {message: 'Main content - play event'}});
 									_mobilePrerollNeedClick = false;	// don't need more click for preroll on iPad
@@ -448,6 +450,7 @@ var adListManager = function () {
 					else {
 						// android
 						if (_player.paused()) {
+							showCover(false);
 							_player.one('play', function() {
 								showCover(true);
 								adData.status = AD_STATUS_PLAYING;
@@ -624,13 +627,14 @@ var adListManager = function () {
 
 	// main entry point to start play ad
     this.play = function (vjsPlayer, options) {
-    	_player = vjsPlayer;
+		_player = vjsPlayer;
+		_playerId = _player.el_.id;
 		_arrOptions = options;
 
-    	_cover = document.getElementById('plugin-break-cover');
+    	_cover = document.getElementById('plugin-break-cover' + _playerId);
     	if (!_cover) {
     		_cover = document.createElement('div');
-    		_cover.id = 'plugin-break-cover';
+    		_cover.id = 'plugin-break-cover' + _playerId;
     		_cover.style.width = '100%';
     		_cover.style.height = '100%';
     		_cover.style.backgroundColor = 'black';
@@ -640,19 +644,17 @@ var adListManager = function () {
     		_cover.style.display = 'none';
     	}
 
-    	_spinnerDiv = document.getElementById('plugin-vast-spinner');
+    	_spinnerDiv = document.getElementById('plugin-vast-spinner' + _playerId);
     	if (!_spinnerDiv) {
 			_spinnerDiv = document.createElement('div');
-			_spinnerDiv.id = 'plugin-vast-spinner';
+			_spinnerDiv.id = 'plugin-vast-spinner' + _playerId;
 			_spinnerDiv.className = 'vjs-loading-spinner';
 			_spinnerDiv.style.display = 'none';
 			_spinnerDiv.style.zIndex = 101;
 			_player.el().appendChild(_spinnerDiv);
 		}
 		_hasPreroll = optionsHavePreroll();
-		if (_hasPreroll) {
-			showCover(true);
-		}
+		showCover(_hasPreroll);
 
 		_player.on('playlistitem', nextListItemHandlerAuto);
 
@@ -660,7 +662,7 @@ var adListManager = function () {
 			startRenderingPreparation();
     	}
     	else {
-            _player.one('loadedmetadata', startRenderingPreparation);
+			_player.one('loadedmetadata', startRenderingPreparation);
     	}
     };
 
