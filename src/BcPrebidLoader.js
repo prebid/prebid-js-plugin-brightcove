@@ -8,7 +8,7 @@ var _prebidGlobal = require('./PrebidGlobal.js');
 var _logger = require('./Logging.js');
 
 // CONSTANTS
-var LOADER_VERSION = '0.4.2';
+var LOADER_VERSION = '0.4.3';
 var PREBID_PLUGIN_ID = 'bcPrebidVastPlugin';
 var COMMAND_PLUGIN_ID = 'bcPrebidVastPluginCommand';
 var DEFAULT_PLUGIN_JS_URL = '//acdn.adnxs.com/video/plugins/bc/prebid/bc_prebid_vast_plugin.min.js';
@@ -31,8 +31,9 @@ var _playerElId;
 
 function getPluginPath(options) {
 	if (options) {
+		var i;
 		if (Array.isArray(options)) {
-			for (var i = 0; i < options.length; i++) {
+			for (i = 0; i < options.length; i++) {
 				if (options[i].prebidPluginPath && options[i].prebidPluginPath.length > 0) {
 					return options[i].prebidPluginPath;
 				}
@@ -40,7 +41,19 @@ function getPluginPath(options) {
 			return DEFAULT_PLUGIN_JS_URL;
 		}
 		else {
-			return options.prebidPluginPath ? options.prebidPluginPath : DEFAULT_PLUGIN_JS_URL;
+			// array in brightcove studio converted to object {0: {...}, 1: {...}, ...}
+			if (options.hasOwnProperty('0')) {
+				// options parameter is array of options from plugin embedded in player in studio
+				for (i = 0; options.hasOwnProperty(i); i++) {
+					if (options[i].prebidPluginPath && options[i].prebidPluginPath.length > 0) {
+						return options[i].prebidPluginPath;
+					}
+				}
+				return DEFAULT_PLUGIN_JS_URL;
+			}
+			else {
+				return options.prebidPluginPath ? options.prebidPluginPath : DEFAULT_PLUGIN_JS_URL;
+			}
 		}
 	}
 	else {
