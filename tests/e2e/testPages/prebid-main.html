@@ -30,7 +30,9 @@ WebFont.load({
 				 'prebid-embed-multi-display',
 				 'prebid-body-multi-players',
 				 'prebid-embed-multi-players',
-				 'prebid-embed-multi-players.5.28.1'];
+				 'prebid-embed-multi-players.5.28.1',
+				 'prebid-embed-multi-players-iframes',
+				 'prebid-embed-multi-players-iframes.5.28.1'];
 	function startTestPage(idx) {
 	    var url = window.location.href;
 	    var nPos = url.lastIndexOf('/');
@@ -44,13 +46,13 @@ WebFont.load({
 </head>
 <body >
 
-<div style="background: #ff8800; color: #ffffff; overflow:scroll; width:600px; height:840px;">
+<div style="background: #ff8800; color: #ffffff; overflow:scroll; width:720px; height:920px;">
      <div class="an-html-body">
         <div class="an-hero-inner inner-wrapper">
 </div>
 </div>
     
-<div style="position:absolute; top:20px; left:20px; z-index:910;">
+<div style="position:absolute; top:20px; left:10px; z-index:910;">
 	<table>
 		<tr>
 			<td>
@@ -77,6 +79,8 @@ WebFont.load({
 				<p onclick='startTestPage(13)' style='cursor: pointer; margin-left: 5em;'><b>Multi-Players - Prebid in Body (multi Ads)</b></p>
 				<p onclick='startTestPage(14)' style='cursor: pointer; margin-left: 5em;'><b>Multi-Players - Plugin Embedded With Options</b></p>
 				<p onclick='startTestPage(15)' style='cursor: pointer; margin-left: 5em;'><b>Multi-Players - Plugin Embedded With Options (Player 5.28.1)</b></p>
+				<p onclick='startTestPage(16)' style='cursor: pointer; margin-left: 5em;'><b>Multi-Players - Plugin Embedded With Options - iFrame embed code</b></p>
+				<p onclick='startTestPage(17)' style='cursor: pointer; margin-left: 5em;'><b>Multi-Players - Plugin Embedded With Options - iFrame embed code (Player 5.28.1)</b></p>
 			</td>
 		</tr>
 	</table>
