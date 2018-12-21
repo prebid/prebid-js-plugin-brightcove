@@ -456,6 +456,7 @@ function convertOptionsToArray(options) {
 // this function loads MailOnline Plugin
 var _molLoadingInProgress = false;
 var _molLoaded = false;
+var _vastClientFunc;
 
 function loadMolPlugin(callback) {
     var vjs = window.videojs || false;
@@ -490,7 +491,13 @@ function loadMolPlugin(callback) {
 
                 // VIDLA-4391 - Add support for multiple players on the same page, each with a unique MOL plugin loaded from an iFrames
                 if (_molIFrame && _molIFrame.contentWindow && _molIFrame.contentWindow.bc_vastClientFunc) {
-                    _player.vastClient = _molIFrame.contentWindow.bc_vastClientFunc;
+					if (_player) {
+						_player.vastClient = _molIFrame.contentWindow.bc_vastClientFunc;
+					}
+					else {
+						// in case of header bidding the _player may not be set yet
+						_vastClientFunc = _molIFrame.contentWindow.bc_vastClientFunc;
+					}
                 }
 
                 callback(true);
@@ -526,7 +533,14 @@ function loadMolPlugin(callback) {
         }
     }
     else {
-        _logger.log(_prefix, 'MailOnline Plugin already loaded');
+		_logger.log(_prefix, 'MailOnline Plugin already loaded');
+		// make sure MOL plugin is registered for header bidding
+		if (_vastClientFunc) {
+			if (_player && !_player.vastClient) {
+				_player.vastClient = _vastClientFunc;
+			}
+			_vastClientFunc = null;
+		}
         callback(true);
     }
 }
