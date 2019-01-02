@@ -8,7 +8,7 @@ var _prebidGlobal = require('./PrebidGlobal.js');
 var _logger = require('./Logging.js');
 
 // CONSTANTS
-var LOADER_VERSION = '0.4.3';
+var LOADER_VERSION = '0.4.4';
 var PREBID_PLUGIN_ID = 'bcPrebidVastPlugin';
 var COMMAND_PLUGIN_ID = 'bcPrebidVastPluginCommand';
 var DEFAULT_PLUGIN_JS_URL = '//acdn.adnxs.com/video/plugins/bc/prebid/bc_prebid_vast_plugin.min.js';
@@ -197,7 +197,8 @@ function apiInit() {
         var path = getPluginPath(options);
 
         var runPlugin = function () {
-            var apiFunc = getLoadedPluginAPI();
+			var apiFunc = getLoadedPluginAPI();
+			_playerElID = player.el().id;
             _prebidPluginObj = apiFunc(player);					// uses local var player
             _prebidPluginObj.run(options);						// uses local var options
         };
