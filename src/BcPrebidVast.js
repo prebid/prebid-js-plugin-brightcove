@@ -11,7 +11,7 @@ var _adListManager = require('./AdListManager.js');
 var _prebidCommunicator = require('./PrebidCommunicator.js');
 var _logger = require('./Logging.js');
 
-var PLUGIN_VERSION = '0.4.2';
+var PLUGIN_VERSION = '0.4.3';
 var _prefix = 'PrebidVast->';
 var _molIFrame = null;
 
