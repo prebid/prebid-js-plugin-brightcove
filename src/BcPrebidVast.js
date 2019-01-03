@@ -617,10 +617,10 @@ var prebidVastPlugin = function(player) {
 		test: function() {
 			return {
 				doPrebid: function(options, callback) {
-					if ($$PREBID_GLOBAL$$.bc_pbjs === undefined) {
+					if (_localPBJS.bc_pbjs === undefined) {
 						loadPrebidScript(options, false);
 						var waitReady = setInterval(function() {
-							if ($$PREBID_GLOBAL$$.bc_pbjs !== undefined) {
+							if (_localPBJS.bc_pbjs !== undefined) {
 								clearInterval(waitReady);
 								doPrebid(options, callback);
 							}
@@ -636,7 +636,8 @@ var prebidVastPlugin = function(player) {
 				bcPrebidInProgress: function() { return BC_prebid_in_progress; },
 				loadMolPlugin: loadMolPlugin,
 				renderAd: renderAd,
-				player: _player
+				player: _player,
+				localPBJS: _localPBJS
 			};
 		},
 		// @endexclude

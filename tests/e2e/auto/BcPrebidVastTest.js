@@ -73,9 +73,10 @@ describe('BcPrebidVast unit test', function() {
 		this.timeout(5000);
 		BcPrebidVast.test().loadPrebidScript(mockObject.options, false);
 		setTimeout(function() {
+			var localPBJS = BcPrebidVast.test().localPBJS;
 			var options = mockObject.options;
 			options.biddersSpec.bids[0].params.placementId = 11653264;
-			sinonStub = sinon.stub($$PREBID_GLOBAL$$.bc_pbjs, 'requestBids', function(obj) {
+			sinonStub = sinon.stub(localPBJS.bc_pbjs, 'requestBids', function(obj) {
 				var response = {
 					'my-video-tag': {
 						bids: [
