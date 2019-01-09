@@ -1,5 +1,4 @@
 var bcPrebidVast = require('./../../../src/BcPrebidVast.js');
-var logger = require('./../../../src/Logging.js');
 
 describe('BcPrebidVast unit test', function() {
     var Mock;
