@@ -636,6 +636,7 @@ var prebidVastPlugin = function(player) {
 				bcPrebidInProgress: function() { return BC_prebid_in_progress; },
 				loadMolPlugin: loadMolPlugin,
 				renderAd: renderAd,
+				insertHiddenIframe: insertHiddenIframe,
 				player: _player,
 				localPBJS: _localPBJS
 			};

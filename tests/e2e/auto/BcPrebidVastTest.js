@@ -138,17 +138,22 @@ describe('BcPrebidVast unit test', function() {
 		assert.equal(value, '10.00', 'failed - expected 10.00, got ' + value);
 	});
 
-	it('loadPrebidScript test - loads prebid js on a page and starts pushing command in pbjs que', function (done) {
-		sinonStub = sinon.stub(logger, 'log', function(pref, data) {
-			if (data && data.indexOf('Selected VAST url') === 0) {
-				console.log(data);
-				done();
-			}
+	it('loadMolPlugin test - loads MailOnline Plugin on a page (in an iFrame)', function (done) {
+		BcPrebidVast.test().loadMolPlugin(function(succ) {
+			assert.isTrue(succ);
+			done();
 		});
-		BcPrebidVast.test().loadPrebidScript(mockObject.options, true);
-     });
+	});
 
-    it('loadMolPlugin test - loads MailOnline Plugin', function (done) {
+	it('insertHiddenIframe test - creates an empty iframe and attaches it to the DOM', function () {
+		var frame = BcPrebidVast.test().insertHiddenIframe('testFrame');
+
+		assert.ok(frame, 'failed - expected frame to be truthy, got ' + frame);
+		assert.ok(frame.parentNode, 'failed - expected frame.parentNode to be truthy, got ' + frame.parentNode);
+		assert.equal(frame.id, 'testFrame', 'failed - expected iFrame.id to be \'testFrame\', got ' + frame.id);
+	});
+
+    it('loadMolPlugin test - loads MailOnline Plugin on a page (in an iFrame)', function (done) {
 		BcPrebidVast.test().loadMolPlugin(function(succ) {
 			assert.isTrue(succ);
 			done();

@@ -100,7 +100,7 @@ function getLoadedPluginAPI (keepInQue) {
 	}
 }
 
-function loadPrebidPlugin(path, loadedCallback, errorCallback) {
+function loadPrebidPlugin(path, callback) {
 	_loaderId = Date.now().valueOf();
 
     _pluginScrEl = document.createElement('script');
@@ -112,12 +112,12 @@ function loadPrebidPlugin(path, loadedCallback, errorCallback) {
 	_pluginScrEl.onload = function () {
 		_logger.log(LOGGER_PREFIX, path + ' loaded successfully');
 
-		loadedCallback();
+		callback(true);
 	};
 	_pluginScrEl.onerror = function (e) {
 		_logger.error(LOGGER_PREFIX, 'Failed to load Prebid Plugin from: ' + path + ' -- Error: ', e);
 
-		errorCallback();
+		callback(false);
 	};
 
 	var node = document.getElementsByTagName('head')[0];
@@ -196,26 +196,26 @@ function apiInit() {
 		// load prebid plugin and run it when it is loaded
         var path = getPluginPath(options);
 
-        var runPlugin = function () {
-			var apiFunc = getLoadedPluginAPI();
-			_playerElID = player.el().id;
-            _prebidPluginObj = apiFunc(player);					// uses local var player
-            _prebidPluginObj.run(options);						// uses local var options
+        var runPlugin = function (success) {
+        	if (success) {
+				var apiFunc = getLoadedPluginAPI();
+				_playerElID = player.el().id;
+				_prebidPluginObj = apiFunc(player);					// uses local var player
+				_prebidPluginObj.run(options);						// uses local var options
+			} else {
+        		// Handle the error
+				var cover = document.getElementById('plugin-break-cover' + playerId);
+				if (cover) {
+					player.el().removeChild(cover);
+				}
+			}
         };
 
-        // error handling here
-        var handleError = function () {
-			var cover = document.getElementById('plugin-break-cover' + playerId);
-			if (cover) {
-				player.el().removeChild(cover);
-			}
-		};
-
         if (!_isLoadedFromPage) {
-            loadPrebidPlugin(path, runPlugin, handleError);
+            loadPrebidPlugin(path, runPlugin);
 		}
 		else {
-			runPlugin();
+			runPlugin(true);
 		}
     };
 
@@ -262,6 +262,8 @@ function apiRenderAd (renderOptions, id, creative) {
 function apiTest () {
 	return {
 		loadPrebidPlugin: loadPrebidPlugin,
+		getLoadedPluginAPI: getLoadedPluginAPI,
+		getPluginPath: getPluginPath,
 		player: _player
 	};
 }
