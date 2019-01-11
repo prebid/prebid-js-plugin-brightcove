@@ -32,7 +32,9 @@ WebFont.load({
 				 'prebid-embed-multi-players',
 				 'prebid-embed-multi-players.5.28.1',
 				 'prebid-embed-multi-players-iframes',
-				 'prebid-embed-multi-players-iframes.5.28.1'];
+				 'prebid-embed-multi-players-iframes.5.28.1',
+				 'prebid-embed-iframe',
+				 'prebid-embed-iframe.5.28.1'];
 	function startTestPage(idx) {
 	    var url = window.location.href;
 	    var nPos = url.lastIndexOf('/');
@@ -46,7 +48,7 @@ WebFont.load({
 </head>
 <body >
 
-<div style="background: #ff8800; color: #ffffff; overflow:scroll; width:720px; height:920px;">
+<div style="background: #ff8800; color: #ffffff; overflow:scroll; width:720px; height:960px;">
      <div class="an-html-body">
         <div class="an-hero-inner inner-wrapper">
 </div>
@@ -69,6 +71,8 @@ WebFont.load({
 				<p onclick='startTestPage(7)' style='cursor: pointer; margin-left: 5em;'><b>Plugin Embedded With Options (Playlist)</b></p>
 				<br>
 				<p onclick='startTestPage(8)' style='cursor: pointer; margin-left: 5em;'><b>Plugin Embedded With Options (Player 5.28.1)</b></p>
+				<p onclick='startTestPage(18)' style='cursor: pointer; margin-left: 5em;'><b>Plugin Embedded - iFrame embed code</b></p>
+				<p onclick='startTestPage(19)' style='cursor: pointer; margin-left: 5em;'><b>Plugin Embedded - iFrame embed code (Player 5.28.1)</b></p>
 				<br>
 				<p onclick='startTestPage(9)' style='cursor: pointer; margin-left: 5em;'><b>Plugin in Body (multi Ads), Then Play</b></p>
 				<p onclick='startTestPage(10)' style='cursor: pointer; margin-left: 5em;'><b>Plugin in Body (multi Ads Playlist), Then Play</b></p>
