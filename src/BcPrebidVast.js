@@ -11,7 +11,7 @@ var _adListManager = require('./AdListManager.js');
 var _prebidCommunicator = require('./PrebidCommunicator.js');
 var _logger = require('./Logging.js');
 
-var PLUGIN_VERSION = '0.4.4';
+var PLUGIN_VERSION = '0.4.5';
 var _prefix = 'PrebidVast->';
 var _molIFrame = null;
 
@@ -226,15 +226,38 @@ function loadPrebidScript(options, fromHeader) {
 				var selectWinnerByCPM = function(arrBids) {
 					var cpm = 0.0;
 					var creative = null;
+					var cacheKey;
 					for (var i = 0; i < arrBids.length; i++) {
 						if (arrBids[i].cpm > cpm) {
 							cpm = arrBids[i].cpm;
 							creative = arrBids[i].vastUrl;
+							cacheKey = arrBids[i].videoCacheKey;
 						}
+					}
+					// get prebid cache url for winner
+					if (cacheKey && cacheKey.length > 0 && options.prebidConfigOptions &&
+						options.prebidConfigOptions.cache && options.prebidConfigOptions.cache.url) {
+						creative = options.prebidConfigOptions.cache.url + '?uuid=' + cacheKey;
 					}
 					_logger.log(_prefix, 'Selected VAST url: ' + creative);
 					return creative;
 				};
+				// get prebid cache url if available
+				function getPrebidCacheUrl(creative, arrBids) {
+					for (var i = 0; i < arrBids.length; i++) {
+						if (arrBids[i].vastUrl === creative) {
+							// winner is creative from bid array
+							if (arrBids[i].videoCacheKey && arrBids[i].videoCacheKey.length > 0 &&
+								options.prebidConfigOptions && options.prebidConfigOptions.cache &&
+								options.prebidConfigOptions.cache.url) {
+								return options.prebidConfigOptions.cache.url + '?uuid=' + arrBids[i].videoCacheKey;
+							}
+							return creative;
+						}
+					}
+					// winner is not creative from bid array
+					return creative;
+				}
 				var arrBids = (bids && bids[options.biddersSpec.code]) ? bids[options.biddersSpec.code].bids : [];
     			_logger.log(_prefix, 'bids for bidding: ', arrBids);
     			if (arrBids && Array.isArray(arrBids)) {
@@ -271,7 +294,7 @@ function loadPrebidScript(options, fromHeader) {
 						}
 						if (func) {
 							func(arrBids, function(creative) {
-								_localPBJS.prebid_creative = creative;
+								_localPBJS.prebid_creative = getPrebidCacheUrl(creative, arrBids);
 	    		            	BC_prebid_in_progress = false;
 								dispatchPrebidDoneEvent();
 								_logger.log(_prefix, 'Selected VAST url: ' + _localPBJS.prebid_creative);
