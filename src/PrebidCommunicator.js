@@ -16,13 +16,37 @@ var prebidCommunicator = function () {
 	function selectWinnerByCPM(arrBids) {
 		var cpm = 0.0;
 		var creative;
+		var cacheKey;
 		for (var i = 0; i < arrBids.length; i++) {
 			if (arrBids[i].cpm > cpm) {
 				cpm = arrBids[i].cpm;
 				creative = arrBids[i].vastUrl;
+				cacheKey = arrBids[i].videoCacheKey;
 			}
 		}
+		// get prebid cache url for winner
+		if (cacheKey && cacheKey.length > 0 && _options.prebidConfigOptions &&
+			_options.prebidConfigOptions.cache && _options.prebidConfigOptions.cache.url) {
+			creative = _options.prebidConfigOptions.cache.url + '?uuid=' + cacheKey;
+		}
 		_logger.log(_prefix, 'Selected VAST url: ' + creative);
+		return creative;
+	}
+
+	// get prebid cache url if available
+	function getPrebidCacheUrl(creative, arrBids) {
+		for (var i = 0; i < arrBids.length; i++) {
+			if (arrBids[i].vastUrl === creative) {
+				// winner is creative from bid array
+				if (arrBids[i].videoCacheKey && arrBids[i].videoCacheKey.length > 0 &&
+					_options.prebidConfigOptions && _options.prebidConfigOptions.cache &&
+					_options.prebidConfigOptions.cache.url) {
+					return _options.prebidConfigOptions.cache.url + '?uuid=' + arrBids[i].videoCacheKey;
+				}
+				return creative;
+			}
+		}
+		// winner is not creative from bid array
 		return creative;
 	}
 
@@ -71,12 +95,13 @@ var prebidCommunicator = function () {
 						}
 						if (func) {
 							func(arrBids, function(adServerCreative) {
-								_logger.log(_prefix, 'Selected VAST url: ' + adServerCreative);
+								var cr = getPrebidCacheUrl(adServerCreative, arrBids);
+								_logger.log(_prefix, 'Selected VAST url: ' + cr);
 								if (_callback) {
-									_callback(adServerCreative);
+									_callback(cr);
 								}
 								else {
-									$$PREBID_GLOBAL$.prebid_creative = adServerCreative;
+									$$PREBID_GLOBAL$.prebid_creative = cr;
 								}
 							});
 						}
