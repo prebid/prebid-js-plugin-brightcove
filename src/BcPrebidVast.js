@@ -11,7 +11,7 @@ var _adListManager = require('./AdListManager.js');
 var _prebidCommunicator = require('./PrebidCommunicator.js');
 var _logger = require('./Logging.js');
 
-var PLUGIN_VERSION = '0.4.5';
+var PLUGIN_VERSION = '0.4.6';
 var _prefix = 'PrebidVast->';
 var _molIFrame = null;
 
@@ -29,6 +29,15 @@ var BC_prebid_in_progress = $$PREBID_GLOBAL$$.plugin_prebid_options && $$PREBID_
 var DEFAULT_SCRIPT_LOAD_TIMEOUT = 3000;
 
 // UTIL FUNCTIONS FOR LOADING JS IFRAMES
+function isEdge() {
+	return /(edge)\/((\d+)?[\w\.]+)/i.test(navigator.userAgent);
+}
+
+function canLoadInIframe() {
+	var vjsTags = document.getElementsByTagName('video-js');	// video-js tag is created when Brightcove player emded in iFrame
+	return !(vjsTags && vjsTags.length > 0 && isEdge());
+}
+
 function getOrigin() {
     if (window.location.origin) {
         return window.location.origin;
@@ -490,9 +499,10 @@ function loadMolPlugin(callback) {
     }
 
     if (!_molLoaded) {
+		var waitMolLoaded;
         if (_molIFrame && _molLoadingInProgress) {
             _logger.log(_prefix, 'MailOnline Plugin loading in progress - setting interval to run callback when loaded');
-            var waitMolLoaded = setInterval(function() {
+            waitMolLoaded = setInterval(function() {
                 if (!_molLoadingInProgress) {
                     clearInterval(waitMolLoaded);
                     _logger.log(_prefix, 'MailOnline Plugin ' + (_molLoaded ? '' : 'not ') + 'loaded successfully - wait interval cleared');
@@ -502,59 +512,93 @@ function loadMolPlugin(callback) {
             return;
         }
 
-        var onLoadIFrame = function (msgEvent) {
-            // check only our messages 'ready' and 'error' from ifarme
-            if (msgEvent.data === 'ready') {
-                frame.contentWindow.removeEventListener('message', onLoadIFrame);
+		if (canLoadInIframe()) {
+			var onLoadIFrame = function (msgEvent) {
+				// check only our messages 'ready' and 'error' from ifarme
+				if (msgEvent.data === 'ready') {
+					frame.contentWindow.removeEventListener('message', onLoadIFrame);
 
-                _molLoaded = true;
-                _molLoadingInProgress = false;
+					_molLoaded = true;
+					_molLoadingInProgress = false;
 
-                _logger.log(_prefix, 'MailOnline Plugin loaded successfully');
+					_logger.log(_prefix, 'MailOnline Plugin loaded successfully');
 
-                // VIDLA-4391 - Add support for multiple players on the same page, each with a unique MOL plugin loaded from an iFrames
-                if (_molIFrame && _molIFrame.contentWindow && _molIFrame.contentWindow.bc_vastClientFunc) {
-					if (_player) {
-						_player.vastClient = _molIFrame.contentWindow.bc_vastClientFunc;
+					// VIDLA-4391 - Add support for multiple players on the same page, each with a unique MOL plugin loaded from an iFrames
+					if (_molIFrame && _molIFrame.contentWindow && _molIFrame.contentWindow.bc_vastClientFunc) {
+						if (_player) {
+							_player.vastClient = _molIFrame.contentWindow.bc_vastClientFunc;
+						}
+						else {
+							// in case of header bidding the _player may not be set yet
+							_vastClientFunc = _molIFrame.contentWindow.bc_vastClientFunc;
+						}
 					}
-					else {
-						// in case of header bidding the _player may not be set yet
-						_vastClientFunc = _molIFrame.contentWindow.bc_vastClientFunc;
+
+					callback(true);
+				}
+				else if (msgEvent.data === 'error') {
+					frame.contentWindow.removeEventListener('message', onLoadIFrame);
+
+					_molLoadingInProgress = false;
+
+					_logger.error(_prefix, 'Failed to load MailOnline Plugin. Error event: ', e);
+					callback(false);
+				}
+			};
+
+			_molLoadingInProgress = true;
+
+			var frameID = 'bc-mol-frame-' + Date.now();
+			var frame = insertHiddenIframe(frameID);
+			_molIFrame = frame;
+
+			try {
+				// make sure for every new plugin version we reload MOL plugin
+				var molPath = MOL_PLUGIN_URL + '?rand=' + PLUGIN_VERSION;
+				writeAsyncScriptToFrame(frame, molPath, true, getOrigin());
+
+				frame.contentWindow.addEventListener('message', onLoadIFrame);
+			}
+			catch (e) {
+				// failed to load MOL.
+				_logger.error(_prefix, 'Failed to load Mail Online Plugin - caught error writing iFrame.');
+
+				callback(false);
+			}
+		}
+		else {
+			if (_molLoadingInProgress) {
+				_logger.log(_prefix, 'MailOnline Plugin loading in progress - setting interval to run callback when loaded');
+				waitMolLoaded = setInterval(function() {
+					if (!_molLoadingInProgress) {
+						clearInterval(waitMolLoaded);
+						_logger.log(_prefix, 'MailOnline Plugin ' + (_molLoaded ? '' : 'not ') + 'loaded successfully - wait interval cleared');
+						callback(_molLoaded);
 					}
-                }
+				}, 50);
+				return;
+			}
 
-                callback(true);
-            }
-            else if (msgEvent.data === 'error') {
-                frame.contentWindow.removeEventListener('message', onLoadIFrame);
+			_molLoadingInProgress = true;
+			var script = document.createElement('script');
+			script.src = MOL_PLUGIN_URL + '?rand=' + PLUGIN_VERSION;
+			script.onload = function() {
+				_molLoaded = true;
+				_player.vastClient = window.bc_vastClientFunc;
+				_molLoadingInProgress = false;
+				_logger.log(_prefix, 'MailOnline Plugin loaded successfully');
+				callback(true);
+			};
+			script.onerror = function(e) {
+				_molLoaded = false;
+				_molLoadingInProgress = false;
+				_logger.error(_prefix, 'Failed to load MailOnline Plugin. Error event: ', e);
+				callback(false);
+			};
 
-                _molLoadingInProgress = false;
-
-                _logger.error(_prefix, 'Failed to load MailOnline Plugin. Error event: ', e);
-                callback(false);
-            }
-        };
-
-        _molLoadingInProgress = true;
-
-        var frameID = 'bc-mol-frame-' + Date.now();
-		var frame = insertHiddenIframe(frameID);
-		_molIFrame = frame;
-
-        try {
-			// make sure for every new plugin version we reload MOL plugin
-			var molPath = MOL_PLUGIN_URL + '?rand=' + PLUGIN_VERSION;
-            writeAsyncScriptToFrame(frame, molPath, true, getOrigin());
-
-            frame.contentWindow.addEventListener('message', onLoadIFrame);
-        }
-        catch (e) {
-            // failed to load MOL.
-            _logger.error(_prefix, 'Failed to load Mail Online Plugin - caught error writing iFrame.');
-
-            callback(false);
-        }
-    }
+			document.body.appendChild(script);
+		}
+   	}
     else {
 		_logger.log(_prefix, 'MailOnline Plugin already loaded');
 		// make sure MOL plugin is registered for header bidding
