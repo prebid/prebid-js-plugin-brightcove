@@ -11,7 +11,7 @@ var _adListManager = require('./AdListManager.js');
 var _prebidCommunicator = require('./PrebidCommunicator.js');
 var _logger = require('./Logging.js');
 
-var PLUGIN_VERSION = '0.4.6';
+var PLUGIN_VERSION = '0.4.7';
 var _prefix = 'PrebidVast->';
 var _molIFrame = null;
 
@@ -34,8 +34,9 @@ function isEdge() {
 }
 
 function canLoadInIframe() {
-	var vjsTags = document.getElementsByTagName('video-js');	// video-js tag is created when Brightcove player emded in iFrame
-	return !(vjsTags && vjsTags.length > 0 && isEdge());
+	var docClassList = document.documentElement.classList;
+	var playerInIframe = docClassList && docClassList.contains('bc-iframe'); // html of player has bc-iframe class when Brightcove player emded in iFrame
+	return !(playerInIframe && isEdge());
 }
 
 function getOrigin() {
