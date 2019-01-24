@@ -329,7 +329,7 @@ var adListManager = function () {
 	}
 
 	// function to play vast xml
-	var playAd = function(adData, forseAdToAutoplay) {
+	var playAd = function(adData, forceAdToAutoplay) {
 		if (_adPlaying) {
 			// not interrupt playing ad
 			showCover(false);
@@ -358,7 +358,7 @@ var adListManager = function () {
 		adData.status = AD_STATUS_PLAYING;
 		_firstAd = false;
 		_adTime = adData.adTime;
-		if (forseAdToAutoplay) {
+		if (forceAdToAutoplay) {
 			_options.initialPlayback = 'auto';
 		}
 		_vastRendererObj.playAd(adData.adTag, _options, firstVideoPreroll, _mobilePrerollNeedClick, _prerollNeedClickToPlay, eventCallback);
