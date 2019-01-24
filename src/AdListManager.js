@@ -329,7 +329,7 @@ var adListManager = function () {
 	}
 
 	// function to play vast xml
-	var playAd = function(adData) {
+	var playAd = function(adData, forceAdToAutoplay) {
 		if (_adPlaying) {
 			// not interrupt playing ad
 			showCover(false);
@@ -358,6 +358,9 @@ var adListManager = function () {
 		adData.status = AD_STATUS_PLAYING;
 		_firstAd = false;
 		_adTime = adData.adTime;
+		if (forceAdToAutoplay) {
+			_options.initialPlayback = 'auto';
+		}
 		_vastRendererObj.playAd(adData.adTag, _options, firstVideoPreroll, _mobilePrerollNeedClick, _prerollNeedClickToPlay, eventCallback);
 	};
 
@@ -437,7 +440,8 @@ var adListManager = function () {
 									_mobilePrerollNeedClick = false;	// don't need more click for preroll on iPad
 									showCover(true);
 									adData.status = AD_STATUS_PLAYING;
-									playAd(adData);
+									// make sure ad going to autoplay
+									playAd(adData, true);
 								});
 							}
 							else {

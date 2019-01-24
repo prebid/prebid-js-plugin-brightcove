@@ -23,7 +23,7 @@ var vastRenderer = function (player) {
 	// set ad playback options base on main content state
 	function setPlaybackMethodData() {
 		var initPlayback = 'auto';
-    	if (_player.currentTime() === 0) {
+    	if (_player.currentTime() === 0 && !_options.initialPlayback) {
             initPlayback = _player.autoplay() ? 'auto' : 'click';
     	}
 		var initAudio = _player.muted() ? 'off' : 'on';
