@@ -11,7 +11,7 @@ var _adListManager = require('./AdListManager.js');
 var _prebidCommunicator = require('./PrebidCommunicator.js');
 var _logger = require('./Logging.js');
 
-var PLUGIN_VERSION = '0.4.8';
+var PLUGIN_VERSION = '0.4.9';
 var _prefix = 'PrebidVast->';
 var _molIFrame = null;
 
@@ -712,6 +712,15 @@ var prebidVastPlugin = function(player) {
 		// @endexclude
 
 		run: function(options) {
+			// get Brightcove Player Id
+			var playerId = '';
+			if (_player.bcinfo) {
+				playerId = _player.bcinfo.playerId;
+			}
+			else if (_player.options_ && _player.options_['data-player']) {
+				playerId = _player.options_['data-player'];
+			}
+			_logger.setPlayerId((playerId && playerId.length > 0 ? (playerId + '-') : '') + _player.el_.id);
 			if (!_localPBJS.bc_pbjs && !BC_prebid_in_progress && !options.creative) {
 				loadPrebidScript(options, false);
 			}
