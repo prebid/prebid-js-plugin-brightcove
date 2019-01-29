@@ -434,9 +434,15 @@ var adListManager = function () {
 						else {
 							// iPad
 							if (_player.paused()) {
+								traceMessage({data: {message: 'iPad -> Player paused'}});
 								showCover(false);
+								// show play button
+								_player.bigPlayButton.el_.style.display = 'block';
+								_player.bigPlayButton.el_.style.opacity = 1;
 								_player.one('play', function() {
 									traceMessage({data: {message: 'Main content - play event'}});
+									// hide play button
+									_player.bigPlayButton.el_.style.display = 'none';
 									_mobilePrerollNeedClick = false;	// don't need more click for preroll on iPad
 									showCover(true);
 									adData.status = AD_STATUS_PLAYING;
@@ -445,6 +451,7 @@ var adListManager = function () {
 								});
 							}
 							else {
+								traceMessage({data: {message: 'Pad -> Player not paused'}});
 								showCover(true);
 								adData.status = AD_STATUS_PLAYING;
 								playAd(adData);
