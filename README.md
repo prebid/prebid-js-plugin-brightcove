@@ -223,7 +223,7 @@ Make sure the following paths are correct:
 
 ## Contribute
 
-SSPs and publishers may contributed to this project.
+SSPs and publishers may contribute to this project.
 
 For guidelines, see [Contributing](https://github.com/prebid/prebid-js-plugin-brightcove/tree/master/CONTRIBUTING.md).
 
