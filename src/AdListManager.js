@@ -461,18 +461,22 @@ var adListManager = function () {
 					else {
 						// android
 						if (_player.paused()) {
-							showCover(false);
-							_player.one('play', function() {
+							if (_player.tech_ && _player.tech_.el_ && !_player.tech_.el_.autoplay) {
+								showCover(false);
+								// show play button if brightcove player is configured for not autoplay
+								_prerollNeedClickToPlay = true;
+								_player.bigPlayButton.el_.style.display = 'block';
+								_player.bigPlayButton.el_.style.opacity = 1;
+							}
+							else {
 								showCover(true);
-								adData.status = AD_STATUS_PLAYING;
-								playAd(adData);
-							});
+							}
 						}
 						else {
 							showCover(true);
-							adData.status = AD_STATUS_PLAYING;
-							playAd(adData);
 						}
+						adData.status = AD_STATUS_PLAYING;
+						playAd(adData);
 					}
 				}
 				else {
