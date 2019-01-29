@@ -451,7 +451,7 @@ var adListManager = function () {
 								});
 							}
 							else {
-								traceMessage({data: {message: 'Pad -> Player not paused'}});
+								traceMessage({data: {message: 'iPad -> Player not paused'}});
 								showCover(true);
 								adData.status = AD_STATUS_PLAYING;
 								playAd(adData);
