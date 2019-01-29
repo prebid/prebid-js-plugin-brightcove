@@ -180,6 +180,16 @@ function apiInit() {
 		var player = this;
 		_player = this;
 
+		// get Brightcove Player Id
+		var playerStudioId = '';
+		if (_player.bcinfo) {
+			playerStudioId = _player.bcinfo.playerId;
+		}
+		else if (_player.options_ && _player.options_['data-player']) {
+			playerStudioId = _player.options_['data-player'];
+		}
+		_logger.setPlayerId((playerStudioId && playerStudioId.length > 0 ? (playerStudioId + '-') : '') + _player.el_.id);
+
 		// cover player with black div to avoid video flickering (do it only at very begging of the main content video)
 		var playerId = _player.el_.id;
     	if (!document.getElementById('plugin-break-cover' + playerId) && _player.currentTime() < 1) {
