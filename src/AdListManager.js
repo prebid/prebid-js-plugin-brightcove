@@ -433,6 +433,7 @@ var adListManager = function () {
 						}
 						else {
 							// iPad
+							traceMessage({data: {message: 'Player ready state = ' + _player.readyState()}});
 							if (_player.paused()) {
 								traceMessage({data: {message: 'iPad -> Player paused'}});
 								showCover(false);
