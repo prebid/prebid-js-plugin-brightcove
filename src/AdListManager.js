@@ -36,6 +36,7 @@ var adListManager = function () {
 	var _showSpinner = false;
 	var _mobilePrerollNeedClick = false;
 	var _prerollNeedClickToPlay = false;
+	var _needForceToPlayMainContent = false;
 
 	var _pageNotificationCallback;
 
@@ -138,6 +139,53 @@ var adListManager = function () {
 		if (!_isPostroll) {
 			if (_player.playlist && _player.playlist.autoadvance) {
 				forceNextVideoForLastAd();
+			}
+			// Here is the specific code used for iPad, because very rare we could see the player send
+			// 'playing' event when player paused and we expected to see play button.
+			// This code compensate this unexpected player bihavior to make sure player not freez after ad
+			// finished with error. We check (using Promise) if video can be played, and if not we are showing play button
+			// to make sure user can continue to play main content by clicking this play button.
+			// We use some delay to pass the first 'play' event (if happened), because when 'play' event happened
+			// the play button will be hidden. We need keep play button visible to allow client continue to play
+			// main video.
+			if (_needForceToPlayMainContent) {
+				traceMessage({data: {message: 'Force to play main content after preroll'}});
+				try {
+					_needForceToPlayMainContent = false;
+					var playPromise = _player.tech().el().play();
+					if (playPromise !== undefined && typeof playPromise.then === 'function') {
+						playPromise.then(function() {
+							_logger.log(_prefix, 'playPromise resolves to play video');
+							_player.play();
+						}).catch(function() {
+							_logger.log(_prefix, 'playPromise rejects to play video');
+							var gotPlayEvent = false;
+							_player.one('play', function() {
+								_logger.log(_prefix, 'got play event');
+								gotPlayEvent = true;
+							});
+							setTimeout(function() {
+								if (!gotPlayEvent || _player.paused()) {
+									// show play button
+									_player.bigPlayButton.el_.style.display = 'block';
+									_player.bigPlayButton.el_.style.opacity = 1;
+									_logger.log(_prefix, 'show BIG play button');
+									_player.one('play', function() {
+										_logger.log(_prefix, 'Main content - play event');
+										_player.bigPlayButton.el_.style.display = 'none';
+										_logger.log(_prefix, 'hide BIG play button');
+									});
+								}
+							}, 2000);
+						});
+					}
+					else {
+						_player.play();
+					}
+				}
+				catch (ex) {
+					_player.play();
+				}
 			}
 		}
 		_isPostroll = false;
@@ -410,6 +458,7 @@ var adListManager = function () {
 	// callback to handle marker reached event from marker component
 	var markerReached = function markerReached(marker) {
 		var adTime = marker.time;
+		_needForceToPlayMainContent = false;
 		getAdData(adTime, function(adData, status) {
 			if (adData) {
 				traceMessage({data: {message: 'Play Ad at time = ' + adTime}});
@@ -433,14 +482,17 @@ var adListManager = function () {
 						}
 						else {
 							// iPad
+							traceMessage({data: {message: 'Player ready state = ' + _player.readyState()}});
 							if (_player.paused()) {
 								traceMessage({data: {message: 'iPad -> Player paused'}});
 								showCover(false);
 								// show play button
 								_player.bigPlayButton.el_.style.display = 'block';
 								_player.bigPlayButton.el_.style.opacity = 1;
-								_player.one('play', function() {
-									traceMessage({data: {message: 'Main content - play event'}});
+								_player.one('playing', function() {
+									traceMessage({data: {message: 'Main content - playing event'}});
+									// we use this flag to activate special code to protect main video from freezing
+									_needForceToPlayMainContent = true;
 									// hide play button
 									_player.bigPlayButton.el_.style.display = 'none';
 									_mobilePrerollNeedClick = false;	// don't need more click for preroll on iPad
