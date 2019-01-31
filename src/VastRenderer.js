@@ -95,7 +95,7 @@ var vastRenderer = function (player) {
     	_player.off('trace.message', resendEvent);
     	_player.off('trace.event', resendEvent);
 
-        _player.on('internal', resendEvent);
+        _player.off('internal', resendEvent);
     }
 
     // play single ad
