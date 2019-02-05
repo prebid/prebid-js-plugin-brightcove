@@ -23,8 +23,8 @@ var vastRenderer = function (player) {
 	// set ad playback options base on main content state
 	function setPlaybackMethodData() {
 		var initPlayback = 'auto';
-    	if (_player.currentTime() === 0) {
-    		initPlayback = _player.autoplay() ? 'auto' : 'click';
+    	if (_player.currentTime() === 0 && !_options.initialPlayback) {
+            initPlayback = _player.autoplay() ? 'auto' : 'click';
     	}
 		var initAudio = _player.muted() ? 'off' : 'on';
 		_options.initialPlayback = initPlayback;
@@ -95,11 +95,19 @@ var vastRenderer = function (player) {
     	_player.off('trace.message', resendEvent);
     	_player.off('trace.event', resendEvent);
 
-        _player.on('internal', resendEvent);
+        _player.off('internal', resendEvent);
     }
 
     // play single ad
     this.playAd = function(xml, options, firstVideoPreroll, mobilePrerollNeedClick, prerollNeedClickToPlay, eventCallback) {
+        // if MOL plugin is not registered in videojs immediatelly notify caller and return
+        if (!_player.vastClient || typeof _player.vastClient != 'function') {
+            if (eventCallback) {
+                eventCallback({type: 'internal', data: {name: 'resetContent'}});
+            }
+            return;
+        }
+
         _eventCallback = eventCallback;
         _options = options;
 

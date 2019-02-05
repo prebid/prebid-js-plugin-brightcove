@@ -1,10 +1,10 @@
-var BcPrebidVast = require('./../../../src/BcPrebidVast.js');
-var logger = require('./../../../src/Logging.js');
+var bcPrebidVast = require('./../../../src/BcPrebidVast.js');
 
 describe('BcPrebidVast unit test', function() {
     var Mock;
 	var mockObject;
 	var sinonStub;
+	var BcPrebidVast = new bcPrebidVast({});
 
 	before(function(done) {
 		setTimeout(function() {
@@ -72,9 +72,10 @@ describe('BcPrebidVast unit test', function() {
 		this.timeout(5000);
 		BcPrebidVast.test().loadPrebidScript(mockObject.options, false);
 		setTimeout(function() {
+			var localPBJS = BcPrebidVast.test().localPBJS;
 			var options = mockObject.options;
 			options.biddersSpec.bids[0].params.placementId = 11653264;
-			sinonStub = sinon.stub($$PREBID_GLOBAL$$.bc_pbjs, 'requestBids', function(obj) {
+			sinonStub = sinon.stub(localPBJS.bc_pbjs, 'requestBids', function(obj) {
 				var response = {
 					'my-video-tag': {
 						bids: [
@@ -136,29 +137,25 @@ describe('BcPrebidVast unit test', function() {
 		assert.equal(value, '10.00', 'failed - expected 10.00, got ' + value);
 	});
 
-	it('loadPrebidScript test - loads prebid js on a page and starts pushing command in pbjs que', function (done) {
-		sinonStub = sinon.stub(logger, 'log', function(pref, data) {
-			if (data && data.indexOf('Selected VAST url') === 0) {
-				console.log(data);
-				done();
-			}
-		});
-		BcPrebidVast.test().loadPrebidScript(mockObject.options, true);
-     });
-
-    it('loadMolPlugin test - loads MailOnline Plugin', function (done) {
+	it('loadMolPlugin test - loads MailOnline Plugin on a page (in an iFrame)', function (done) {
 		BcPrebidVast.test().loadMolPlugin(function(succ) {
 			assert.isTrue(succ);
 			done();
 		});
-    });
+	});
 
-    it('init test - registers Brightcove Prebid Plugin in videojs', function (done) {
-		sinonStub = sinon.stub(videojs, 'registerPlugin', function(name, fnc) {
-			assert.equal(name, 'bcPrebidVastPluginCommand');
-			assert.isTrue(typeof fnc == 'function');
+	it('insertHiddenIframe test - creates an empty iframe and attaches it to the DOM', function () {
+		var frame = BcPrebidVast.test().insertHiddenIframe('testFrame');
+
+		assert.ok(frame, 'failed - expected frame to be truthy, got ' + frame);
+		assert.ok(frame.parentNode, 'failed - expected frame.parentNode to be truthy, got ' + frame.parentNode);
+		assert.equal(frame.id, 'testFrame', 'failed - expected iFrame.id to be \'testFrame\', got ' + frame.id);
+	});
+
+    it('loadMolPlugin test - loads MailOnline Plugin on a page (in an iFrame)', function (done) {
+		BcPrebidVast.test().loadMolPlugin(function(succ) {
+			assert.isTrue(succ);
 			done();
 		});
-		BcPrebidVast.init();
     });
 });

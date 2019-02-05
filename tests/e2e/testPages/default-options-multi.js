@@ -1,6 +1,7 @@
 var defaultOptions = [
 {
     "prebidPath" : "//acdn.adnxs.com/prebid/not-for-prod/1/prebid.js",
+    "prebidPluginPath": "//acdn.adnxs.com/video/plugins/bc/prebid/bc_prebid_vast_plugin.min.js",
     "scriptLoadTimeout": 3000,
     "bidderAliases": [
         {
@@ -213,6 +214,7 @@ var defaultOptions = [
 },
 {
 	"prebidPath" : "//acdn.adnxs.com/prebid/not-for-prod/1/prebid.js",
+    "prebidPluginPath": "//acdn.adnxs.com/video/plugins/bc/prebid/bc_prebid_vast_plugin.min.js",
 	"biddersSpec" : {
         "code" : "my-video-tag",
         "sizes" : [640, 480],

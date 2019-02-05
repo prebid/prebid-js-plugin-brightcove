@@ -1,6 +1,5 @@
 var _adListManager = require('../../../src/AdListManager.js');
-var BcPrebidVast = require('../../../src/BcPrebidVast.js');
-// var prebidCommunicator = require('../../../src/PrebidCommunicator.js');
+var BcPrebidVast = require('../../../src/BcPrebidLoader.js');
 
 describe('AdListManager unit test', function () {
     var Mock;

@@ -34,6 +34,8 @@ var _debugLevelLocalStorage = TRACE_LEVEL_DEFAULT;
 // the debug level that was set via call to setDebugLevel
 var _debugLevelFunctionSet = TRACE_LEVEL_DEFAULT;
 
+var _playerId;
+
 function getCurrentTimeString() {
     var dateToReturn = '';
     try {
@@ -80,6 +82,10 @@ function traceMessageAtLevel(messageLogLevel, args) {
                     messagePrefix += '-' + methodToUse;
                     methodToUse = 'log';
                 }
+                if (_playerId && _playerId.length > 0) {
+                    messagePrefix += ('-' + _playerId);
+                }
+
                 messagePrefix += ']';
                 messagePrefix += '[' + getCurrentTimeString() + ']';
 
@@ -338,6 +344,14 @@ module.exports = {
         } catch (e) {
             return false;
         }
+    },
+
+    /**
+     * Sets player id
+     * @param (string) id = Brightcove Player Id
+     */
+    setPlayerId: function(id) {
+        _playerId = id;
     },
 
     /** @constant {number} */

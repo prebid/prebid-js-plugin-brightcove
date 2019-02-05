@@ -14,6 +14,7 @@ var adListManager = function () {
 	var _prebidCommunicatorObj = new _prebidCommunicator();
 	var _vastRendererObj;
 	var _player;
+	var _playerId;
 	var _playlistIdx = -1;
 	var _arrOptions;
 	var _options;
@@ -21,10 +22,9 @@ var adListManager = function () {
 	var _adMarkerStyle;
 	var _frequencyRules;
 	var _hasPreroll = false;
-	var _hasPostroll = false;
-	var _waitPostrollEndedForPlaylist = false;
 	var _isPostroll = false;
 	var _adPlaying = false;
+	var _adTime;
 	var _firstAd = true;
 	var _mainVideoEnded = false;
     var _savedMarkers;
@@ -36,6 +36,7 @@ var adListManager = function () {
 	var _showSpinner = false;
 	var _mobilePrerollNeedClick = false;
 	var _prerollNeedClickToPlay = false;
+	var _needForceToPlayMainContent = false;
 
 	var _pageNotificationCallback;
 
@@ -80,36 +81,52 @@ var adListManager = function () {
 		}
 	};
 
+	// force next playlist video
+	var forceNextVideoForLastAd = function forceNextVideoForLastAd() {
+		// after ad played brightcove player stopped to fire 'playlistitem' events !?!?
+		var isLastAd = _arrAdList[_arrAdList.length - 1].adTime === _adTime;
+		if (isLastAd && _player.playlist.currentIndex() < _player.playlist.lastIndex()) {
+			// when last ad done, and main video is ended, and main video is not last video in playlist
+			// force to play next video in playlist
+			_player.one('ended', function() {
+				startNextPlaylistVideo();
+			});
+		}
+	};
+
 	// restore main content after ad is finished
 	var resetContent = function resetContent() {
-		if (_waitPostrollEndedForPlaylist) {
+		if (_isPostroll) {
+			var state = _player.muted();
+			_player.muted(true);
 			showCover(true);
+			_mainVideoEnded = true;
+			_player.one('ended', function() {
+				_player.muted(state);
+				if (_player.playlist && _player.playlist.autoadvance) {
+					if (_markersHandler && _player.markers && _player.markers.destroy) {
+						_player.markers.destroy();
+					}
+					if (_player.playlist.currentIndex() < _player.playlist.lastIndex()) {
+						startNextPlaylistVideo();
+					}
+					else {
+						showCover(false);
+					}
+				}
+				else {
+					showCover(false);
+				}
+			});
 		}
 		else {
-			if (_isPostroll) {
-				var state = _player.muted();
-				_player.muted(true);
-				showCover(true);
-				_player.one('ended', function() {
-					showCover(false);
-					_player.muted(state);
-				});
-			}
-			else {
-				showCover(false);
-			}
+			showCover(false);
 		}
-		_isPostroll = false;
 		_options = null;
 		setTimeout(function() {
 			_adPlaying = false;
-			if (_savedMarkers && _player.markers && _player.markers.reset) {
-				if (!_waitPostrollEndedForPlaylist) {
-					_player.markers.reset(JSON.parse(_savedMarkers));
-				}
-			}
-			if (_waitPostrollEndedForPlaylist) {
-				startNextPlaylistVideo();
+			if (!_mainVideoEnded && _savedMarkers && _player.markers && _player.markers.reset) {
+				_player.markers.reset(JSON.parse(_savedMarkers));
 			}
 		}, 500);
 		_adIndicator.style.display = 'none';
@@ -119,6 +136,59 @@ var adListManager = function () {
 		if (adData) {
 			adData.status = AD_STATUS_DONE;
 		}
+		if (!_isPostroll) {
+			if (_player.playlist && _player.playlist.autoadvance) {
+				forceNextVideoForLastAd();
+			}
+			// Here is the specific code used for iPad, because very rare we could see the player send
+			// 'playing' event when player paused and we expected to see play button.
+			// This code compensate this unexpected player bihavior to make sure player not freez after ad
+			// finished with error. We check (using Promise) if video can be played, and if not we are showing play button
+			// to make sure user can continue to play main content by clicking this play button.
+			// We use some delay to pass the first 'play' event (if happened), because when 'play' event happened
+			// the play button will be hidden. We need keep play button visible to allow client continue to play
+			// main video.
+			if (_needForceToPlayMainContent) {
+				traceMessage({data: {message: 'Force to play main content after preroll'}});
+				try {
+					_needForceToPlayMainContent = false;
+					var playPromise = _player.tech().el().play();
+					if (playPromise !== undefined && typeof playPromise.then === 'function') {
+						playPromise.then(function() {
+							_logger.log(_prefix, 'playPromise resolves to play video');
+							_player.play();
+						}).catch(function() {
+							_logger.log(_prefix, 'playPromise rejects to play video');
+							var gotPlayEvent = false;
+							_player.one('play', function() {
+								_logger.log(_prefix, 'got play event');
+								gotPlayEvent = true;
+							});
+							setTimeout(function() {
+								if (!gotPlayEvent || _player.paused()) {
+									// show play button
+									_player.bigPlayButton.el_.style.display = 'block';
+									_player.bigPlayButton.el_.style.opacity = 1;
+									_logger.log(_prefix, 'show BIG play button');
+									_player.one('play', function() {
+										_logger.log(_prefix, 'Main content - play event');
+										_player.bigPlayButton.el_.style.display = 'none';
+										_logger.log(_prefix, 'hide BIG play button');
+									});
+								}
+							}, 2000);
+						});
+					}
+					else {
+						_player.play();
+					}
+				}
+				catch (ex) {
+					_player.play();
+				}
+			}
+		}
+		_isPostroll = false;
 	};
 
 	if (!Array.prototype.find) {
@@ -159,22 +229,29 @@ var adListManager = function () {
 
 	// event handler for 'playlistitem' event
 	function nextListItemHandler() {
+		if (_playlistIdx === _player.playlist.currentIndex()) {
+			// ignore second call event handler for same playlist item
+			return;
+		}
 		_player.off('timeupdate', checkPrepareTime);
 		_savedMarkers = null;
 		_prerollNeedClickToPlay = false;
-		_hasPostroll = false;
-		_waitPostrollEndedForPlaylist = false;
 		showCover(true);
-		_playlistIdx++;
+		if (_player.playlist && _player.playlist.currentIndex) {
+			_playlistIdx = _player.playlist.currentIndex();
+		}
 		_contentDuration = 0;
 		_player.one('loadedmetadata', function() {
 			_mainVideoEnded = false;
+			if (needPlayAdForPlaylistItem(_player.playlist.currentIndex())) {
+				// for first video in playlist we already handle loadedmatadata event
+				if (_player.playlist.currentIndex() > 0) {
+					startRenderingPreparation();
+				}
+				return;
+			}
 			if (_markersHandler && _player.markers && _player.markers.destroy) {
 				_player.markers.destroy();
-			}
-			if (needPlayAdForPlaylistItem(_player.playlist.currentIndex())) {
-				startRenderingPreparation();
-				return;
 			}
 			showCover(false);
 			_logger.log(_prefix, 'Ad did not play due to frequency settings');
@@ -293,13 +370,17 @@ var adListManager = function () {
 			if (internalName === 'cover') {
 				showCover(event.data.cover);
 			}
+			else if (internalName === 'resetContent') {
+				resetContent();
+			}
 		}
 	}
 
 	// function to play vast xml
-	var playAd = function(adData) {
+	var playAd = function(adData, forceAdToAutoplay) {
 		if (_adPlaying) {
 			// not interrupt playing ad
+			showCover(false);
 			return;
 		}
 		if (!_vastRendererObj) {
@@ -324,6 +405,10 @@ var adListManager = function () {
 		_adIndicator.innerHTML = _options.adText ? _options.adText : 'Ad';
 		adData.status = AD_STATUS_PLAYING;
 		_firstAd = false;
+		_adTime = adData.adTime;
+		if (forceAdToAutoplay) {
+			_options.initialPlayback = 'auto';
+		}
 		_vastRendererObj.playAd(adData.adTag, _options, firstVideoPreroll, _mobilePrerollNeedClick, _prerollNeedClickToPlay, eventCallback);
 	};
 
@@ -347,7 +432,7 @@ var adListManager = function () {
 					}
 					else {
 						adData.status = AD_STATUS_DONE;
-						callback(null);
+						callback(null, adData.status);
 					}
 				});
 			}
@@ -360,7 +445,7 @@ var adListManager = function () {
 				var interval = setInterval(function() {
 					if (adData.status != AD_STATUS_TAG_REQUEST) {
 						clearInterval(interval);
-						callback(adData.adTag ? adData : null);
+						callback(adData.adTag ? adData : null, adData.status);
 					}
 				}, 50);
 			}
@@ -373,36 +458,52 @@ var adListManager = function () {
 	// callback to handle marker reached event from marker component
 	var markerReached = function markerReached(marker) {
 		var adTime = marker.time;
-		getAdData(adTime, function(adData) {
+		_needForceToPlayMainContent = false;
+		getAdData(adTime, function(adData, status) {
 			if (adData) {
+				traceMessage({data: {message: 'Play Ad at time = ' + adTime}});
 				_isPostroll = adTime === _contentDuration;
 				adData.status = AD_STATUS_READY_PLAY;
 				_mobilePrerollNeedClick = isMobile() && adTime === 0;
 				if (_mobilePrerollNeedClick && _playlistIdx < 0) {
-					showCover(false);
 					_player.bigPlayButton.el_.style.opacity = 1;
 					if (isIDevice()) {
 						// iOS
 						if (isIPhone()) {
 							// iPhone
+							showCover(false);
 							_player.one('play', function() {
 								_mobilePrerollNeedClick = false;	// don't need more click for preroll on iPhone
 								adData.status = AD_STATUS_PLAYING;
+								// force player to autoplay after user click play button
+								_player.autoplay(true);
 								playAd(adData);
 							});
 						}
 						else {
 							// iPad
+							traceMessage({data: {message: 'Player ready state = ' + _player.readyState()}});
 							if (_player.paused()) {
-								_player.one('play', function() {
-									traceMessage({data: {message: 'Main content - play event'}});
+								traceMessage({data: {message: 'iPad -> Player paused'}});
+								showCover(false);
+								// show play button
+								_player.bigPlayButton.el_.style.display = 'block';
+								_player.bigPlayButton.el_.style.opacity = 1;
+								_player.one('playing', function() {
+									traceMessage({data: {message: 'Main content - playing event'}});
+									// we use this flag to activate special code to protect main video from freezing
+									_needForceToPlayMainContent = true;
+									// hide play button
+									_player.bigPlayButton.el_.style.display = 'none';
 									_mobilePrerollNeedClick = false;	// don't need more click for preroll on iPad
 									showCover(true);
 									adData.status = AD_STATUS_PLAYING;
-									playAd(adData);
+									// make sure ad going to autoplay
+									playAd(adData, true);
 								});
 							}
 							else {
+								traceMessage({data: {message: 'iPad -> Player not paused'}});
 								showCover(true);
 								adData.status = AD_STATUS_PLAYING;
 								playAd(adData);
@@ -412,17 +513,22 @@ var adListManager = function () {
 					else {
 						// android
 						if (_player.paused()) {
-							_player.one('play', function() {
+							if (_player.tech_ && _player.tech_.el_ && !_player.tech_.el_.autoplay) {
+								showCover(false);
+								// show play button if brightcove player is configured for not autoplay
+								_prerollNeedClickToPlay = true;
+								_player.bigPlayButton.el_.style.display = 'block';
+								_player.bigPlayButton.el_.style.opacity = 1;
+							}
+							else {
 								showCover(true);
-								adData.status = AD_STATUS_PLAYING;
-								playAd(adData);
-							});
+							}
 						}
 						else {
 							showCover(true);
-							adData.status = AD_STATUS_PLAYING;
-							playAd(adData);
 						}
+						adData.status = AD_STATUS_PLAYING;
+						playAd(adData);
 					}
 				}
 				else {
@@ -449,6 +555,11 @@ var adListManager = function () {
 				if (!_mainVideoEnded) {
 					showCover(false);
 				}
+				if (status === AD_STATUS_DONE && _player.playlist && _player.playlist.currentIndex() >= 0) {
+					_player.play();
+					_adTime = adTime;
+					forceNextVideoForLastAd();
+				}
 			}
 		});
 	};
@@ -466,7 +577,7 @@ var adListManager = function () {
 				if (!_arrAdList[i].adTag && _arrAdList[i].status === AD_STATUS_NOT_PLAYED) {
 					_arrAdList[i].status = AD_STATUS_TAG_REQUEST;
 					_arrAdList[i].options.clearPrebid = _arrOptions && _arrOptions.length > 1;
-					_prebidCommunicatorObj.doPrebid(_arrAdList[i].options, function(creative) {
+					_prebidCommunicatorObj.doPrebid(_arrAdList[i].options, function(creative) {		// jshint ignore:line
 						_arrAdList[i].status = !!creative ? AD_STATUS_READY_PLAY : AD_STATUS_DONE;
 						_arrAdList[i].adTag = creative;
 					});
@@ -518,9 +629,6 @@ var adListManager = function () {
 				if (!timeVal) {
 					_arrAdList.push({adTag: null, options: options, adTime: adTime, status: AD_STATUS_NOT_PLAYED});
 					arrTimes.push(adTime);
-					if (adTime === _contentDuration) {
-						_hasPostroll = true;
-					}
 				}
 			}
 		});
@@ -562,6 +670,10 @@ var adListManager = function () {
 		if (needRegMarkers) {
 			_markersHandler.init(_player);
 		}
+		// remove old markers from previous video
+		if (_player.markers) {
+			_player.markers.removeAll();
+		}
 		_markersHandler.markers(timeMarkers);
 
 		_player.on('timeupdate', checkPrepareTime);
@@ -582,13 +694,14 @@ var adListManager = function () {
 
 	// main entry point to start play ad
     this.play = function (vjsPlayer, options) {
-    	_player = vjsPlayer;
+		_player = vjsPlayer;
+		_playerId = _player.el_.id;
 		_arrOptions = options;
 
-    	_cover = document.getElementById('plugin-break-cover');
+    	_cover = document.getElementById('plugin-break-cover' + _playerId);
     	if (!_cover) {
     		_cover = document.createElement('div');
-    		_cover.id = 'plugin-break-cover';
+    		_cover.id = 'plugin-break-cover' + _playerId;
     		_cover.style.width = '100%';
     		_cover.style.height = '100%';
     		_cover.style.backgroundColor = 'black';
@@ -598,38 +711,17 @@ var adListManager = function () {
     		_cover.style.display = 'none';
     	}
 
-    	_spinnerDiv = document.getElementById('plugin-vast-spinner');
+    	_spinnerDiv = document.getElementById('plugin-vast-spinner' + _playerId);
     	if (!_spinnerDiv) {
 			_spinnerDiv = document.createElement('div');
-			_spinnerDiv.id = 'plugin-vast-spinner';
+			_spinnerDiv.id = 'plugin-vast-spinner' + _playerId;
 			_spinnerDiv.className = 'vjs-loading-spinner';
 			_spinnerDiv.style.display = 'none';
 			_spinnerDiv.style.zIndex = 101;
 			_player.el().appendChild(_spinnerDiv);
 		}
 		_hasPreroll = optionsHavePreroll();
-		if (_hasPreroll) {
-			showCover(true);
-		}
-
-		if (_player.playlist && _player.playlist.autoadvance) {
-			_player.on('ended', function() {
-				if (_player.playlist && _player.playlist.autoadvance) {
-					if (_adPlaying) {
-						return;
-					}
-					_mainVideoEnded = true;
-					if (_player.playlist.currentIndex() < _player.playlist.lastIndex()) {
-						if (_hasPostroll) {
-							_waitPostrollEndedForPlaylist = true;
-						}
-						else {
-							startNextPlaylistVideo();
-						}
-					}
-				}
-			});
-		}
+		showCover(_hasPreroll);
 
 		_player.on('playlistitem', nextListItemHandlerAuto);
 
@@ -637,7 +729,7 @@ var adListManager = function () {
 			startRenderingPreparation();
     	}
     	else {
-            _player.one('loadedmetadata', startRenderingPreparation);
+			_player.one('loadedmetadata', startRenderingPreparation);
     	}
     };
 

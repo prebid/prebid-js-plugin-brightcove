@@ -11,9 +11,11 @@ var header = require('gulp-header');
 var cp = require('child_process');
 var replace = require('gulp-replace');
 var webpackConfig = require('./webpack.conf.js');
+var webpackConfigPlugin = require('./webpack.conf.plugin.js');
 var pkg = require('./package.json');
 
 var versionText = 'v' + pkg.version;
+var loaderVersionText = 'v' + pkg.loaderVersion;
 
 var licenseHeaders = fs.readFileSync('license-bc-prebid.txt');
 
@@ -22,7 +24,9 @@ var curDateObj = new Date();
 var copyrightText = '(c)' + curDateObj.getUTCFullYear() + ' PREBID.ORG, INC.';
 
 var bannerText = '/*! ' + copyrightText + ' ' + versionText + '\n' + licenseHeaders + '*/\n';
+var loaderBannerText = '/*! ' + copyrightText + ' ' + loaderVersionText + '\n' + licenseHeaders + '*/\n';
 
+// start build shim
 gulp.task('webpack:build', function(callback) {
     return gulpWebpack(require('./webpack.conf.js'))
         .pipe(replace('</script>', '<\\/script>'))
@@ -38,10 +42,31 @@ gulp.task('webpack:build-min', function(callback) {
    return gulpWebpack(webpackConfig)
        .pipe(replace('</script>', '<\\/script>'))
        .pipe(preprocess())
+       .pipe(header(loaderBannerText))
+       .pipe(rename({suffix: '.min'}))
+       .pipe(gulp.dest('dist/'));
+});
+// end build shim
+
+// start build plugin
+gulp.task('webpack:build-plugin', function(callback) {
+    return gulpWebpack(require('./webpack.conf.plugin.js'))
+    	.pipe(preprocess())
+        .pipe(gulp.dest('dist/'));
+});
+
+gulp.task('webpack:build-plugin-min', function(callback) {
+    webpackConfigPlugin.plugins.push(new webpack.optimize.UglifyJsPlugin({
+       minimize: false,
+      sourceMap: false
+    }));
+   return gulpWebpack(webpackConfigPlugin)
+       .pipe(preprocess())
        .pipe(header(bannerText))
        .pipe(rename({suffix: '.min'}))
        .pipe(gulp.dest('dist/'));
 });
+// end build plugin
 
 gulp.task('lint', () => {
     return gulp.src(['src/**/*.js', 'tests/e2e/auto/**/*.js'])
@@ -85,7 +110,7 @@ gulp.task('dev-server', function(callback) {
     });
 });
 
-gulp.task('default', ['lint', 'webpack:build', 'webpack:build-min', 'test']);
+gulp.task('default', ['lint', 'webpack:build', 'webpack:build-min', 'webpack:build-plugin', 'webpack:build-plugin-min', 'test']);
 
 var Server = require('karma').Server;
 
