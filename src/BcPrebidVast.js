@@ -9,6 +9,7 @@ var _prebidGlobal = require('./PrebidGlobal.js');
 var _vastManager = require('./VastManager.js');
 var _adListManager = require('./AdListManager.js');
 var _prebidCommunicator = require('./PrebidCommunicator.js');
+var _dfpUrlGenerator = require('./DfpUrlGenerator.js');
 var _logger = require('./Logging.js');
 
 var PLUGIN_VERSION = '0.4.10';
@@ -97,6 +98,7 @@ function writeAsyncScriptToFrame (targetFrame, jsPath, includeVJS, origin) {
 
 // the function does bidding and returns bids thru callback
 var BC_bidders_added = false;
+var _dfpUrlGeneratorObj;
 
 function doPrebid(options, callback) {
 	if (_localPBJS.bc_pbjs && options.biddersSpec) {
@@ -156,6 +158,13 @@ function doPrebid(options, callback) {
 				}
 			});
 		});
+	}
+	else if (_localPBJS.bc_pbjs_error && options.dfpParameters) {
+		if (!_dfpUrlGeneratorObj) {
+			_dfpUrlGeneratorObj = new _dfpUrlGenerator();
+		}
+		var dfpUrl = _dfpUrlGeneratorObj.buildVideoUrl(options.dfpParameters);
+		callback(dfpUrl);
 	}
 	else {
 		callback(null);
@@ -228,7 +237,7 @@ function loadPrebidScript(options, fromHeader) {
 	// internal function which will be called later
 	var doInternalPrebid = function() {
     	// do header bidding if fromHeader is 'true' and bidder setting are present in options
-    	if (fromHeader && options && options.biddersSpec) {
+    	if (fromHeader && options) {
 			BC_prebid_in_progress = true;
 			// invoke prebid
     		doPrebid(options, function(bids) {
@@ -268,24 +277,30 @@ function loadPrebidScript(options, fromHeader) {
 					// winner is not creative from bid array
 					return creative;
 				}
-				var arrBids = (bids && bids[options.biddersSpec.code]) ? bids[options.biddersSpec.code].bids : [];
+				var arrBids = (options.biddersSpec && bids && typeof bids !== 'string' && bids[options.biddersSpec.code]) ? bids[options.biddersSpec.code].bids : [];
     			_logger.log(_prefix, 'bids for bidding: ', arrBids);
     			if (arrBids && Array.isArray(arrBids)) {
 	    			if (options.dfpParameters) {
-	    				// use DFP server if DFP parameters present in options
+						// use DFP server if DFP parameters present in options
 						_logger.log(_prefix, 'Use DFP');
-						var dfpOpts = {adUnit: options.biddersSpec};
-						if (options.dfpParameters.url && options.dfpParameters.url.length > 0) {
-							dfpOpts.url = options.dfpParameters.url;
+						if (arrBids.length === 0 && typeof bids === 'string') {
+							// bids is a dfp vast url
+							_localPBJS.prebid_creative = bids;
 						}
-						if (options.dfpParameters.params && options.dfpParameters.params.hasOwnProperty('iu')) {
-							dfpOpts.params = options.dfpParameters.params;
+						else {
+							var dfpOpts = {adUnit: options.biddersSpec};
+							if (options.dfpParameters.url && options.dfpParameters.url.length > 0) {
+								dfpOpts.url = options.dfpParameters.url;
+							}
+							if (options.dfpParameters.params && options.dfpParameters.params.hasOwnProperty('iu')) {
+								dfpOpts.params = options.dfpParameters.params;
+							}
+							if (options.dfpParameters.bid && Object.keys(options.dfpParameters.bid).length > 0) {
+								dfpOpts.bid = options.dfpParameters.bid;
+							}
+							_logger.log(_prefix, 'DFP buildVideoUrl options: ', dfpOpts);
+							_localPBJS.prebid_creative = _localPBJS.bc_pbjs.adServers.dfp.buildVideoUrl(dfpOpts);
 						}
-						if (options.dfpParameters.bid && Object.keys(options.dfpParameters.bid).length > 0) {
-							dfpOpts.bid = options.dfpParameters.bid;
-						}
-						_logger.log(_prefix, 'DFP buildVideoUrl options: ', dfpOpts);
-						_localPBJS.prebid_creative = _localPBJS.bc_pbjs.adServers.dfp.buildVideoUrl(dfpOpts);
 						BC_prebid_in_progress = false;
 						dispatchPrebidDoneEvent();
 						_logger.log(_prefix, 'Selected VAST url: ' + _localPBJS.prebid_creative);
