@@ -85,7 +85,7 @@ var adListManager = function () {
 	var forceNextVideoForLastAd = function forceNextVideoForLastAd() {
 		// after ad played brightcove player stopped to fire 'playlistitem' events !?!?
 		var isLastAd = _arrAdList[_arrAdList.length - 1].adTime === _adTime;
-		if (isLastAd && _player.playlist.currentIndex() < _player.playlist.lastIndex()) {
+		if (isLastAd && _player.playlist.currentIndex && _player.playlist.currentIndex() < _player.playlist.lastIndex()) {
 			// when last ad done, and main video is ended, and main video is not last video in playlist
 			// force to play next video in playlist
 			_player.one('ended', function() {
@@ -107,7 +107,7 @@ var adListManager = function () {
 					if (_markersHandler && _player.markers && _player.markers.destroy) {
 						_player.markers.destroy();
 					}
-					if (_player.playlist.currentIndex() < _player.playlist.lastIndex()) {
+					if (_player.playlist.currentIndex && _player.playlist.currentIndex() < _player.playlist.lastIndex()) {
 						startNextPlaylistVideo();
 					}
 					else {
@@ -229,6 +229,10 @@ var adListManager = function () {
 
 	// event handler for 'playlistitem' event
 	function nextListItemHandler() {
+		if (!_player.playlist.currentIndex || typeof _player.playlist.currentIndex !== 'function') {
+			// player not support playlisting
+			return;
+		}
 		if (_playlistIdx === _player.playlist.currentIndex()) {
 			// ignore second call event handler for same playlist item
 			return;
@@ -555,7 +559,7 @@ var adListManager = function () {
 				if (!_mainVideoEnded) {
 					showCover(false);
 				}
-				if (status === AD_STATUS_DONE && _player.playlist && _player.playlist.currentIndex() >= 0) {
+				if (status === AD_STATUS_DONE && _player.playlist && _player.playlist.currentIndex && _player.playlist.currentIndex() >= 0) {
 					_player.play();
 					_adTime = adTime;
 					forceNextVideoForLastAd();

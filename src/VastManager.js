@@ -163,7 +163,7 @@ var vastManager = function () {
 		if (!_playlist) {
 			_playlist = [];
 		}
-		if (_playlist.length > 1 && _player.playlist.currentIndex() < _playlist.length - 1) {
+		if (_playlist.length > 1 && _player.playlist.currentIndex && _player.playlist.currentIndex() < _playlist.length - 1) {
 			if (!_playlistCreative) {
 				if (!_prebidCommunicatorObj) {
 					_prebidCommunicatorObj = new _prebidCommunicator();
@@ -506,8 +506,10 @@ var vastManager = function () {
 		if (creative) {
 			// render ad
 			play(creative);
-    	}
-		_player.on('playlistitem', nextListItemHandler);
+		}
+		if (_player.playlist.currentIndex && typeof _player.playlist.currentIndex === 'function') {
+			_player.on('playlistitem', nextListItemHandler);
+		}
     };
 
 	// stop play ad
