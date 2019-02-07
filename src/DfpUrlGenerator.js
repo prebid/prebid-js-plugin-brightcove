@@ -15,6 +15,7 @@ var dfpUrlGenerator = function () {
 		unviewed_position_start: 1,
 	};
 
+	// creates query parameters string from object
 	function formatQS(query) {
 		return Object
 		  .keys(query)
@@ -48,10 +49,10 @@ var dfpUrlGenerator = function () {
 	function buildUrl(obj) {
 		return (obj.protocol || 'http') + '://' +
 			   (obj.host ||
-				obj.hostname + (obj.port ? ':${obj.port}' : '')) +
+				obj.hostname + (obj.port ? ':' + obj.port : '')) +
 			   (obj.pathname || '') +
 			   (obj.search ? '?${' + formatQS(obj.search || '') + '}' : '') +
-			   (obj.hash ? '#${obj.hash}' : '');
+			   (obj.hash ? '#' + obj.hash : '');
 	}
 
 	function parseSizesInput(sizeObj) {
@@ -72,7 +73,7 @@ var dfpUrlGenerator = function () {
 			  }
 			}
 		  }
-		} 
+		}
 		else if (typeof sizeObj === 'object') {
 		  var sizeArrayLength = sizeObj.length;
 
@@ -98,7 +99,7 @@ var dfpUrlGenerator = function () {
 		return !query ? {} : query
 		  .replace(/^\?/, '')
 		  .split('&')
-		  .reduce((acc, criteria) => {
+		  .reduce(function(acc, criteria) {
 				var arr = criteria.split('=');
 				var k = arr[0];
 				var v = arr[1];
@@ -140,27 +141,27 @@ var dfpUrlGenerator = function () {
 
 		var allTargetingData = {};
 
-		const optCustParams = deepAccess(options, 'params.cust_params');
-		let customParams = Object.assign({},
+		var optCustParams = deepAccess(options, 'params.cust_params');
+		var customParams = Object.assign({},
 		  allTargetingData,
 		  adserverTargeting,
 		  { hb_uuid: bid && bid.videoCacheKey },
 		  // hb_uuid will be deprecated and replaced by hb_cache_id
 		  { hb_cache_id: bid && bid.videoCacheKey },
-		  optCustParams,
+		  optCustParams
 		);
 		return encodeURIComponent(formatQS(customParams));
 	}
 
 	function getDescriptionUrl(bid, components, prop) {
-		if (!deepAccess(components, '${prop}.description_url')) {
+		if (!deepAccess(components, prop + '.description_url')) {
 			var vastUrl = bid && bid.vastUrl;
 			if (vastUrl) {
-				return encodeURIComponent(vastUrl); 
+				return encodeURIComponent(vastUrl);
 			}
 		}
 		else {
-			_logger.log(_prefix, 'nput cannnot contain description_url');
+			_logger.log(_prefix, 'input cannnot contain description_url');
 		}
 	}
 
@@ -213,7 +214,7 @@ var dfpUrlGenerator = function () {
 
 		var descriptionUrl = getDescriptionUrl(bid, options, 'params');
 		if (descriptionUrl) {
-			queryParams.description_url = descriptionUrl; 
+			queryParams.description_url = descriptionUrl;
 		}
 
 		return buildUrl({
@@ -229,6 +230,15 @@ var dfpUrlGenerator = function () {
     // Gets stripped off in the actual build artifact
 	this.test = function() {
 		return {
+			formatQS: formatQS,
+			deepAccess: deepAccess,
+			buildUrl: buildUrl,
+			parseSizesInput: parseSizesInput,
+			parseQS: parseQS,
+			parse: parse,
+			getCustParams: getCustParams,
+			getDescriptionUrl: getDescriptionUrl,
+			buildUrlFromAdserverUrlComponents: buildUrlFromAdserverUrlComponents
 		};
 	};
 	// @endexclude
