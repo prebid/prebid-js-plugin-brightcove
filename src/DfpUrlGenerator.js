@@ -32,11 +32,17 @@ var dfpUrlGenerator = function () {
 		  .join('&');
 	}
 
+	/**
+	 * deepAccess utility function useful for doing safe access (will not throw exceptions) of deep object paths.
+	 * @param {Object} obj The object containing the values you would like to access.
+	 * @param {string|number} path Object path to the value you would like to access.  Non-strings are coerced to strings.
+	 * @returns {*} The value found at the specified object path, or undefined if path is not found.
+	 */
 	function deepAccess(obj, path) {
 		if (!obj) {
 		  return;
 		}
-		path = String(path).split('.');
+		path = path.toString().split('.');
 		for (var i = 0; i < path.length; i++) {
 		  obj = obj[path[i]];
 		  if (typeof obj === 'undefined') {
@@ -46,15 +52,24 @@ var dfpUrlGenerator = function () {
 		return obj;
 	}
 
+	// build url from object
 	function buildUrl(obj) {
 		return (obj.protocol || 'http') + '://' +
 			   (obj.host ||
 				obj.hostname + (obj.port ? ':' + obj.port : '')) +
 			   (obj.pathname || '') +
-			   (obj.search ? '?${' + formatQS(obj.search || '') + '}' : '') +
+			   (obj.search ? '?' + formatQS(obj.search || '') : '') +
 			   (obj.hash ? '#' + obj.hash : '');
 	}
 
+	function parseGPTSingleSizeArray(singleSize) {
+		// if we aren't exactly 2 items in this array, it is invalid
+		if (Array.isArray(singleSize) && singleSize.length === 2 && (!isNaN(singleSize[0]) && !isNaN(singleSize[1]))) {
+		  return singleSize[0] + 'x' + singleSize[1];
+		}
+	}
+
+	// parse string, object or array of sizes
 	function parseSizesInput(sizeObj) {
 		var parsedSizes = [];
 
@@ -95,6 +110,7 @@ var dfpUrlGenerator = function () {
 		return parsedSizes;
 	}
 
+	// parse query string to an object
     function parseQS(query) {
 		return !query ? {} : query
 		  .replace(/^\?/, '')
@@ -115,6 +131,7 @@ var dfpUrlGenerator = function () {
 			}, {});
 	}
 
+	// parse url to an object
 	function parse(url, options) {
 		var parsed = document.createElement('a');
 		if (options && 'noDecodeWholeURL' in options && options.noDecodeWholeURL) {
