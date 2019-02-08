@@ -64,56 +64,63 @@ describe('DfpUrlGenerator unit test', function() {
 			'{"href":"http://www.msn.com:8888/appnexus?par1=1&par2=2#section1","protocol":"http","hostname":"www.msn.com","port":8888,"pathname":"/appnexus","search":{"par1":"1","par2":"2"},"hash":"section1","host":"www.msn.com:8888"}');
     });
 
-	/* it('PrebidCommunicator doPrebid test - DFP (params)', function (done) {
-        var options = mockObject.options;
-		options.biddersSpec.bids[0].params.placementId = 11653264;
-		options.doPrebid = BcPrebidVast.test().doPrebid;
-		options.dfpParameters = {
+	it('DfpUrlGenerator getCustParams test - creates query parameters from custom parameters', function () {
+        var cust_params = {
+			par1: 'a',
+			par2: 'e'
+		};
+		var opts = {
 			params: {
-				iu: '/19968336/prebid_cache_video_adunit',
-				output: 'vast'
+				cust_params: cust_params
 			}
 		};
-		var sinonStub2 = sinon.stub(localPBJS.bc_pbjs.adServers.dfp, 'buildVideoUrl', function(opts) {
-			return 'http://bla_bla';
-		});
-		var communicator = new PrebidCommunicator();
-        communicator.doPrebid(options, function(url) {
-			sinonStub2.restore();
-			assert.equal(url, 'http://bla_bla');
-        	done();
-        });
-    });
+		var ret = testObj.getCustParams({}, opts);
+		assert.equal(ret, encodeURIComponent('hb_uuid=undefined&hb_cache_id=undefined&par1=a&par2=e'));
+	});
 
-	it('PrebidCommunicator doPrebid test - DFP (url)', function (done) {
-        var options = mockObject.options;
-		options.biddersSpec.bids[0].params.placementId = 11653264;
-		options.doPrebid = BcPrebidVast.test().doPrebid;
-		options.dfpParameters = {
-			url: 'http://fake_fake'
+	it('DfpUrlGenerator getDescriptionUrl test - gets description url for particular property', function () {
+        var components = {
+			par1: {
+				a: 'b'
+			}
 		};
-		var sinonStub2 = sinon.stub(localPBJS.bc_pbjs.adServers.dfp, 'buildVideoUrl', function(opts) {
-			return 'http://bla_bla';
-		});
-		var communicator = new PrebidCommunicator();
-        communicator.doPrebid(options, function(url) {
-			sinonStub2.restore();
-			assert.equal(url, 'http://bla_bla');
-        	done();
-        });
-    });
+		var bids = {
+			vastUrl: 'http://a.com/vast.xml'
+		};
+		var ret = testObj.getDescriptionUrl(bids, components, 'par1');
+		assert.equal(ret, encodeURIComponent('http://a.com/vast.xml'));
+	});
 
-	it('PrebidCommunicator doPrebid test - Ad Server', function (done) {
-        var options = mockObject.options;
-		options.biddersSpec.bids[0].params.placementId = 11653264;
-		options.doPrebid = BcPrebidVast.test().doPrebid;
-		options.adServerCallback = function(arrBids, callback) {
-			callback('http://video.devnxs.net/meena/BurstingPipe_http.xml');
+	it('DfpUrlGenerator buildUrlFromAdserverUrlComponents test - builds url from dfrParameters.url and dfrParameters.bid', function () {
+        var dfpParameters = {
+			bid: {},
+			url: 'http://a.com/b',
+			params: {
+				cust_params: {
+					par1: 'a',
+					par2: 'b'
+				}
+			}
 		};
-		var communicator = new PrebidCommunicator();
-        communicator.doPrebid(options, function(url) {
-			assert.equal(url, 'http://video.devnxs.net/meena/BurstingPipe_http.xml');
-        	done();
-        });
-    }); */
+		var components = {
+			search: {},
+			host: 'a.com'
+		}
+		var ret = testObj.buildUrlFromAdserverUrlComponents(components, dfpParameters.bid, dfpParameters);
+		assert.equal(ret, 'http://a.com?cust_params=' + encodeURIComponent('hb_uuid=undefined&hb_cache_id=undefined&par1=a&par2=b'));
+	});
+
+	it('DfpUrlGenerator buildVideoUrl test - builds DFP url', function () {
+        var dfpParameters = {
+			params: {
+				iu: '/1999999/encino_prebid_demo_adunit',
+				output: 'vast'
+			},
+			url: '',
+			bid: {}
+		};
+		var ret = dfpUrlGenerator.buildVideoUrl(dfpParameters, [640, 480]);
+		assert.equal(ret.substr(0, 73), 'https://pubads.g.doubleclick.net/gampad/ads?env=vp&gdfp_req=1&output=vast');
+		assert.isTrue(ret.indexOf('640x480') > 0);
+	});
 });

@@ -153,6 +153,7 @@ var dfpUrlGenerator = function () {
 		};
 	}
 
+	// creates query parameters from custom parameters
 	function getCustParams(bid, options) {
 		var adserverTargeting = (bid && bid.adserverTargeting) || {};
 
@@ -170,6 +171,7 @@ var dfpUrlGenerator = function () {
 		return encodeURIComponent(formatQS(customParams));
 	}
 
+	// gets description url for particular property
 	function getDescriptionUrl(bid, components, prop) {
 		if (!deepAccess(components, prop + '.description_url')) {
 			var vastUrl = bid && bid.vastUrl;
@@ -182,6 +184,7 @@ var dfpUrlGenerator = function () {
 		}
 	}
 
+	// builds url from dfrParameters.url and dfrParameters.bid
 	function buildUrlFromAdserverUrlComponents(components, bid, options) {
 		var descriptionUrl = getDescriptionUrl(bid, components, 'search');
 		if (descriptionUrl) {
@@ -242,9 +245,9 @@ var dfpUrlGenerator = function () {
 		});
 	};
 
-    // @exclude
-    // Method exposed only for unit Testing Purpose
-    // Gets stripped off in the actual build artifact
+  // @exclude
+  // Method exposed only for unit Testing Purpose
+  // Gets stripped off in the actual build artifact
 	this.test = function() {
 		return {
 			formatQS: formatQS,
