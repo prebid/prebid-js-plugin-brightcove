@@ -12,7 +12,7 @@ var _prebidCommunicator = require('./PrebidCommunicator.js');
 var _dfpUrlGenerator = require('./DfpUrlGenerator.js');
 var _logger = require('./Logging.js');
 
-var PLUGIN_VERSION = '0.4.11';
+var PLUGIN_VERSION = '0.4.12';
 var _prefix = 'PrebidVast->';
 var _molIFrame = null;
 
@@ -163,7 +163,8 @@ function doPrebid(options, callback) {
 		if (!_dfpUrlGeneratorObj) {
 			_dfpUrlGeneratorObj = new _dfpUrlGenerator();
 		}
-		var dfpUrl = _dfpUrlGeneratorObj.buildVideoUrl(options.dfpParameters);
+		var sizes = options.biddersSpec ? (options.biddersSpec.sizes || []) : [];
+		var dfpUrl = _dfpUrlGeneratorObj.buildVideoUrl(options.dfpParameters, sizes);
 		callback(dfpUrl);
 	}
 	else {
