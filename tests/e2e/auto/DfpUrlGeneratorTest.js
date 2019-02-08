@@ -8,6 +8,18 @@ describe('DfpUrlGenerator unit test', function() {
 		console.log(this.currentTest.title);
     });
 
+	it('DfpUrlGenerator isEmpty test - return true if the object is "empty"', function () {
+        var obj = {};
+		var ret = testObj.isEmpty(obj);
+		assert.isTrue(ret);
+		obj.a = undefined;
+		ret = testObj.isEmpty(obj);
+		assert.isFalse(ret);
+		obj.a = 'data';
+		ret = testObj.isEmpty(obj);
+		assert.isFalse(ret);
+    });
+
 	it('DfpUrlGenerator formatQS test - creates query parameters string from object', function () {
         var query = {
 			par1: 'a',

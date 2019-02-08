@@ -15,6 +15,21 @@ var dfpUrlGenerator = function () {
 		unviewed_position_start: 1,
 	};
 
+	// return true if the object is "empty"
+  function isEmpty(object) {
+		if (!object) return true;
+		if (Array.isArray(object) || typeof object === 'string') {
+			var ret = object.length > 0;
+			return !ret;
+		}
+
+		for (var k in object) {
+			if (hasOwnProperty.call(object, k)) return false;
+		}
+
+		return true;
+	}
+
 	// creates query parameters string from object
 	function formatQS(query) {
 		return Object
@@ -250,6 +265,7 @@ var dfpUrlGenerator = function () {
   // Gets stripped off in the actual build artifact
 	this.test = function() {
 		return {
+			isEmpty: isEmpty,
 			formatQS: formatQS,
 			deepAccess: deepAccess,
 			buildUrl: buildUrl,
