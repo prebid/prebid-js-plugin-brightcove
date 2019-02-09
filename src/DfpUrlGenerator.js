@@ -3,6 +3,10 @@
  * @module DfpUrlGenerator
  */
 
+// This file was created from Prebid.js /module/dfpAdServerVideo.js (written in ES6). This code was converted to ES5
+// and will be used only when prebid.js fails to load and the dfpParameters property is present in the config.
+// In this case we will try to request a vast tag from DFP server directly (not by calling prebid.js API).
+
 var _logger = require('./Logging.js');
 var _prefix = 'PrebidVast->DfpUrlGenerator';
 
