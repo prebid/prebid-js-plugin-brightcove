@@ -54,25 +54,31 @@ var prebidCommunicator = function () {
 		// call bidding
     	if (_options.biddersSpec) {
     		_options.doPrebid(_options, function(bids) {
-    			var arrBids = (bids && bids[_options.biddersSpec.code]) ? bids[_options.biddersSpec.code].bids : [];
+				var arrBids = (_options.biddersSpec && bids && typeof bids !== 'string' && bids[_options.biddersSpec.code])	? bids[_options.biddersSpec.code].bids : [];
     			_logger.log(_prefix, 'bids for bidding: ', arrBids);
     			if (arrBids && Array.isArray(arrBids)) {
         			var creative;
         			if (_options.dfpParameters) {
         				// use DFP server if DFP settings are present in options
 	        			_logger.log(_prefix, 'Use DFP');
-						var dfpOpts = {adUnit: _options.biddersSpec};
-						if (_options.dfpParameters.url && _options.dfpParameters.url.length > 0) {
-							dfpOpts.url = _options.dfpParameters.url;
+						if (arrBids.length === 0 && typeof bids === 'string') {
+							// bids is a dfp vast url
+							creative = bids;
 						}
-						if (_options.dfpParameters.params && _options.dfpParameters.params.hasOwnProperty('iu')) {
-							dfpOpts.params = _options.dfpParameters.params;
+						else {
+							var dfpOpts = {adUnit: _options.biddersSpec};
+							if (_options.dfpParameters.url && _options.dfpParameters.url.length > 0) {
+								dfpOpts.url = _options.dfpParameters.url;
+							}
+							if (_options.dfpParameters.params && _options.dfpParameters.params.hasOwnProperty('iu')) {
+								dfpOpts.params = _options.dfpParameters.params;
+							}
+							if (_options.dfpParameters.bid && Object.keys(_options.dfpParameters.bid).length > 0) {
+								dfpOpts.bid = _options.dfpParameters.bid;
+							}
+							_logger.log(_prefix, 'DFP buildVideoUrl options: ', dfpOpts);
+							creative = _localPBJS.bc_pbjs.adServers.dfp.buildVideoUrl(dfpOpts);
 						}
-						if (_options.dfpParameters.bid && Object.keys(_options.dfpParameters.bid).length > 0) {
-							dfpOpts.bid = _options.dfpParameters.bid;
-						}
-						_logger.log(_prefix, 'DFP buildVideoUrl options: ', dfpOpts);
-						creative = _localPBJS.bc_pbjs.adServers.dfp.buildVideoUrl(dfpOpts);
             			_logger.log(_prefix, 'Selected VAST url: ' + creative);
 						if (_callback) {
 							_callback(creative);
@@ -155,15 +161,10 @@ var prebidCommunicator = function () {
     		else {
     			// wait until prebid.js is loaded
     			var waitPbjs = setInterval(function() {
-    	    		if (_localPBJS.bc_pbjs) {
+    	    		if (_localPBJS.bc_pbjs || _localPBJS.bc_pbjs_error) {
     	    			clearInterval(waitPbjs);
     	    			waitPbjs = null;
-    	    			doPrebid();
-    	    		}
-    	    		else if (_localPBJS.bc_pbjs_error) {
-    	    			clearInterval(waitPbjs);
-    	    			waitPbjs = null;
-    	    			callback(null);
+    	    			doPrebid();		// we will try to get xml url from prebid.js if possible or generate locally for DFP call.
     	    		}
     			}, 100);
     		}
