@@ -240,7 +240,7 @@ function dispatchPrebidDoneEvent() {
 // $$PREBID_GLOBAL$$.plugin_prebid_options.biddersSpec has to be set for header bidding BEFORE the plugin's script is loaded.
 function loadPrebidScript(options, fromHeader) {
 	// internal function which will be called later
-	var doInternalPrebid = function() {
+	var setupAdCreative = function() {
     	// do header bidding if fromHeader is 'true' and bidder setting are present in options
     	if (fromHeader && options) {
 			BC_prebid_in_progress = true;
@@ -371,7 +371,7 @@ function loadPrebidScript(options, fromHeader) {
 		// plugin has been loaded in the html page <head> (document body is not ready)
 		if (document.getElementById('bc-pb-script')) {
 			// if prebid.js is already loaded try to invoke prebid.
-			doInternalPrebid();
+			setupAdCreative();
 			return;
 		}
 
@@ -382,7 +382,7 @@ function loadPrebidScript(options, fromHeader) {
 
             _logger.log(_prefix, 'Prebid.js loaded successfully');
 
-            doInternalPrebid();
+            setupAdCreative();
 		};
 		pbjsScr.onerror = function(e) {
 			// failed to load prebid.js.
@@ -395,7 +395,8 @@ function loadPrebidScript(options, fromHeader) {
 				options.pageNotificationCallback('message', debugMsg);
 			}
 
-			doInternalPrebid();
+			// setuo ad creative for dfp or 3rd party ad server if either is present in options
+			setupAdCreative();
 		};
 
 		pbjsScr.id = 'bc-pb-script-' + Date.now.valueOf();
@@ -419,7 +420,8 @@ function loadPrebidScript(options, fromHeader) {
 				options.pageNotificationCallback('message', debugMsg);
 			}
 
-			doInternalPrebid();
+			// setuo ad creative for dfp or 3rd party ad server if either is present in options
+			setupAdCreative();
 		}, !!scriptLoadTimeout ? scriptLoadTimeout : DEFAULT_SCRIPT_LOAD_TIMEOUT);
 
         var onLoadIFrame = function (msgEvent) {
@@ -440,7 +442,7 @@ function loadPrebidScript(options, fromHeader) {
 
                 _logger.log(_prefix, 'Prebid.js loaded successfully');
 
-                doInternalPrebid();
+                setupAdCreative();
             }
             else if (msgEvent.data === 'error') {
                 frame.contentWindow.removeEventListener('message', onLoadIFrame);
@@ -455,7 +457,8 @@ function loadPrebidScript(options, fromHeader) {
                     options.pageNotificationCallback('message', debugMsg);
                 }
 
-				doInternalPrebid();
+				// setuo ad creative for dfp or 3rd party ad server if either is present in options
+				setupAdCreative();
             }
         };
 
