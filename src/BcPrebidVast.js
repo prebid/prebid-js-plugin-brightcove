@@ -12,7 +12,7 @@ var _prebidCommunicator = require('./PrebidCommunicator.js');
 var _dfpUrlGenerator = require('./DfpUrlGenerator.js');
 var _logger = require('./Logging.js');
 
-var PLUGIN_VERSION = '0.4.12';
+var PLUGIN_VERSION = '0.4.13';
 var _prefix = 'PrebidVast->';
 var _molIFrame = null;
 
@@ -167,6 +167,10 @@ function doPrebid(options, callback) {
 		var dfpUrl = _dfpUrlGeneratorObj.buildVideoUrl(options.dfpParameters, sizes);
 		callback(dfpUrl);
 	}
+	else if (_localPBJS.bc_pbjs_error && options.adServerCallback) {
+		// simulate empty bids situation
+		callback([]);
+	}
 	else {
 		callback(null);
 	}
@@ -314,14 +318,14 @@ function loadPrebidScript(options, fromHeader) {
 							func = $$PREBID_GLOBAL$$.plugin_prebid_options.adServerCallback;
 						}
 						else if (typeof options.adServerCallback === 'string' &&
-								 window[options.adServerCallback] &&
-								 typeof window[options.adServerCallback] === 'function') {
+								window[options.adServerCallback] &&
+								typeof window[options.adServerCallback] === 'function') {
 							func = window[options.adServerCallback];
 						}
 						if (func) {
 							func(arrBids, function(creative) {
 								_localPBJS.prebid_creative = getPrebidCacheUrl(creative, arrBids);
-	    		            	BC_prebid_in_progress = false;
+								BC_prebid_in_progress = false;
 								dispatchPrebidDoneEvent();
 								_logger.log(_prefix, 'Selected VAST url: ' + _localPBJS.prebid_creative);
 							});
@@ -391,7 +395,7 @@ function loadPrebidScript(options, fromHeader) {
 				options.pageNotificationCallback('message', debugMsg);
 			}
 
-			dispatchPrebidDoneEvent();
+			doInternalPrebid();
 		};
 
 		pbjsScr.id = 'bc-pb-script-' + Date.now.valueOf();
@@ -415,7 +419,7 @@ function loadPrebidScript(options, fromHeader) {
 				options.pageNotificationCallback('message', debugMsg);
 			}
 
-			dispatchPrebidDoneEvent();
+			doInternalPrebid();
 		}, !!scriptLoadTimeout ? scriptLoadTimeout : DEFAULT_SCRIPT_LOAD_TIMEOUT);
 
         var onLoadIFrame = function (msgEvent) {
@@ -451,7 +455,7 @@ function loadPrebidScript(options, fromHeader) {
                     options.pageNotificationCallback('message', debugMsg);
                 }
 
-                dispatchPrebidDoneEvent();
+				doInternalPrebid();
             }
         };
 
@@ -728,6 +732,10 @@ var prebidVastPlugin = function(player) {
 		// @endexclude
 
 		run: function(options) {
+			if (!_player) {
+				// ignore call if player is not ready
+				return;
+			}
 			// get Brightcove Player Id
 			var playerId = '';
 			if (_player.bcinfo) {
