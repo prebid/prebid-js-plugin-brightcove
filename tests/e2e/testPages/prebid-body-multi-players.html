@@ -101,7 +101,7 @@
 
 	    function pageNotification(type, data) {
 			if (type === 'event') {
-	    		appendStatistics('Event: ' + data);
+	    		appendStatistics('Event: ' + data, 1);
 			}
 			else if (type === 'message') {
 	    		appendStatistics(data, 1);
@@ -110,7 +110,7 @@
 	    
 	    function pageNotification2(type, data) {
 			if (type === 'event') {
-	    		appendStatistics('Event: ' + data);
+	    		appendStatistics('Event: ' + data, 2);
 			}
 			else if (type === 'message') {
 	    		appendStatistics(data, 2);
