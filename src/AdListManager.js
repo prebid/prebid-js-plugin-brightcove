@@ -560,8 +560,13 @@ var adListManager = function () {
 					showCover(false);
 				}
 				if (status === AD_STATUS_DONE && _player.playlist && _player.playlist.currentIndex && _player.playlist.currentIndex() >= 0) {
-					_player.play();
+					var playPromise = _player.play();
 					_adTime = adTime;
+
+					if (playPromise !== undefined) {
+						// Add catch handler to prevent "Uncaught (in promise) DOM Exception" Error in console
+						playPromise.catch(function (err) {});
+					}
 					forceNextVideoForLastAd();
 				}
 			}
