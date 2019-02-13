@@ -99,6 +99,7 @@
 	    	document.getElementById('statistics' + idx).scrollTop = document.getElementById('statistics' + idx).scrollHeight;
 	    }
 
+		// page notification callback for player #1
 	    function pageNotification(type, data) {
 			if (type === 'event') {
 	    		appendStatistics('Event: ' + data, 1);
@@ -108,6 +109,7 @@
 			}
 		}
 	    
+		// page notification callback for player #2
 	    function pageNotification2(type, data) {
 			if (type === 'event') {
 	    		appendStatistics('Event: ' + data, 2);
