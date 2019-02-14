@@ -12,7 +12,7 @@ var _prebidCommunicator = require('./PrebidCommunicator.js');
 var _dfpUrlGenerator = require('./DfpUrlGenerator.js');
 var _logger = require('./Logging.js');
 
-var PLUGIN_VERSION = '0.4.13';
+var PLUGIN_VERSION = '0.4.14';
 var _prefix = 'PrebidVast->';
 var _molIFrame = null;
 
