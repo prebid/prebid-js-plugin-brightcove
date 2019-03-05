@@ -152,20 +152,6 @@ var markersHandler = function (vjs, adMarkerStyle) {
 	      }
 	      catch (e) {}
 
-	      // bind click event to seek to marker time
-	      markerDiv.addEventListener('click', function () {
-	        var preventDefault = false;
-	        if (typeof setting.onMarkerClick === 'function') {
-	          // if return false, prevent default behavior
-	          preventDefault = setting.onMarkerClick(marker) === false;
-	        }
-
-	        if (!preventDefault) {
-	          var key = this.getAttribute('data-marker-key');
-	          player.currentTime(setting.markerTip.time(markersMap[key]));
-	        }
-	      });
-
 	      if (setting.markerTip.display) {
 	        registerMarkerTipHandler(markerDiv);
 	      }
