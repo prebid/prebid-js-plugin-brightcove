@@ -486,7 +486,8 @@ var adListManager = function () {
 						}
 						else {
 							// iPad
-							traceMessage({data: {message: 'Player ready state = ' + _player.readyState()}});
+							var state = _player.readyState();
+							traceMessage({data: {message: 'iPad -> Player ready state = ' + state}});
 							if (_player.paused()) {
 								traceMessage({data: {message: 'iPad -> Player paused'}});
 								showCover(false);
@@ -509,6 +510,7 @@ var adListManager = function () {
 							else {
 								traceMessage({data: {message: 'iPad -> Player not paused'}});
 								showCover(true);
+								_mobilePrerollNeedClick = false;	// don't need click for preroll on iPad
 								adData.status = AD_STATUS_PLAYING;
 								playAd(adData);
 							}
