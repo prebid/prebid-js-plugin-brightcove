@@ -15,8 +15,8 @@ WebFont.load({
 </script>
 
 <script>
-	var pages = ['prebid-body',
-	             'prebid-header',
+	var pages = ['prebid-header',
+	             'prebid-body',
 				 'prebid-studio-config'];
 	function startTestPage(idx) {
 	    var url = window.location.href;
@@ -31,43 +31,15 @@ WebFont.load({
 </head>
 <body >
 
-<div style="background: #ff8800; color: #ffffff; overflow:scroll; width:720px; height:960px;">
-     <div class="an-html-body">
-        <div class="an-hero-inner inner-wrapper">
-</div>
-</div>
-    
-<div style="position:absolute; top:20px; left:10px; z-index:910;">
+<div style="background: #ff8800; color: #ffffff; overflow:scroll; width:600px; height:400px;">
+<h3 style="margin: 25px 40px">Brightcove Prebid Plugin : Test Pages</h3>
+<div style="position:absolute; top:75px; left:10px; z-index:910;">
 	<table>
 		<tr>
 			<td>
-				<p onclick='startTestPage(0)' style='cursor: pointer; margin-left: 5em;'><b>Prebid in Body, Then Play</b></p>
-				<p onclick='startTestPage(1)' style='cursor: pointer; margin-left: 5em;'><b>Prebid in Body and Prebid Display in Header, Then Play</b></p>
-				<p onclick='startTestPage(2)' style='cursor: pointer; margin-left: 5em;'><b>Prebid in Body, Then Play (Using Ad Server)</b></p>
-				<br>
-				<p onclick='startTestPage(3)' style='cursor: pointer; margin-left: 5em;'><b>Prebid in Header, Then Play</b></p>
-				<p onclick='startTestPage(4)' style='cursor: pointer; margin-left: 5em;'><b>Prebid in Header, Then Play (Using Ad Server)</b></p>
-				<br>
-				<p onclick='startTestPage(5)' style='cursor: pointer; margin-left: 5em;'><b>Plugin Embedded With Options</b></p>
-				<br>
-				<p onclick='startTestPage(6)' style='cursor: pointer; margin-left: 5em;'><b>Prebid in Body, Then Play (Playlist)</b></p>
-				<p onclick='startTestPage(7)' style='cursor: pointer; margin-left: 5em;'><b>Plugin Embedded With Options (Playlist)</b></p>
-				<br>
-				<p onclick='startTestPage(8)' style='cursor: pointer; margin-left: 5em;'><b>Plugin Embedded With Options (Player 5.28.1)</b></p>
-				<p onclick='startTestPage(18)' style='cursor: pointer; margin-left: 5em;'><b>Plugin Embedded - iFrame embed code</b></p>
-				<p onclick='startTestPage(19)' style='cursor: pointer; margin-left: 5em;'><b>Plugin Embedded - iFrame embed code (Player 5.28.1)</b></p>
-				<br>
-				<p onclick='startTestPage(9)' style='cursor: pointer; margin-left: 5em;'><b>Plugin in Body (multi Ads), Then Play</b></p>
-				<p onclick='startTestPage(10)' style='cursor: pointer; margin-left: 5em;'><b>Plugin in Body (multi Ads Playlist), Then Play</b></p>
-				<br>
-				<p onclick='startTestPage(11)' style='cursor: pointer; margin-left: 5em;'><b>Plugin Embedded and Prebid Display</b></p>
-				<p onclick='startTestPage(12)' style='cursor: pointer; margin-left: 5em;'><b>Plugin Embedded (multi Ads) and Prebid Display</b></p>
-				<br>
-				<p onclick='startTestPage(13)' style='cursor: pointer; margin-left: 5em;'><b>Multi-Players - Prebid in Body (multi Ads)</b></p>
-				<p onclick='startTestPage(14)' style='cursor: pointer; margin-left: 5em;'><b>Multi-Players - Plugin Embedded With Options</b></p>
-				<p onclick='startTestPage(15)' style='cursor: pointer; margin-left: 5em;'><b>Multi-Players - Plugin Embedded With Options (Player 5.28.1)</b></p>
-				<p onclick='startTestPage(16)' style='cursor: pointer; margin-left: 5em;'><b>Multi-Players - Plugin Embedded With Options - iFrame embed code</b></p>
-				<p onclick='startTestPage(17)' style='cursor: pointer; margin-left: 5em;'><b>Multi-Players - Plugin Embedded With Options - iFrame embed code (Player 5.28.1)</b></p>
+				<p onclick='startTestPage(0)' style='cursor: pointer; margin-left: 5em;'><b>Prebid in Header, Then Play</b></p>
+				<p onclick='startTestPage(1)' style='cursor: pointer; margin-left: 5em;'><b>Prebid in Body, Then Play</b></p>
+				<p onclick='startTestPage(2)' style='cursor: pointer; margin-left: 5em;'><b>Plugin With Options Embedded in Studio</b></p>
 			</td>
 		</tr>
 	</table>
