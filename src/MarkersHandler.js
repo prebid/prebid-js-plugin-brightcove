@@ -307,7 +307,7 @@ var markersHandler = function (vjs, adMarkerStyle) {
 	        return _videoDuration;
 	      };
 	      var currentTime = player.currentTime();
-	      var newMarkerIndex = NULL_INDEX;
+				var newMarkerIndex = NULL_INDEX;
 
 				var nextMarkerTime;
 
@@ -317,9 +317,19 @@ var markersHandler = function (vjs, adMarkerStyle) {
 					if (setting.markerTip.time(markersList[markersList.length - 1]) === _videoDuration) {
 						if (options.onMarkerReached) {
 							_waitingVideoEnd = true;
-							player.one('ended', function() {
+							// postroll whwn playlist is playing
+							if (player.playlist && player.playlist.currentIndex) {
 								options.onMarkerReached(markersList[markersList.length - 1]);
-							});
+								// stop checking time after postroll
+								player.off('timeupdate', onTimeUpdate);
+							}
+							else {	// postroll when no playlist is playing
+								player.one('ended', function() {
+									options.onMarkerReached(markersList[markersList.length - 1]);
+								// stop checking time after postroll
+								player.off('timeupdate', onTimeUpdate);
+								});
+							}
 						}
 					}
 					return;
@@ -376,7 +386,7 @@ var markersHandler = function (vjs, adMarkerStyle) {
 
 	      if (setting.breakOverlay.display) {
 	        initializeOverlay();
-	      }
+				}
 	      onTimeUpdate();
 	      player.on('timeupdate', onTimeUpdate);
 	      player.off('loadedmetadata', loadedMetadataHandler);

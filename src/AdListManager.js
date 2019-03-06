@@ -101,23 +101,46 @@ var adListManager = function () {
 			_player.muted(true);
 			showCover(true);
 			_mainVideoEnded = true;
-			_player.one('ended', function() {
-				_player.muted(state);
-				if (_player.playlist && _player.playlist.autoadvance) {
+			// playlist mode. now playing not last video in playlist
+			if (_player.playlist && _player.playlist.currentIndex && _player.playlist.currentIndex() < _player.playlist.lastIndex()) {
+				_player.one('ended', function() {
+					_player.muted(state);
 					if (_markersHandler && _player.markers && _player.markers.destroy) {
 						_player.markers.destroy();
 					}
-					if (_player.playlist.currentIndex && _player.playlist.currentIndex() < _player.playlist.lastIndex()) {
-						startNextPlaylistVideo();
+					startNextPlaylistVideo();
+				});
+			}
+			else {	// not playlist mode or last video in playlist
+				_player.one('ended', function() {
+					_player.muted(state);
+					if (_player.playlist && _player.playlist.autoadvance) {
+						if (_markersHandler && _player.markers && _player.markers.destroy) {
+							_player.markers.destroy();
+						}
+						if (_player.playlist.currentIndex && _player.playlist.currentIndex() < _player.playlist.lastIndex()) {
+							startNextPlaylistVideo();
+						}
+						else {
+							showCover(false);
+						}
 					}
 					else {
 						showCover(false);
 					}
-				}
-				else {
-					showCover(false);
-				}
+				});
+			}
+			_options = null;
+			_adPlaying = false;
+			_adIndicator.style.display = 'none';
+			var adDataPostroll = _arrAdList.find(function(data) {
+				return data.status === AD_STATUS_PLAYING;
 			});
+			if (adDataPostroll) {
+				adDataPostroll.status = AD_STATUS_DONE;
+			}
+			_isPostroll = false;
+			return;
 		}
 		else {
 			showCover(false);
@@ -259,7 +282,8 @@ var adListManager = function () {
 			}
 			showCover(false);
 			_logger.log(_prefix, 'Ad did not play due to frequency settings');
-			_player.playlist.autoadvance(0);
+			// disable autostart playing next video in playlist
+			_player.playlist.autoadvance(null);
 		});
 		setTimeout(function() {
 			if (_contentDuration === 0) {
@@ -735,6 +759,9 @@ var adListManager = function () {
 		showCover(_hasPreroll);
 
 		_player.on('playlistitem', nextListItemHandlerAuto);
+		if (_player.playlist && _player.playlist.autoadvance) {
+			_player.playlist.autoadvance(null);
+		}
 
     	if (_player.duration() > 0) {
 			startRenderingPreparation();
