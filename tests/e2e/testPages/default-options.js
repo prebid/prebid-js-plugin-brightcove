@@ -28,7 +28,7 @@ var defaultOptions = {
             {
                 "bidder": "appnexus",
                 "params": {
-                    "placementId": 12527596,
+                    "placementId": 15185489,
                     "video": {
                         "skippable": true,
                         "playback_method": ["auto_play_sound_off"]
@@ -38,7 +38,7 @@ var defaultOptions = {
             {
                 "bidder": "alias1_SomeSSP",
                 "params": {
-                    "placementId": 12531984,
+                    "placementId": 15185489,
                     "video": {
                         "skippable": true,
                         "playback_method": ["auto_play_sound_off"]
@@ -48,7 +48,7 @@ var defaultOptions = {
             {
                 "bidder": "alias2_SomeDSP",
                 "params": {
-                    "placementId": 12531977,
+                    "placementId": 15185489,
                     "video": {
                         "skippable": true,
                         "playback_method": ["auto_play_sound_off"]
