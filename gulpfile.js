@@ -110,7 +110,7 @@ gulp.task('dev-server', function(callback) {
     });
 });
 
-gulp.task('default', ['lint', 'webpack:build', 'webpack:build-min', 'webpack:build-plugin', 'webpack:build-plugin-min', 'test']);
+gulp.task('default', gulp.series('lint', 'webpack:build', 'webpack:build-min', 'webpack:build-plugin', 'webpack:build-plugin-min', 'test'));
 
 var Server = require('karma').Server;
 
