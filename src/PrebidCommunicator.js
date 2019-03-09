@@ -107,7 +107,7 @@ var prebidCommunicator = function () {
 									_callback(cr);
 								}
 								else {
-									$$PREBID_GLOBAL$.prebid_creative = cr;
+									$$PREBID_GLOBAL$$.prebid_creative = cr;
 								}
 							});
 						}
