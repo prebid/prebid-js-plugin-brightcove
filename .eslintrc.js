@@ -4,12 +4,20 @@ module.exports = {
   },
   "extends": "standard",
   "parserOptions": {
-    "sourceType": "module"
+    "ecmaVersion": 5,
+    "sourceType": "module",
+    "ecmaFeatures": {
+      "experimentalObjectRestSpread": "",
+      "jsx": false
+    },
   },
   "rules": {
+    "no-unused-vars": "off",
     "comma-dangle": "off",
     "semi": "off",
     "space-before-function-paren": "off",
+    "padding-line-between-statements": "off",
+    "padded-blocks": "off",
 
     "camelcase": "off",
     "eqeqeq": "off",
@@ -27,6 +35,10 @@ module.exports = {
     "no-extra-boolean-cast": "off",
     "new-cap": "off",
     "handle-callback-err": 'off',
-    "no-extend-native": "off"
+    "no-extend-native": "off",
+    "no-multiple-empty-lines": "off",
+    "no-debugger": "off",
+    "no-inline-comments": "off",
+    "no-multi-spaces": "off"
   }
 };
