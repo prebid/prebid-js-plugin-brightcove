@@ -26,7 +26,7 @@ module.exports = function (env, argv) {
     var loaderConfig = {
         mode: WP_MODE,
         entry: LOADER_ENTRY_FILE,
-        devtool: 'inline-source-map',
+        devtool: 'eval-source-map',
         output: {
             path: path.join(__dirname, 'dist'),
             filename: LOADER_OUTPUT_FILE,
@@ -38,7 +38,7 @@ module.exports = function (env, argv) {
     var pluginConfig = {
         mode: WP_MODE,
         entry: PLUGIN_ENTRY_FILE,
-        devtool: 'inline-source-map',
+        devtool: 'eval-source-map',
         output: {
             path: path.join(__dirname, 'dist'),
             filename: PLUGIN_OUTPUT_FILE,
