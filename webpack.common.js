@@ -1,5 +1,6 @@
 var path = require('path');
 require('eslint-loader');
+var eslintStylishConfig = require('eslint-stylish-config');
 var StringReplacePlugin = require('string-replace-webpack-plugin');
 
 var GLOBAL_VAR_NAME = 'bc_plugin_pbjs'
@@ -34,6 +35,7 @@ module.exports = function (mode) {
                     ],
                     loader: 'eslint-loader',
                     options: {
+                        formatter: eslintStylishConfig,
                         emitError: true,
                         failOnError: true,
                     }

@@ -1,18 +1,14 @@
+var fs = require('fs');
+var cp = require('child_process');
 var gulp = require('gulp');
 var gutil = require('gulp-util');
 var webpack = require('webpack');
 var WebpackDevServer = require('webpack-dev-server');
-var fs = require('fs');
-var rename = require('gulp-rename');
-var eslint = require('gulp-eslint');
-var gulpWebpack = require('gulp-webpack');
-var preprocess = require('gulp-preprocess');
-var header = require('gulp-header');
-var cp = require('child_process');
-var replace = require('gulp-replace');
-var webpackConfig = require('./webpack.conf.js');
-var webpackConfigPlugin = require('./webpack.conf.plugin.js');
+
 var pkg = require('./package.json');
+
+var webpack_config_dev = require('./webpack.dev')();
+var webpack_config_prod = require('./webpack.prod')();
 
 var versionText = 'v' + pkg.version;
 var loaderVersionText = 'v' + pkg.loaderVersion;
@@ -26,53 +22,24 @@ var copyrightText = '(c)' + curDateObj.getUTCFullYear() + ' PREBID.ORG, INC.';
 var bannerText = '/*! ' + copyrightText + ' ' + versionText + '\n' + licenseHeaders + '*/\n';
 var loaderBannerText = '/*! ' + copyrightText + ' ' + loaderVersionText + '\n' + licenseHeaders + '*/\n';
 
-// start build shim
-gulp.task('webpack:build', function(callback) {
-    return gulpWebpack(require('./webpack.conf.js'))
-        .pipe(replace('</script>', '<\\/script>'))
-    	.pipe(preprocess())
-        .pipe(gulp.dest('dist/'));
+var getWebpackCallback = function getWebpackCallback (done) {
+    return function(err, stats) {
+        if (err) {
+            throw new gutil.PluginError('webpack', err);
+        }
+        else {
+            gutil.log('=================== Webpack Build Report ===================\n', stats.toString());
+        }
+        done();
+    }
+};
+
+gulp.task('build:dev', function (done) {
+    webpack(webpack_config_dev, getWebpackCallback(done));
 });
 
-gulp.task('webpack:build-min', function(callback) {
-    webpackConfig.plugins.push(new webpack.optimize.UglifyJsPlugin({
-       minimize: false,
-      sourceMap: false
-    }));
-   return gulpWebpack(webpackConfig)
-       .pipe(replace('</script>', '<\\/script>'))
-       .pipe(preprocess())
-       .pipe(header(loaderBannerText))
-       .pipe(rename({suffix: '.min'}))
-       .pipe(gulp.dest('dist/'));
-});
-// end build shim
-
-// start build plugin
-gulp.task('webpack:build-plugin', function(callback) {
-    return gulpWebpack(require('./webpack.conf.plugin.js'))
-    	.pipe(preprocess())
-        .pipe(gulp.dest('dist/'));
-});
-
-gulp.task('webpack:build-plugin-min', function(callback) {
-    webpackConfigPlugin.plugins.push(new webpack.optimize.UglifyJsPlugin({
-       minimize: false,
-      sourceMap: false
-    }));
-   return gulpWebpack(webpackConfigPlugin)
-       .pipe(preprocess())
-       .pipe(header(bannerText))
-       .pipe(rename({suffix: '.min'}))
-       .pipe(gulp.dest('dist/'));
-});
-// end build plugin
-
-gulp.task('lint', () => {
-    return gulp.src(['src/**/*.js', 'tests/e2e/auto/**/*.js'])
-      .pipe(eslint())
-      .pipe(eslint.format('stylish'))
-      .pipe(eslint.failAfterError());
+gulp.task('build:prod', function(done) {
+    webpack(webpack_config_prod, getWebpackCallback(done));
 });
 
 gulp.task('test', function () {
@@ -81,43 +48,44 @@ gulp.task('test', function () {
     });
 });
 
-gulp.task('dev-server', function(callback) {
-    // modify some webpack config options
-    var myConfig = Object.create(webpackConfig);
-    myConfig.devtool = 'eval';
-    myConfig.debug = true;
+// NOTE: This task must be defined after the tasks it depends on
+gulp.task('default', gulp.series('build:prod', 'test'));
 
-    const debugPort = 8082;
+
+gulp.task('dev-server', function(callback) {
+
+    var debugPort = 8082;
+    var target_entry = 'http://local.prebid.com:' + debugPort + '/prebid-main.html';
 
     // Start a webpack-dev-server
     // note- setting "publicPath" to /dist/ hides the actual
     // dist folder.  When webpack-dev-server runs, it does a webpack build
-    // of the module in memory, not on disk into /dist/  This allows us to do live-rebuilds duing development time
+    // of the module in memory, not on disk into /dist/  This allows us to do live-rebuilds during development time
     // to build to the actual dist folder, you need to run the webpack gulp task
     // note that the pages in the testPages folder point to ../../../dist/ModuleName.js
     // this is so they can run standalone outside of the webpack dev server, and when webpack-dev-server server the file
     // moving up levels doesn't matter because we are already at the webserver root
-    new WebpackDevServer(webpack(myConfig), {
+
+    var wp = webpack(webpack_config_dev);
+    new WebpackDevServer(wp, {
         publicPath: '/dist/',
         contentBase: './tests/e2e/testPages/',
-        hot: true,
+        hot: false,
         stats: {
             colors: true
         }
-    }).listen(debugPort, 'local.prebid', function(err) {
+    }).listen(debugPort, 'local.prebid.com', function(err) {
         if (err) throw new gutil.PluginError('webpack-dev-server', err);
-        gutil.log('[webpack-dev-server]', 'Webpack Dev Server Started at: http://local.prebid:' + debugPort + '/webpack-dev-server/');
+        gutil.log('[webpack-dev-server]', 'Webpack Dev Server Started at: ' + target_entry);
     });
 });
-
-gulp.task('default', gulp.series('lint', 'webpack:build', 'webpack:build-min', 'webpack:build-plugin', 'webpack:build-plugin-min', 'test'));
 
 var Server = require('karma').Server;
 
 gulp.task('ci-test', function(done) {
     console.log('DIRNAME = ', __dirname);
     new Server({
-        configFile: __dirname + '/karma.conf.ci.js',
+        configFile: path.join(__dirname, 'karma.conf.ci.js'),
         autoWatch: false,
         singleRun: true,
         browsers: ['Chrome_travis_ci'],
