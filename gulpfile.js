@@ -5,22 +5,8 @@ var gutil = require('gulp-util');
 var webpack = require('webpack');
 var WebpackDevServer = require('webpack-dev-server');
 
-var pkg = require('./package.json');
-
-var webpack_config_dev = require('./webpack.dev')();
-var webpack_config_prod = require('./webpack.prod')();
-
-var versionText = 'v' + pkg.version;
-var loaderVersionText = 'v' + pkg.loaderVersion;
-
-var licenseHeaders = fs.readFileSync('license-bc-prebid.txt');
-
-var curDateObj = new Date();
-
-var copyrightText = '(c)' + curDateObj.getUTCFullYear() + ' PREBID.ORG, INC.';
-
-var bannerText = '/*! ' + copyrightText + ' ' + versionText + '\n' + licenseHeaders + '*/\n';
-var loaderBannerText = '/*! ' + copyrightText + ' ' + loaderVersionText + '\n' + licenseHeaders + '*/\n';
+var webpack_config_dev = require('./webpack.dev.js')(null, null);
+var webpack_config_prod = require('./webpack.prod.js')(null, null);
 
 var getWebpackCallback = function getWebpackCallback (done) {
     return function(err, stats) {
@@ -34,11 +20,11 @@ var getWebpackCallback = function getWebpackCallback (done) {
     }
 };
 
-gulp.task('build:dev', function (done) {
+gulp.task('build-dev', function (done) {
     webpack(webpack_config_dev, getWebpackCallback(done));
 });
 
-gulp.task('build:prod', function(done) {
+gulp.task('build-prod', function(done) {
     webpack(webpack_config_prod, getWebpackCallback(done));
 });
 
@@ -49,7 +35,7 @@ gulp.task('test', function () {
 });
 
 // NOTE: This task must be defined after the tasks it depends on
-gulp.task('default', gulp.series('build:prod', 'test'));
+gulp.task('default', gulp.series('build-prod', 'test'));
 
 
 gulp.task('dev-server', function(callback) {

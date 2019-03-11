@@ -1,15 +1,8 @@
-var path = require('path');
 var merge = require('webpack-merge');
 
-var WEBPACK_MODE = 'production';
+var buildProps = require('./webpack.properties.js');
 
-var LOADER_ENTRY_FILE = './src/BcPrebidLoader.js';
-var LOADER_OUTPUT_FILE = 'bc_prebid_vast.min.js';
-var LOADER_VAR_NAME = 'BCVideo_PrebidVastPlugin';
-
-var PLUGIN_ENTRY_FILE = './src/BcPrebidVast.js';
-var PLUGIN_OUTPUT_FILE = 'bc_prebid_vast_plugin.min.js';
-var PLUGIN_VAR_NAME = 'BCVideo_PrebidVastMainPlugin';
+var WEBPACK_MODE = buildProps.MODE_PRODUCTION;
 
 var devConfig = require('./webpack.dev.js');
 var commonConfig = require('./webpack.common.js')(WEBPACK_MODE);
@@ -20,25 +13,25 @@ module.exports = function (env, argv) {
 
     var loaderConfig = {
         mode: WEBPACK_MODE,
-        entry: LOADER_ENTRY_FILE,
-        devtool: 'none',
+        entry: buildProps.loader.entry_file,
+        devtool: buildProps.devTool[WEBPACK_MODE],
         output: {
-            path: path.join(__dirname, 'dist'),
-            filename: LOADER_OUTPUT_FILE,
-            libraryTarget: 'var',
-            library: LOADER_VAR_NAME,
+            path: buildProps.output.path,
+            filename: buildProps.loader.output_file[WEBPACK_MODE],
+            libraryTarget: buildProps.plugin.libraryTarget,
+            library: buildProps.loader.var_name
         }
     };
 
     var pluginConfig = {
         mode: WEBPACK_MODE,
-        entry: PLUGIN_ENTRY_FILE,
-        devtool: 'none',
+        entry: buildProps.plugin.entry_file,
+        devtool: buildProps.devTool[WEBPACK_MODE],
         output: {
-            path: path.join(__dirname, 'dist'),
-            filename: PLUGIN_OUTPUT_FILE,
-            libraryTarget: 'var',
-            library: PLUGIN_VAR_NAME,
+            path: buildProps.output.path,
+            filename: buildProps.plugin.output_file[WEBPACK_MODE],
+            libraryTarget: buildProps.plugin.libraryTarget,
+            library: buildProps.plugin.var_name
         }
     };
 
@@ -46,27 +39,10 @@ module.exports = function (env, argv) {
     pluginConfig = merge(pluginConfig, commonConfig);
 
     // console.log('---------------------------------------------');
-    // traceObj(loaderConfig);
+    // buildProps.util.traceObj(loaderConfig);
     // console.log('---------------------------------------------');
-    // traceObj(pluginConfig);
+    // buildProps.util.traceObj(pluginConfig);
     // console.log('---------------------------------------------');
 
     return devConfig.concat([loaderConfig, pluginConfig]);
 };
-
-/*
-var traceObj = function (obj, depth) {
-    depth = depth || 0;
-
-    var space = new Array(depth + 2).join('==') + '> ';
-
-    for (var k in obj) {
-
-        console.log(space + k + ' --> ' + obj[k]);
-        if (typeof obj[k] === 'object') {
-            traceObj(obj[k], depth + 1);
-            continue;
-        }
-    }
-};
-*/

@@ -1,11 +1,26 @@
+var webpack = require('webpack');
 var path = require('path');
-require('eslint-loader');
+var eslintLoader = require('eslint-loader');
+
 var eslintStylishConfig = require('eslint-stylish-config');
 var StringReplacePlugin = require('string-replace-webpack-plugin');
 
-var GLOBAL_VAR_NAME = 'bc_plugin_pbjs'
-var MODE_DEV = 'development';
-var MODE_PROD = 'production';
+var buildProps = require('./webpack.properties.js');
+
+var bannerOptions = {
+    banner: function (obj) {
+        if (obj.filename.match(/^bc_prebid_vast_plugin/)) {
+            // console.log('Adding Plugin banner string');
+            return buildProps.plugin.bannerText;
+        } else {
+            // console.log('Adding Loader banner string');
+            return buildProps.loader.bannerText;
+        }
+    },
+    entryOnly: true,
+    raw: false
+}
+
 
 module.exports = function (mode) {
 
@@ -51,7 +66,7 @@ module.exports = function (mode) {
                             {
                                 pattern: /\$\$PREBID_GLOBAL\$\$/g,
                                 replacement: function (match, p1, offset, string) {
-                                    return GLOBAL_VAR_NAME;
+                                    return buildProps.globalVarName;
                                 }
                             },
                             {
@@ -90,6 +105,7 @@ module.exports = function (mode) {
         },
         plugins: [
             new StringReplacePlugin(),
+            new webpack.BannerPlugin(bannerOptions)
         ]
     };
 
