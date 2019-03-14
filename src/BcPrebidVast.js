@@ -12,7 +12,7 @@ var _prebidCommunicator = require('./PrebidCommunicator.js');
 var _dfpUrlGenerator = require('./DfpUrlGenerator.js');
 var _logger = require('./Logging.js');
 
-var PLUGIN_VERSION = '0.4.14';
+var PLUGIN_VERSION = '0.5.1';
 var _prefix = 'PrebidVast->';
 var _molIFrame = null;
 
@@ -28,6 +28,11 @@ _logger.always(_prefix, 'Prebid Plugin Version: ' + PLUGIN_VERSION);
 var BC_prebid_in_progress = $$PREBID_GLOBAL$$.plugin_prebid_options && $$PREBID_GLOBAL$$.plugin_prebid_options.biddersSpec;
 
 var DEFAULT_SCRIPT_LOAD_TIMEOUT = 3000;
+
+var _rendererNames = {
+	MOL: 'mailonline',
+	IMA: 'ima'
+};
 
 // UTIL FUNCTIONS FOR LOADING JS IFRAMES
 function isEdge() {
@@ -636,11 +641,76 @@ function loadMolPlugin(callback) {
     }
 }
 
+function getAdRendererFromAdOptions(adOptions) {
+	// if adRenderer option is present use it for all ads
+	if (adOptions.hasOwnProperty('adRenderer') && adOptions.adRenderer &&
+		(adOptions.adRenderer === _rendererNames.MOL || adOptions.adRenderer === _rendererNames.IMA)) {
+		return {adRenderer: adOptions.adRenderer, needBreak: true};
+	}
+	// for DFP use IMA plugin as renderer
+	if (adOptions.hasOwnProperty('dfpParameters')) {
+		return {adRenderer: _rendererNames.IMA, needBreak: false};
+	}
+	return null;
+}
+
+function setAdRenderer(options) {
+	if (options) {
+		var adRenderer = _rendererNames.MOL;
+		var rendObj;
+		var i;
+		if (Array.isArray(options)) {
+			for (i = 0; i < options.length; i++) {
+				rendObj = getAdRendererFromAdOptions(options[i]);
+				if (rendObj) {
+					adRenderer = rendObj.adRenderer;
+					if (rendObj.needBreak) {
+						break;
+					}
+				}
+			}
+			if (adRenderer) {
+				for (i = 0; i < options.length; i++) {
+					options[i].adRenderer = adRenderer;
+				}
+			}
+		}
+		else {
+			// array in brightcove studio converted to object {0: {...}, 1: {...}, ...}
+			if (options.hasOwnProperty('0')) {
+				// options parameter is array of options from plugin embedded in player in studio
+				for (i = 0; options.hasOwnProperty(i); i++) {
+					rendObj = getAdRendererFromAdOptions(options[i]);
+					if (rendObj) {
+						adRenderer = rendObj.adRenderer;
+						if (rendObj.needBreak) {
+							break;
+						}
+					}
+				}
+				for (i = 0; options.hasOwnProperty(i); i++) {
+					options[i].adRenderer = adRenderer;
+				}
+			}
+			else {
+				rendObj = getAdRendererFromAdOptions(options);
+				if (rendObj) {
+					options.adRenderer = rendObj.adRenderer;
+				}
+				else {
+					options.adRenderer = adRenderer;
+				}
+			}
+		}
+	}
+}
+
 (function () {
 	// if bidders settings are present in the $$PREBID_GLOBAL$$.plugin_prebid_options variable load prebid.js and do the bidding
 	if ($$PREBID_GLOBAL$$.plugin_prebid_options && $$PREBID_GLOBAL$$.plugin_prebid_options.biddersSpec) {
 		BC_prebid_in_progress = true;
 		loadPrebidScript($$PREBID_GLOBAL$$.plugin_prebid_options, true);
+		setAdRenderer($$PREBID_GLOBAL$$.plugin_prebid_options);
 	}
 	loadMolPlugin(function() {});
 })();
@@ -728,6 +798,8 @@ var prebidVastPlugin = function(player) {
 				loadMolPlugin: loadMolPlugin,
 				renderAd: renderAd,
 				insertHiddenIframe: insertHiddenIframe,
+				getAdRendererFromAdOptions: getAdRendererFromAdOptions,
+				setAdRenderer: setAdRenderer,
 				player: _player,
 				localPBJS: _localPBJS
 			};
@@ -739,6 +811,7 @@ var prebidVastPlugin = function(player) {
 				// ignore call if player is not ready
 				return;
 			}
+			setAdRenderer(options);
 			// get Brightcove Player Id
 			var playerId = '';
 			if (_player.bcinfo) {
