@@ -77,4 +77,43 @@ describe('BcPrebidVast unit test', function() {
 				done();
 			})
 	});
+
+	it('getAdRendererFromAdOptions test - getting ad renderer name from ad options', function () {
+		var title = this.test.title;
+
+		var rendObj = BcPrebidVast.test().getAdRendererFromAdOptions({adRenderer: 'mailonline'});
+		assert(rendObj.adRenderer == 'mailonline', title + ' failed for MOL renderer');
+		assert.isTrue(rendObj.needBreak, title + ' failed. Need break.');
+
+		rendObj = BcPrebidVast.test().getAdRendererFromAdOptions({dfpParameters: {}});
+		assert(rendObj.adRenderer == 'ima', title + ' failed for IMA renderer');
+		assert.isTrue(!rendObj.needBreak, title + ' failed. Does not need break.')
+
+		rendObj = BcPrebidVast.test().getAdRendererFromAdOptions({});
+		assert.isNull(rendObj, title + ' failed.')
+	});
+
+	it('setAdRenderer test - sets adRenderer option', function () {
+		var title = this.test.title;
+
+		var options = [
+			{},
+			{adRenderer: 'ima'}
+		];
+		BcPrebidVast.test().setAdRenderer(options);
+		assert(options[0].adRenderer == 'ima', title + ' failed. Expected explicit renderer name for array');
+
+		options = {
+			'0': {},
+			'1': {adRenderer: 'mailonline'}
+		};
+		BcPrebidVast.test().setAdRenderer(options);
+		assert(options[0].adRenderer == 'mailonline', title + ' failed. Expected explicit renderer name');
+
+		options = {
+			dfpParameters: {}
+		};
+		BcPrebidVast.test().setAdRenderer(options);
+		assert(options.adRenderer == 'ima', title + ' failed set ad renderer IMA for DFP');
+	});
 });

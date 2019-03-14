@@ -1,7 +1,7 @@
 {
 	"name": "videoads-product-prebid-plugin",
 	"version": "0.4.14",
-	"loaderVersion": "0.4.6",
+	"loaderVersion": "0.5.1",
 	"description": "Header Bidding plug-in for Brightcove player.",
 	"main": "src/BcPrebidVast.js",
 	"scripts": {
