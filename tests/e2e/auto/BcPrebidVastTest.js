@@ -164,11 +164,11 @@ describe('BcPrebidVast unit test', function() {
 
 		var rendObj = BcPrebidVast.test().getAdRendererFromAdOptions({adRenderer: 'mailonline'});
 		assert(rendObj.adRenderer == 'mailonline', title + ' failed for MOL renderer');
-		assert.isTrue(rendObj.needBreak, title + ' failed. Need break.');
+		assert.isTrue(rendObj.userSet, title + ' failed. Need break.');
 
 		rendObj = BcPrebidVast.test().getAdRendererFromAdOptions({dfpParameters: {}});
 		assert(rendObj.adRenderer == 'ima', title + ' failed for IMA renderer');
-		assert.isTrue(!rendObj.needBreak, title + ' failed. Does not need break.')
+		assert.isTrue(!rendObj.userSet, title + ' failed. Does not need break.')
 
 		rendObj = BcPrebidVast.test().getAdRendererFromAdOptions({});
 		assert.isNull(rendObj, title + ' failed.')

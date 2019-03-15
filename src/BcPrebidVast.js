@@ -645,11 +645,11 @@ function getAdRendererFromAdOptions(adOptions) {
 	// if adRenderer option is present use it for all ads
 	if (adOptions.hasOwnProperty('adRenderer') && adOptions.adRenderer &&
 		(adOptions.adRenderer === _rendererNames.MOL || adOptions.adRenderer === _rendererNames.IMA)) {
-		return {adRenderer: adOptions.adRenderer, needBreak: true};
+		return {adRenderer: adOptions.adRenderer, userSet: true};
 	}
 	// for DFP use IMA plugin as renderer
 	if (adOptions.hasOwnProperty('dfpParameters')) {
-		return {adRenderer: _rendererNames.IMA, needBreak: false};
+		return {adRenderer: _rendererNames.IMA, userSet: false};
 	}
 	return null;
 }
@@ -659,47 +659,32 @@ function setAdRenderer(options) {
 		var adRenderer = _rendererNames.MOL;
 		var rendObj;
 		var i;
-		if (Array.isArray(options)) {
-			for (i = 0; i < options.length; i++) {
+		// if options parameter is array of options from plugin embedded in player in studio
+		// array in brightcove studio converted to object {0: {...}, 1: {...}, ...}
+		if (Array.isArray(options) || options.hasOwnProperty('0')) {
+			// get renderer name
+			for (i = 0; options.hasOwnProperty(i); i++) {
 				rendObj = getAdRendererFromAdOptions(options[i]);
 				if (rendObj) {
 					adRenderer = rendObj.adRenderer;
-					if (rendObj.needBreak) {
+					if (rendObj.userSet) {
 						break;
 					}
 				}
 			}
-			if (adRenderer) {
-				for (i = 0; i < options.length; i++) {
-					options[i].adRenderer = adRenderer;
-				}
+			// set the same renderer across all configurations
+			for (i = 0; options.hasOwnProperty(i); i++) {
+				options[i].adRenderer = adRenderer;
 			}
 		}
 		else {
-			// array in brightcove studio converted to object {0: {...}, 1: {...}, ...}
-			if (options.hasOwnProperty('0')) {
-				// options parameter is array of options from plugin embedded in player in studio
-				for (i = 0; options.hasOwnProperty(i); i++) {
-					rendObj = getAdRendererFromAdOptions(options[i]);
-					if (rendObj) {
-						adRenderer = rendObj.adRenderer;
-						if (rendObj.needBreak) {
-							break;
-						}
-					}
-				}
-				for (i = 0; options.hasOwnProperty(i); i++) {
-					options[i].adRenderer = adRenderer;
-				}
+			rendObj = getAdRendererFromAdOptions(options);
+			// set renderer explicitly
+			if (rendObj) {
+				options.adRenderer = rendObj.adRenderer;
 			}
 			else {
-				rendObj = getAdRendererFromAdOptions(options);
-				if (rendObj) {
-					options.adRenderer = rendObj.adRenderer;
-				}
-				else {
-					options.adRenderer = adRenderer;
-				}
+				options.adRenderer = adRenderer;
 			}
 		}
 	}
