@@ -201,7 +201,7 @@ function apiInit() {
     		cover.style.position = 'absolute';
     		cover.style.zIndex = 101;
     		_player.el().appendChild(cover);
-    	}
+		}
 
 		// load prebid plugin and run it when it is loaded
         var path = getPluginPath(options);
