@@ -12,16 +12,16 @@ var vastRenderer = function (player) {
     var _player = player;
 	var _defaultAdCancelTimeout = 3000;
 
-    var isMobile = function isMobile() {
+    var isMobile = function isMobile () {
     	return /iP(hone|ad|od)|Android|Windows Phone/.test(navigator.userAgent);
     };
 
-	var isMobileSafari = function isMobileSafari() {
+	var isMobileSafari = function isMobileSafari () {
 		return /version\/([\w\.]+).+?mobile\/\w+\s(safari)/i.test(navigator.userAgent);
 	};
 
 	// set ad playback options base on main content state
-	function setPlaybackMethodData() {
+	function setPlaybackMethodData () {
 		var initPlayback = 'auto';
     	if (_player.currentTime() === 0 && !_options.initialPlayback) {
             initPlayback = _player.autoplay() ? 'auto' : 'click';
@@ -31,7 +31,7 @@ var vastRenderer = function (player) {
 		_options.initialAudio = initAudio;
     }
 
-	function getMobileSafariVersion() {
+	function getMobileSafariVersion () {
 		var nVer = null;
 		var nPos = navigator.userAgent.indexOf('Version');
 		if (nPos > 0) {
@@ -46,7 +46,7 @@ var vastRenderer = function (player) {
 	}
 
 	// show/hide brightcove controls activated for next clip within playlist
-	var showNextOverlay = function showNextOverlay(show) {
+	var showNextOverlay = function showNextOverlay (show) {
 		var nextOverlays = document.getElementsByClassName('vjs-next-overlay');
 		if (nextOverlays && nextOverlays.length > 0) {
 			nextOverlays[0].style.display = show ? '' : 'none';
@@ -54,18 +54,18 @@ var vastRenderer = function (player) {
 	};
 
     // resend event to caller
-    function resendEvent(event) {
+    function resendEvent (event) {
         _eventCallback(event);
     }
 
-    function closeEvent(event) {
+    function closeEvent (event) {
         resendEvent(event);
         removeListeners();
         showNextOverlay(true);
     }
 
 	// add listeners for renderer events
-    function addListeners() {
+    function addListeners () {
     	_player.one('vast.adStart', resendEvent);
 
     	_player.on('vast.adError', closeEvent);
@@ -82,7 +82,7 @@ var vastRenderer = function (player) {
     }
 
 	// remove listeners for renderer events
-    function removeListeners() {
+    function removeListeners () {
     	_player.off('vast.adStart', resendEvent);
 
     	_player.off('vast.adError', closeEvent);
@@ -99,7 +99,7 @@ var vastRenderer = function (player) {
     }
 
     // play single ad
-    this.playAd = function(xml, options, firstVideoPreroll, mobilePrerollNeedClick, prerollNeedClickToPlay, eventCallback) {
+    this.playAd = function (xml, options, firstVideoPreroll, mobilePrerollNeedClick, prerollNeedClickToPlay, eventCallback) {
         // if MOL plugin is not registered in videojs immediatelly notify caller and return
         if (!_player.vastClient || typeof _player.vastClient != 'function') {
             if (eventCallback) {
@@ -125,8 +125,8 @@ var vastRenderer = function (player) {
         // prepare parameters for MailOnline plugin
         var clientParams = {
                     // VAST xml
-                    adTagXML: function(callback) {
-                        setTimeout(function() {
+                    adTagXML: function (callback) {
+                        setTimeout(function () {
                             callback(null, xml);
                         }, 0);
                     },
@@ -138,8 +138,8 @@ var vastRenderer = function (player) {
             };
         if (creativeIsVast) {
             // creative is VAST
-            clientParams.adTagXML = function(callback) {
-                    setTimeout(function() {
+            clientParams.adTagXML = function (callback) {
+                    setTimeout(function () {
                         callback(null, _creative);
                     }, 0);
                 };
@@ -167,7 +167,7 @@ var vastRenderer = function (player) {
         var renderAd = function (clientParams, canAutoplay) {
             if (_options.initialPlayback !== 'click' || mobilePrerollNeedClick) {
                 if (!prerollNeedClickToPlay) {
-                    setTimeout(function() {
+                    setTimeout(function () {
                         if (canAutoplay) {
                             // start MailOnline plugin for render the ad
                             _player.vastClient(clientParams);
@@ -183,12 +183,12 @@ var vastRenderer = function (player) {
                             _player.bigPlayButton.el_.style.display = 'block';
                             _player.bigPlayButton.el_.style.opacity = 1;
                             _player.bigPlayButton.el_.style.zIndex = 99999;
-                            _player.one('play', function() {
+                            _player.one('play', function () {
                                 _player.bigPlayButton.el_.style.display = 'none';
                                 _player.trigger({type: 'internal', data: {name: 'cover', cover: true}});
                                 // start MailOnline plugin for render the ad
                                 _player.vastClient(clientParams);
-                                setTimeout(function() {
+                                setTimeout(function () {
                                     // trigger play event to MailOnline plugin to force render pre-roll
                                     _player.trigger('play');
                                 }, 0);
@@ -217,7 +217,7 @@ var vastRenderer = function (player) {
                     _logger.log(_prefix, 'Do not autoplay preroll on mobile safari version 10 or less');
                     _player.trigger({type: 'trace.message', data: {message: 'Do not autoplay preroll on mobile safari version 10 or less'}});
                     // give player the time to finish initialization
-                    setTimeout(function() {
+                    setTimeout(function () {
                         _player.pause();
                         renderAd(clientParams, false);
                     }, 1000);
@@ -227,13 +227,13 @@ var vastRenderer = function (player) {
             try {
                 var playPromise = _player.tech().el().play();
                 if (playPromise !== undefined && typeof playPromise.then === 'function') {
-                    playPromise.then(function() {
+                    playPromise.then(function () {
                         _player.pause();
                         _logger.log(_prefix, 'Video can play with sound (allowed by browser)');
                         _player.trigger({type: 'trace.message', data: {message: 'Video can play with sound (allowed by browser)'}});
                         renderAd(clientParams, true);
-                    }).catch(function() {
-                        setTimeout(function() {
+                    }).catch(function () {
+                        setTimeout(function () {
                             _player.pause();
                             _logger.log(_prefix, 'Video cannot play with sound (browser restriction)');
                             _player.trigger({type: 'trace.message', data: {message: 'Video cannot play with sound (browser restriction)'}});
@@ -252,8 +252,8 @@ var vastRenderer = function (player) {
                         _player.trigger({type: 'trace.message', data: {message: 'Main video is auto-playing. Pause it.'}});
                         _player.pause();
                         if (_options.initialPlayback === 'click') {
-                            setTimeout(function() {
-                                _player.one('play', function() {
+                            setTimeout(function () {
+                                _player.one('play', function () {
                                     // we already did click, now we can play automatically.
                                     _options.initialPlayback = 'auto';
                                     prerollNeedClickToPlay = false;
@@ -284,12 +284,12 @@ var vastRenderer = function (player) {
     // @exclude
     // Method exposed only for unit Testing Purpose
     // Gets stripped off in the actual build artifact
-	this.test = function() {
+	this.test = function () {
 		return {
-			setOptions: function(options) {
+			setOptions: function (options) {
 				_options = options;
 			},
-			options: function() { return _options; },
+			options: function () { return _options; },
             setPlaybackMethodData: setPlaybackMethodData,
             getMobileSafariVersion: getMobileSafariVersion
 		};

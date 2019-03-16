@@ -30,17 +30,17 @@ var BC_prebid_in_progress = $$PREBID_GLOBAL$$.plugin_prebid_options && $$PREBID_
 var DEFAULT_SCRIPT_LOAD_TIMEOUT = 3000;
 
 // UTIL FUNCTIONS FOR LOADING JS IFRAMES
-function isEdge() {
+function isEdge () {
 	return /(edge)\/((\d+)?[\w\.]+)/i.test(navigator.userAgent);
 }
 
-function canLoadInIframe() {
+function canLoadInIframe () {
 	var docClassList = document.documentElement.classList;
 	var playerInIframe = docClassList && docClassList.contains('bc-iframe'); // html of player has bc-iframe class when Brightcove player emded in iFrame
 	return !(playerInIframe && isEdge());
 }
 
-function getOrigin() {
+function getOrigin () {
     if (window.location.origin) {
         return window.location.origin;
     }
@@ -100,7 +100,7 @@ function writeAsyncScriptToFrame (targetFrame, jsPath, includeVJS, origin) {
 var BC_bidders_added = false;
 var _dfpUrlGeneratorObj;
 
-function doPrebid(options, callback) {
+function doPrebid (options, callback) {
 	if (_localPBJS.bc_pbjs && options.biddersSpec) {
 		if (options.clearPrebid) {
 			_localPBJS.bc_pbjs.adUnits = [];
@@ -113,11 +113,11 @@ function doPrebid(options, callback) {
 		//
 		// Prebid Video adUnit
 		//
-		var logBids = function(bids) {
+		var logBids = function (bids) {
 			_logger.log(_prefix, 'MESSAGE: got bids back: ', bids);
 		};
 
-		_localPBJS.bc_pbjs.que.push(function() {
+		_localPBJS.bc_pbjs.que.push(function () {
 			if (!BC_bidders_added) {
 				BC_bidders_added = true;
 				specifyBidderAliases(options.bidderAliases, _localPBJS.bc_pbjs);
@@ -152,7 +152,7 @@ function doPrebid(options, callback) {
 
 			_localPBJS.bc_pbjs.requestBids({
 				timeout: (options.prebidTimeout && options.prebidTimeout > 0) ? options.prebidTimeout : 700,
-				bidsBackHandler: function(bids) { // this function will be called once bids are returned
+				bidsBackHandler: function (bids) { // this function will be called once bids are returned
 					logBids(bids);
 					callback(bids);
 				}
@@ -179,7 +179,7 @@ function doPrebid(options, callback) {
 // This function enumerates all aliases for bidder adapters and defines them in prebid.js.
 // bidderAliases is array of object each of them defines pair of alias/bidder.
 // bc_pbjs is prebid.js instance.
-function specifyBidderAliases(bidderAliases, bc_pbjs) {
+function specifyBidderAliases (bidderAliases, bc_pbjs) {
 	if (bidderAliases && Array.isArray(bidderAliases) && bidderAliases.length > 0) {
 		for (var i = 0; i < bidderAliases.length; i++) {
 			if (bidderAliases[i].bidderName && bidderAliases[i].name) {
@@ -193,7 +193,7 @@ function specifyBidderAliases(bidderAliases, bc_pbjs) {
 // This function converts 'val' properties in bidderSettings represented as string array to inline functions.
 // We recommend to use string array in bidderSettings only when options are defined for Brightcove player
 // in Brightcove studio.
-function prepareBidderSettings(options) {
+function prepareBidderSettings (options) {
 	if (options.bidderSettings) {
 		var subtituteToEval = function (arr, obj) {
 			if (arr.length > 1 && arr[0] === 'valueIsFunction') {
@@ -202,7 +202,7 @@ function prepareBidderSettings(options) {
 				eval('obj.val = ' + str); // jshint ignore:line
 			}
 		};
-		var findValProperty = function findValProperty(obj) {
+		var findValProperty = function findValProperty (obj) {
 			for (var name in obj) {
 				if (name.toLowerCase() === 'val') {
 					if (Array.isArray(obj.val)) {
@@ -220,7 +220,7 @@ function prepareBidderSettings(options) {
 	}
 }
 
-function dispatchPrebidDoneEvent() {
+function dispatchPrebidDoneEvent () {
 	var event;
 	if (typeof Event === 'function') {
 		event = new Event('prebid_done_loading_script');
@@ -238,16 +238,16 @@ function dispatchPrebidDoneEvent() {
 // If second parameter is present and is 'true' we have to call prebid right now (header bidding).
 // That parameter is present and set to 'true' when $$PREBID_GLOBAL$$.plugin_prebid_options.biddersSpec has a value.
 // $$PREBID_GLOBAL$$.plugin_prebid_options.biddersSpec has to be set for header bidding BEFORE the plugin's script is loaded.
-function loadPrebidScript(options, fromHeader) {
+function loadPrebidScript (options, fromHeader) {
 	// internal function which will be called later
-	var setupAdCreative = function() {
+	var setupAdCreative = function () {
     	// do header bidding if fromHeader is 'true' and bidder setting are present in options
     	if (fromHeader && options) {
 			BC_prebid_in_progress = true;
 			// invoke prebid
-    		doPrebid(options, function(bids) {
+    		doPrebid(options, function (bids) {
 				// this function returns creative with higher CPM
-				var selectWinnerByCPM = function(arrBids) {
+				var selectWinnerByCPM = function (arrBids) {
 					var cpm = 0.0;
 					var creative = null;
 					var cacheKey;
@@ -267,7 +267,7 @@ function loadPrebidScript(options, fromHeader) {
 					return creative;
 				};
 				// get prebid cache url if available
-				function getPrebidCacheUrl(creative, arrBids) {
+				function getPrebidCacheUrl (creative, arrBids) {
 					for (var i = 0; i < arrBids.length; i++) {
 						if (arrBids[i].vastUrl === creative) {
 							// winner is creative from bid array
@@ -323,7 +323,7 @@ function loadPrebidScript(options, fromHeader) {
 							func = window[options.adServerCallback];
 						}
 						if (func) {
-							func(arrBids, function(creative) {
+							func(arrBids, function (creative) {
 								_localPBJS.prebid_creative = getPrebidCacheUrl(creative, arrBids);
 								BC_prebid_in_progress = false;
 								dispatchPrebidDoneEvent();
@@ -376,7 +376,7 @@ function loadPrebidScript(options, fromHeader) {
 		}
 
 		var pbjsScr = document.createElement('script');
-		pbjsScr.onload = function() {
+		pbjsScr.onload = function () {
 			// after prebid.js is successfully loaded try to invoke prebid.
 			_localPBJS.bc_pbjs = frame.contentWindow.pbjs;
 
@@ -384,7 +384,7 @@ function loadPrebidScript(options, fromHeader) {
 
             setupAdCreative();
 		};
-		pbjsScr.onerror = function(e) {
+		pbjsScr.onerror = function (e) {
 			// failed to load prebid.js.
 			_localPBJS.bc_pbjs_error = true;
 
@@ -408,7 +408,7 @@ function loadPrebidScript(options, fromHeader) {
 		node.appendChild(pbjsScr);
 	}
 	else {
-        var timeout = setTimeout(function() {
+        var timeout = setTimeout(function () {
 			// failed to load prebid.js in iframe.
 			_localPBJS.bc_pbjs_error = true;
 			timeout = null;
@@ -488,7 +488,7 @@ function loadPrebidScript(options, fromHeader) {
     }
 }
 
-function convertOptionsToArray(options) {
+function convertOptionsToArray (options) {
 	var arrOptions;
 	if (Array.isArray(options)) {
 		arrOptions = options;
@@ -514,7 +514,7 @@ var _molLoadingInProgress = false;
 var _molLoaded = false;
 var _vastClientFunc;
 
-function loadMolPlugin(callback) {
+function loadMolPlugin (callback) {
     var vjs = window.videojs || false;
     if (!vjs) {
         _logger.warn(_prefix, 'Can\'t load MOL Plugin now - Videojs isn\'t loaded yet.');
@@ -526,7 +526,7 @@ function loadMolPlugin(callback) {
 		var waitMolLoaded;
         if (_molIFrame && _molLoadingInProgress) {
             _logger.log(_prefix, 'MailOnline Plugin loading in progress - setting interval to run callback when loaded');
-            waitMolLoaded = setInterval(function() {
+            waitMolLoaded = setInterval(function () {
                 if (!_molLoadingInProgress) {
                     clearInterval(waitMolLoaded);
                     _logger.log(_prefix, 'MailOnline Plugin ' + (_molLoaded ? '' : 'not ') + 'loaded successfully - wait interval cleared');
@@ -593,7 +593,7 @@ function loadMolPlugin(callback) {
 		else {
 			if (_molLoadingInProgress) {
 				_logger.log(_prefix, 'MailOnline Plugin loading in progress - setting interval to run callback when loaded');
-				waitMolLoaded = setInterval(function() {
+				waitMolLoaded = setInterval(function () {
 					if (!_molLoadingInProgress) {
 						clearInterval(waitMolLoaded);
 						_logger.log(_prefix, 'MailOnline Plugin ' + (_molLoaded ? '' : 'not ') + 'loaded successfully - wait interval cleared');
@@ -606,14 +606,14 @@ function loadMolPlugin(callback) {
 			_molLoadingInProgress = true;
 			var script = document.createElement('script');
 			script.src = MOL_PLUGIN_URL + '?rand=' + PLUGIN_VERSION;
-			script.onload = function() {
+			script.onload = function () {
 				_molLoaded = true;
 				_player.vastClient = window.bc_vastClientFunc;
 				_molLoadingInProgress = false;
 				_logger.log(_prefix, 'MailOnline Plugin loaded successfully');
 				callback(true);
 			};
-			script.onerror = function(e) {
+			script.onerror = function (e) {
 				_molLoaded = false;
 				_molLoadingInProgress = false;
 				_logger.error(_prefix, 'Failed to load MailOnline Plugin. Error event: ', e);
@@ -642,7 +642,7 @@ function loadMolPlugin(callback) {
 		BC_prebid_in_progress = true;
 		loadPrebidScript($$PREBID_GLOBAL$$.plugin_prebid_options, true);
 	}
-	loadMolPlugin(function() {});
+	loadMolPlugin(function () {});
 })();
 
 var _player;
@@ -650,7 +650,7 @@ var _vastManagerObj;
 var _adListManagerObj;
 var _prebidCommunicatorObj;
 
-function renderAd(options) {
+function renderAd (options) {
 	if (options.creative) {
 		// render ad if vast url is ready
 		_vastManagerObj = new _vastManager();
@@ -659,7 +659,7 @@ function renderAd(options) {
 	}
 	else if (BC_prebid_in_progress) {
 		// wait until prebid done
-		document.addEventListener('prebid_done_loading_script', function() {
+		document.addEventListener('prebid_done_loading_script', function () {
 			if (_localPBJS.prebid_creative) {
 				// render ad
 				if (!options.onlyPrebid) {
@@ -692,25 +692,25 @@ function renderAd(options) {
 		// do prebid if needed and render ad(s)
 		_adListManagerObj = new _adListManager();
 		var arrOptions = convertOptionsToArray(options);
-		arrOptions.forEach(function(opt) {
+		arrOptions.forEach(function (opt) {
 			opt.doPrebid = doPrebid;
 		});
 		_adListManagerObj.play(_player, arrOptions);
 	}
 }
 
-var prebidVastPlugin = function(player) {
+var prebidVastPlugin = function (player) {
 	_player = player;
 	return {
 		// @exclude
 		// Method exposed only for unit Testing Purpose
 		// Gets stripped off in the actual build artifact
-		test: function() {
+		test: function () {
 			return {
-				doPrebid: function(options, callback) {
+				doPrebid: function (options, callback) {
 					if (_localPBJS.bc_pbjs === undefined) {
 						loadPrebidScript(options, false);
-						var waitReady = setInterval(function() {
+						var waitReady = setInterval(function () {
 							if (_localPBJS.bc_pbjs !== undefined) {
 								clearInterval(waitReady);
 								doPrebid(options, callback);
@@ -724,7 +724,7 @@ var prebidVastPlugin = function(player) {
 				specifyBidderAliases: specifyBidderAliases,
 				prepareBidderSettings: prepareBidderSettings,
 				loadPrebidScript: loadPrebidScript,
-				bcPrebidInProgress: function() { return BC_prebid_in_progress; },
+				bcPrebidInProgress: function () { return BC_prebid_in_progress; },
 				loadMolPlugin: loadMolPlugin,
 				renderAd: renderAd,
 				insertHiddenIframe: insertHiddenIframe,
@@ -734,7 +734,7 @@ var prebidVastPlugin = function(player) {
 		},
 		// @endexclude
 
-		run: function(options) {
+		run: function (options) {
 			if (!_player) {
 				// ignore call if player is not ready
 				return;
@@ -753,12 +753,12 @@ var prebidVastPlugin = function(player) {
 			}
 			// Brightcove Player v5.28.1 issues alert on every tech() call
 			if (window.videojs && window.videojs.VERSION.substr(0, 2) <= '5.') {
-				_player.tech = function() {
+				_player.tech = function () {
 					return _player.tech_;
 				};
 			}
 			if (!options.onlyPrebid) {
-				loadMolPlugin(function(succ) {
+				loadMolPlugin(function (succ) {
 					if (succ) {
 						renderAd(options);
 					}
@@ -769,7 +769,7 @@ var prebidVastPlugin = function(player) {
 			}
 		},
 
-		stop: function() {
+		stop: function () {
 			if (_vastManagerObj) {
 				_vastManagerObj.stop();
 			} else if (_adListManagerObj) {

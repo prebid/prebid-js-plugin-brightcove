@@ -24,8 +24,14 @@ gulp.task('build-dev', function (done) {
     webpack(webpack_config_dev, getWebpackCallback(done));
 });
 
-gulp.task('build-prod', function(done) {
+gulp.task('build-prod', function (done) {
     webpack(webpack_config_prod, getWebpackCallback(done));
+});
+
+gulp.task('copy-css', function (done) {
+    gulp.src('./src/styles/*.css')
+    .pipe(gulp.dest('./dist/styles/'));
+    done();
 });
 
 gulp.task('test', function () {
@@ -35,7 +41,7 @@ gulp.task('test', function () {
 });
 
 // NOTE: This task must be defined after the tasks it depends on
-gulp.task('default', gulp.series('build-prod', 'test'));
+gulp.task('default', gulp.series('build-prod', 'copy-css', 'test'));
 
 
 gulp.task('dev-server', function(callback) {

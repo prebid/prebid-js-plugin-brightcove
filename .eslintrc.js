@@ -14,7 +14,7 @@ module.exports = {
     "no-unused-vars": "off",
     "comma-dangle": "off",
     "semi": "off",
-    "space-before-function-paren": "off",
+    "space-before-function-paren": 2,
     "padding-line-between-statements": "off",
     "padded-blocks": "off",
 
@@ -41,3 +41,4 @@ module.exports = {
     "no-multi-spaces": "off"
   }
 };
+
