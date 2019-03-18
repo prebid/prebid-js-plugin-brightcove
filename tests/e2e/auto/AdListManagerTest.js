@@ -152,7 +152,7 @@ describe('AdListManager unit test', function () {
                 assert.isTrue(firstVideoPreroll);
                 done();
             });
-            testObj.options({});
+            testObj.options({adRenderer: 'mailonline'});
             var adData = {status: 2, adTag: '<VAST>...</VAST>', options: {}, adTime: 0};
             testObj.playAd(adData);
         });
