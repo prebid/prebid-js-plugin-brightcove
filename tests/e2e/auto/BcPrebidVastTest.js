@@ -144,6 +144,13 @@ describe('BcPrebidVast unit test', function() {
 		});
 	});
 
+	it('loadImaPlugin test - loads IMA Plugin on a page', function (done) {
+		BcPrebidVast.test().loadImaPlugin(function(succ) {
+			assert.isTrue(succ);
+			done();
+		});
+	});
+
 	it('insertHiddenIframe test - creates an empty iframe and attaches it to the DOM', function () {
 		var frame = BcPrebidVast.test().insertHiddenIframe('testFrame');
 

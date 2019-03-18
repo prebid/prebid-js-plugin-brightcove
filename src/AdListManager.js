@@ -7,12 +7,14 @@ var _logger = require('./Logging.js');
 var _prebidCommunicator = require('./PrebidCommunicator.js');
 var _MarkersHandler = require('./MarkersHandler.js');
 var _vastRenderer = require('./VastRenderer.js');
+var _imaVastRenderer = require('./ImaVastRenderer.js');
 var _prefix = 'PrebidVast->adListManager';
 
 var adListManager = function () {
 	'use strict';
 	var _prebidCommunicatorObj = new _prebidCommunicator();
 	var _vastRendererObj;
+	var _imaVastRendererObj;
 	var _player;
 	var _playerId;
 	var _playlistIdx = -1;
@@ -411,9 +413,6 @@ var adListManager = function () {
 			showCover(false);
 			return;
 		}
-		if (!_vastRendererObj) {
-			_vastRendererObj = new _vastRenderer(_player);
-		}
 		_adPlaying = true;
 		if (_markersHandler && _player.markers) {
 			_savedMarkers = JSON.stringify(_player.markers.getMarkers());
@@ -437,7 +436,19 @@ var adListManager = function () {
 		if (forceAdToAutoplay) {
 			_options.initialPlayback = 'auto';
 		}
-		_vastRendererObj.playAd(adData.adTag, _options, firstVideoPreroll, _mobilePrerollNeedClick, _prerollNeedClickToPlay, eventCallback);
+		if (_options.adRenderer === 'ima') {
+			if (!_imaVastRendererObj) {
+				_imaVastRendererObj = new _imaVastRenderer(_player);
+			}
+			showCover(false);
+			_imaVastRendererObj.playAd(adData.adTag, _options, firstVideoPreroll, _mobilePrerollNeedClick, _prerollNeedClickToPlay, eventCallback);
+		}
+		else if (_options.adRenderer === 'mailonline') {
+			if (!_vastRendererObj) {
+				_vastRendererObj = new _vastRenderer(_player);
+			}
+			_vastRendererObj.playAd(adData.adTag, _options, firstVideoPreroll, _mobilePrerollNeedClick, _prerollNeedClickToPlay, eventCallback);
+		}
 	};
 
 	// function to get break data for ad renderring

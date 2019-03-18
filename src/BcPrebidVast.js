@@ -517,6 +517,7 @@ function convertOptionsToArray(options) {
 // this function loads MailOnline Plugin
 var _molLoadingInProgress = false;
 var _molLoaded = false;
+var _imaLoaded = false;
 var _vastClientFunc;
 
 function loadMolPlugin(callback) {
@@ -641,6 +642,53 @@ function loadMolPlugin(callback) {
     }
 }
 
+function loadImaPlugin (callback) {
+    var vjs = window.videojs || false;
+    if (!vjs) {
+        _logger.warn(_prefix, 'Can\'t load IMA Plugin now - Videojs isn\'t loaded yet.');
+        callback(false);
+        return;
+	}
+
+    if (!_imaLoaded) {
+		_imaLoaded = true;	// load IMA plugin script only once
+
+		// check if IMA plugin is imbedded in player
+		if (vjs.getPlugin('ima3')) {
+			_logger.warn(_prefix, 'IMA Plugin already loaded within player.');
+			callback(true);
+			return;
+		}
+
+		// add ima css to the document head
+		var css = document.createElement('link');
+		css.href = 'https://players.brightcove.net/videojs-ima3/3/videojs.ima3.min.css';
+		css.rel = 'stylesheet';
+		var node = document.getElementsByTagName('head')[0];
+		node.appendChild(css);
+
+		// add ima plugin script to the document body
+		var script = document.createElement('script');
+		script.src = 'https://players.brightcove.net/videojs-ima3/3/videojs.ima3.min.js';
+		script.onerror = function (e) {
+			_logger.error(_prefix, 'Failed to load IMA Plugin. Error event: ', e);
+			callback(false);
+		};
+		script.onload = function () {
+			_logger.log(_prefix, 'IMA Plugin loaded successfully');
+			callback(true);
+		};
+		document.body.appendChild(script);
+   	}
+    else {
+		_logger.log(_prefix, 'IMA Plugin already loaded');
+		if (vjs.getPlugin('ima3')) {
+			callback(true);
+		}
+		// IMA plugin script is loading right now. Wait until it is loaded or failed
+    }
+}
+
 function getAdRendererFromAdOptions(adOptions) {
 	// if adRenderer option is present use it for all ads
 	if (adOptions.hasOwnProperty('adRenderer') && adOptions.adRenderer &&
@@ -693,19 +741,39 @@ function setAdRenderer(options) {
 (function () {
 	// if bidders settings are present in the $$PREBID_GLOBAL$$.plugin_prebid_options variable load prebid.js and do the bidding
 	if ($$PREBID_GLOBAL$$.plugin_prebid_options && $$PREBID_GLOBAL$$.plugin_prebid_options.biddersSpec) {
-		BC_prebid_in_progress = true;
-		loadPrebidScript($$PREBID_GLOBAL$$.plugin_prebid_options, true);
 		setAdRenderer($$PREBID_GLOBAL$$.plugin_prebid_options);
+		if ($$PREBID_GLOBAL$$.plugin_prebid_options.biddersSpec) {
+			BC_prebid_in_progress = true;
+			loadPrebidScript($$PREBID_GLOBAL$$.plugin_prebid_options, true);
+		}
+		if ($$PREBID_GLOBAL$$.plugin_prebid_options.adRenderer === 'ima') {
+			loadImaPlugin(function() {});
+		}
+		else if ($$PREBID_GLOBAL$$.plugin_prebid_options.adRenderer === 'ima') {
+			loadMolPlugin(function() {});
+		}
 	}
-	loadMolPlugin(function() {});
 })();
 
 var _player;
 var _vastManagerObj;
 var _adListManagerObj;
 var _prebidCommunicatorObj;
+var _defaultAdCancelTimeout = 3000;
 
 function renderAd(options) {
+	if (options.adRenderer === 'ima') {
+		if (_player.ima3 && typeof _player.ima3 === 'function') {
+			// initialize some setting values for IMA plugin
+			_player.ima3({
+				debug: true,
+				showVpaidControls: true,
+				requestMode: 'ondemand',
+				timeout: options.adStartTimeout ? options.adStartTimeout : _defaultAdCancelTimeout,
+				vpaidMode: 'ENABLED'
+			});
+		}
+	}
 	if (options.creative) {
 		// render ad if vast url is ready
 		_vastManagerObj = new _vastManager();
@@ -781,6 +849,7 @@ var prebidVastPlugin = function(player) {
 				loadPrebidScript: loadPrebidScript,
 				bcPrebidInProgress: function() { return BC_prebid_in_progress; },
 				loadMolPlugin: loadMolPlugin,
+				loadImaPlugin: loadImaPlugin,
 				renderAd: renderAd,
 				insertHiddenIframe: insertHiddenIframe,
 				getAdRendererFromAdOptions: getAdRendererFromAdOptions,
@@ -816,7 +885,11 @@ var prebidVastPlugin = function(player) {
 				};
 			}
 			if (!options.onlyPrebid) {
-				loadMolPlugin(function(succ) {
+				var pluginLoader = loadMolPlugin;
+				if (options.adRenderer === 'ima') {
+					pluginLoader = loadImaPlugin;
+				}
+				pluginLoader(function(succ) {
 					if (succ) {
 						renderAd(options);
 					}
