@@ -7,12 +7,14 @@ var _logger = require('./Logging.js');
 var _prebidCommunicator = require('./PrebidCommunicator.js');
 var _MarkersHandler = require('./MarkersHandler.js');
 var _vastRenderer = require('./VastRenderer.js');
+var _imaVastRenderer = require('./ImaVastRenderer.js');
 var _prefix = 'PrebidVast->vastManager';
 
 var vastManager = function () {
 	'use strict';
 	var _prebidCommunicatorObj;
 	var _vastRendererObj;
+	var _imaVastRendererObj;
 	var _player;
 	var _playerId;
 	var _playlist = [];
@@ -21,25 +23,25 @@ var vastManager = function () {
 	var _nextPlaylistItemFired = false;
 	var _options;
 	var _adPlaying = false;
-    var _savedMarkers;
-    var _markersHandler;
-    var _contentDuration = 0;
-    var _markerXml = {};
-    var _adIndicator;
+  var _savedMarkers;
+  var _markersHandler;
+  var _contentDuration = 0;
+  var _markerXml = {};
+  var _adIndicator;
 	var _cover;
 	var _spinnerDiv;
 	var _showSpinner = false;
-    var _mobilePrerollNeedClick = false;
+  var _mobilePrerollNeedClick = false;
 
-    var isMobile = function isMobile() {
+  var isMobile = function isMobile() {
     	return /iP(hone|ad|od)|Android|Windows Phone/.test(navigator.userAgent);
     };
 
-    var isIDevice = function isIDevice() {
+  var isIDevice = function isIDevice() {
     	return /iP(hone|ad)/.test(navigator.userAgent);
     };
 
-    var isIPhone = function isIPhone() {
+  var isIPhone = function isIPhone() {
     	return /iP(hone|od)/.test(navigator.userAgent);
 	};
 
@@ -306,7 +308,7 @@ var vastManager = function () {
 	}
 
 	// function to play ad
-    function play(creative) {
+  function play(creative) {
 		if (!creative) {
 			return;
 		}
@@ -326,18 +328,26 @@ var vastManager = function () {
     		if (_adPlaying) {
     			// not interrupt playing ad
     			return;
-			}
-			if (!_vastRendererObj) {
-				_vastRendererObj = new _vastRenderer(_player);
-			}
-			_playlistCreative = null;
-    		_adPlaying = true;
-    		if (_markersHandler && _player.markers) {
-				_savedMarkers = JSON.stringify(_player.markers.getMarkers());
-			}
-			var firstVideoPreroll = _player.currentTime() < 0.5 && _playlistIdx <= 0;
-			_vastRendererObj.playAd(xml, _options, firstVideoPreroll, _mobilePrerollNeedClick, prerollNeedClickToPlay, eventCallback);
-		};
+				}
+				_playlistCreative = null;
+					_adPlaying = true;
+					if (_markersHandler && _player.markers) {
+					_savedMarkers = JSON.stringify(_player.markers.getMarkers());
+				}
+				var firstVideoPreroll = _player.currentTime() < 0.5 && _playlistIdx <= 0;
+				if (_options.adRenderer === 'ima') {
+					if (!_imaVastRendererObj) {
+						_imaVastRendererObj = new _imaVastRenderer(_player);
+					}
+					_imaVastRendererObj.playAd(xml, _options, firstVideoPreroll, _mobilePrerollNeedClick, prerollNeedClickToPlay, eventCallback);
+				}
+				else if (_options.adRenderer === 'mailonline') {
+					if (!_vastRendererObj) {
+						_vastRendererObj = new _vastRenderer(_player);
+					}
+					_vastRendererObj.playAd(xml, _options, firstVideoPreroll, _mobilePrerollNeedClick, prerollNeedClickToPlay, eventCallback);
+				}
+			};
 
     	if (_player.duration() > 0) {
     		_contentDuration = parseInt(_player.duration()) - 0.5;
@@ -345,7 +355,7 @@ var vastManager = function () {
     	else {
             _player.one('loadedmetadata', loadMetadataHandler);
     	}
-		if (_options.timeOffset) {
+			if (_options.timeOffset) {
 	        // prepare timeline marker for the ad
 		    var timeMarkers = {
 				markerStyle: {
@@ -358,6 +368,21 @@ var vastManager = function () {
 				},
 				onMarkerReached: function(marker) {
 					if (_markerXml[marker.time]) {
+						if (_options.adRenderer === 'ima') {
+							if (marker.time === 0) {
+								setTimeout(function() {
+									showCover(true);
+									playAd(_markerXml[marker.time]);
+									delete _markerXml[marker.time];
+								}, 500);
+							}
+							else {
+								showCover(true);
+								playAd(_markerXml[marker.time]);
+								delete _markerXml[marker.time];
+							}
+							return;
+						}
 						_mobilePrerollNeedClick = isMobile() && marker.time === 0;
 						if (_mobilePrerollNeedClick && _playlistIdx < 0) {
 							showCover(false);
@@ -473,7 +498,7 @@ var vastManager = function () {
     }
 
 	// main entry point to start play ad
-    this.play = function (vjsPlayer, creative, options) {
+  this.play = function (vjsPlayer, creative, options) {
 		_player = vjsPlayer;
 		_playerId = _player.el_.id;
 		_options = options;
@@ -513,7 +538,7 @@ var vastManager = function () {
     };
 
 	// stop play ad
-    this.stop = function() {
+  this.stop = function() {
     	// stop ad if playing and remove marker from timeline
     	if (_adPlaying) {
     		_player.trigger('vast.adsCancel');

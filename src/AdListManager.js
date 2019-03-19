@@ -440,7 +440,6 @@ var adListManager = function () {
 			if (!_imaVastRendererObj) {
 				_imaVastRendererObj = new _imaVastRenderer(_player);
 			}
-			showCover(false);
 			_imaVastRendererObj.playAd(adData.adTag, _options, firstVideoPreroll, _mobilePrerollNeedClick, _prerollNeedClickToPlay, eventCallback);
 		}
 		else if (_options.adRenderer === 'mailonline') {
@@ -501,6 +500,12 @@ var adListManager = function () {
 		getAdData(adTime, function(adData, status) {
 			if (adData) {
 				traceMessage({data: {message: 'Play Ad at time = ' + adTime}});
+				if (adData.options.adRenderer === 'ima') {
+					showCover(true);
+					adData.status = AD_STATUS_PLAYING;
+					playAd(adData);
+					return;
+				}
 				_isPostroll = adTime === _contentDuration;
 				adData.status = AD_STATUS_READY_PLAY;
 				_mobilePrerollNeedClick = isMobile() && adTime === 0;

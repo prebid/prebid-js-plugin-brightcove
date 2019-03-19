@@ -312,8 +312,8 @@ function loadPrebidScript(options, fromHeader) {
 							_localPBJS.prebid_creative = _localPBJS.bc_pbjs.adServers.dfp.buildVideoUrl(dfpOpts);
 						}
 						BC_prebid_in_progress = false;
-						dispatchPrebidDoneEvent();
 						_logger.log(_prefix, 'Selected VAST url: ' + _localPBJS.prebid_creative);
+						dispatchPrebidDoneEvent();
 					}
 	    			else if (options.adServerCallback) {
 	    				// use 3rd party ad server if ad server callback present in options
@@ -331,8 +331,8 @@ function loadPrebidScript(options, fromHeader) {
 							func(arrBids, function(creative) {
 								_localPBJS.prebid_creative = getPrebidCacheUrl(creative, arrBids);
 								BC_prebid_in_progress = false;
-								dispatchPrebidDoneEvent();
 								_logger.log(_prefix, 'Selected VAST url: ' + _localPBJS.prebid_creative);
+								dispatchPrebidDoneEvent();
 							});
 						}
 						else {
