@@ -47,8 +47,8 @@ describe('AdListManager unit test', function () {
     });
 
     describe('player related', function () {
-        before(function(done) {
-            setTimeout(function() {
+        before(function (done) {
+            setTimeout(function () {
                 BcPrebidVast.init();
                 BcPrebidVast.renderAd({}, 'test_player');
                 done();
@@ -95,7 +95,7 @@ describe('AdListManager unit test', function () {
             done();
         });
 
-        afterEach(function(done) {
+        afterEach(function (done) {
             if (spy) {
                 spy.restore();
                 spy = null;
@@ -133,8 +133,8 @@ describe('AdListManager unit test', function () {
         it('nextListItemHandler test - plays ad for next item in playlist', function (done) {
             var orig = player.playlist;
             player.playlist = {
-                currentIndex: function() { return 1; },
-                autoadvance: function() {
+                currentIndex: function () { return 1; },
+                autoadvance: function () {
                     player.playlist = orig;
                     done();
                 }
@@ -146,7 +146,7 @@ describe('AdListManager unit test', function () {
 
         it('playAd test - invokes VastRenderer', function (done) {
             var renderer = testObj.setVastRenderer(player);
-            var stub1 = sinon.stub(renderer, 'playAd', function(xml, options, firstVideoPreroll, mobilePrerollNeedClick, prerollNeedClickToPlay, eventCallback) {
+            var stub1 = sinon.stub(renderer, 'playAd', function (xml, options, firstVideoPreroll, mobilePrerollNeedClick, prerollNeedClickToPlay, eventCallback) {
                 stub1.restore();
                 assert.equal(xml, '<VAST>...</VAST>');
                 assert.isTrue(firstVideoPreroll);
@@ -160,7 +160,7 @@ describe('AdListManager unit test', function () {
         it('getAdData test - returns object which represents ad in ad list', function (done) {
             var adList = [{status: 0, adTag: null, options: {}, adTime: 0}];
             testObj.setArrAdList(adList);
-            testObj.getAdData(0, function(adData) {
+            testObj.getAdData(0, function (adData) {
                 assert.isNull(adData);
                 done();
             });
@@ -170,7 +170,7 @@ describe('AdListManager unit test', function () {
             var adList = [{status: 0, adTag: 'xml', options: {}, adTime: 0}];
             testObj.setArrAdList(adList);
             var renderer = testObj.setVastRenderer(player);
-            var stub1 = sinon.stub(renderer, 'playAd', function(xml, options, firstVideoPreroll, mobilePrerollNeedClick, prerollNeedClickToPlay, eventCallback) {
+            var stub1 = sinon.stub(renderer, 'playAd', function (xml, options, firstVideoPreroll, mobilePrerollNeedClick, prerollNeedClickToPlay, eventCallback) {
                 stub1.restore();
             });
             testObj.markerReached({time: 0});
@@ -179,7 +179,7 @@ describe('AdListManager unit test', function () {
 
         it('checkPrepareTime test - if it is a time requests xml from prebid.js', function (done) {
             var comm = testObj.getCommunicator();
-            var stub1 = sinon.stub(comm, 'doPrebid', function(options, callback) {
+            var stub1 = sinon.stub(comm, 'doPrebid', function (options, callback) {
                 stub1.restore();
                 callback('fake vast xml');
             });
@@ -187,7 +187,7 @@ describe('AdListManager unit test', function () {
             testObj.setArrAdList(adList);
             testObj.setDuration(100);
             testObj.checkPrepareTime();
-            setTimeout(function() {
+            setTimeout(function () {
                 assert.equal(adList[0].adTag, 'fake vast xml');
                 done();
             }, 500);
@@ -205,7 +205,7 @@ describe('AdListManager unit test', function () {
             spy = sinon.spy(player, 'on');
             adListManager.play(player, [{}]);
             player.trigger('loadedmetadata');
-            setTimeout(function() {
+            setTimeout(function () {
                 assert.equal(spy.callCount, 1);
                 done();
             }, 1000);

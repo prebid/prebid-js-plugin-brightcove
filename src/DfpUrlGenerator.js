@@ -6,7 +6,7 @@
 if (typeof Object.assign !== 'function') {
 	// Must be writable: true, enumerable: false, configurable: true
 	Object.defineProperty(Object, 'assign', {
-		value: function assign(target, varArgs) { // .length of function is 2
+		value: function assign (target, varArgs) { // .length of function is 2
 			'use strict';
 			if (target == null) { // TypeError if undefined or null
 				throw new TypeError('Cannot convert undefined or null to object');
@@ -55,7 +55,7 @@ var dfpUrlGenerator = function () {
 	};
 
 	// return true if the object is "empty"
-  function isEmpty(object) {
+  function isEmpty (object) {
 		if (!object) return true;
 		if (Array.isArray(object) || typeof object === 'string') {
 			var ret = object.length > 0;
@@ -70,12 +70,12 @@ var dfpUrlGenerator = function () {
 	}
 
 	// creates query parameters string from object
-	function formatQS(query) {
+	function formatQS (query) {
 		return Object
 		  .keys(query)
-		  .map(function(k) {
+		  .map(function (k) {
 			  if (Array.isArray(query[k])) {
-				return query[k].map(function(v) {
+				return query[k].map(function (v) {
 					return k + '[]=' + v;
 				  }).join('&');
 			  }
@@ -92,7 +92,7 @@ var dfpUrlGenerator = function () {
 	 * @param {string|number} path Object path to the value you would like to access.  Non-strings are coerced to strings.
 	 * @returns {*} The value found at the specified object path, or undefined if path is not found.
 	 */
-	function deepAccess(obj, path) {
+	function deepAccess (obj, path) {
 		if (!obj) {
 		  return;
 		}
@@ -107,7 +107,7 @@ var dfpUrlGenerator = function () {
 	}
 
 	// build url from object
-	function buildUrl(obj) {
+	function buildUrl (obj) {
 		return (obj.protocol || 'http') + '://' +
 			   (obj.host ||
 				obj.hostname + (obj.port ? ':' + obj.port : '')) +
@@ -116,7 +116,7 @@ var dfpUrlGenerator = function () {
 			   (obj.hash ? '#' + obj.hash : '');
 	}
 
-	function parseGPTSingleSizeArray(singleSize) {
+	function parseGPTSingleSizeArray (singleSize) {
 		// if we aren't exactly 2 items in this array, it is invalid
 		if (Array.isArray(singleSize) && singleSize.length === 2 && (!isNaN(singleSize[0]) && !isNaN(singleSize[1]))) {
 		  return singleSize[0] + 'x' + singleSize[1];
@@ -124,7 +124,7 @@ var dfpUrlGenerator = function () {
 	}
 
 	// parse string, object or array of sizes
-	function parseSizesInput(sizeObj) {
+	function parseSizesInput (sizeObj) {
 		var parsedSizes = [];
 
 		// if a string for now we can assume it is a single size, like "300x250"
@@ -165,11 +165,11 @@ var dfpUrlGenerator = function () {
 	}
 
 	// parse query string to an object
-    function parseQS(query) {
+    function parseQS (query) {
 		return !query ? {} : query
 		  .replace(/^\?/, '')
 		  .split('&')
-		  .reduce(function(acc, criteria) {
+		  .reduce(function (acc, criteria) {
 				var arr = criteria.split('=');
 				var k = arr[0];
 				var v = arr[1];
@@ -186,7 +186,7 @@ var dfpUrlGenerator = function () {
 	}
 
 	// parse url to an object
-	function parse(url, options) {
+	function parse (url, options) {
 		var parsed = document.createElement('a');
 		if (options && 'noDecodeWholeURL' in options && options.noDecodeWholeURL) {
 		  parsed.href = url;
@@ -208,7 +208,7 @@ var dfpUrlGenerator = function () {
 	}
 
 	// creates query parameters from custom parameters
-	function getCustParams(bid, options) {
+	function getCustParams (bid, options) {
 		var adserverTargeting = (bid && bid.adserverTargeting) || {};
 
 		var allTargetingData = {};
@@ -226,7 +226,7 @@ var dfpUrlGenerator = function () {
 	}
 
 	// gets description url for particular property
-	function getDescriptionUrl(bid, components, prop) {
+	function getDescriptionUrl (bid, components, prop) {
 		if (!deepAccess(components, prop + '.description_url')) {
 			var vastUrl = bid && bid.vastUrl;
 			if (vastUrl) {
@@ -239,7 +239,7 @@ var dfpUrlGenerator = function () {
 	}
 
 	// builds url from dfrParameters.url and dfrParameters.bid
-	function buildUrlFromAdserverUrlComponents(components, bid, options) {
+	function buildUrlFromAdserverUrlComponents (components, bid, options) {
 		var descriptionUrl = getDescriptionUrl(bid, components, 'search');
 		if (descriptionUrl) {
 			components.search.description_url = descriptionUrl;
@@ -302,7 +302,7 @@ var dfpUrlGenerator = function () {
   // @exclude
   // Method exposed only for unit Testing Purpose
   // Gets stripped off in the actual build artifact
-	this.test = function() {
+	this.test = function () {
 		return {
 			isEmpty: isEmpty,
 			formatQS: formatQS,

@@ -5,10 +5,10 @@ window.$$PREBID_GLOBAL$$ = (window.$$PREBID_GLOBAL$$ || {});
 var _localPBJS = {};
 
 module.exports = {
-  getGlobal: function() {
+  getGlobal: function () {
     return window.$$PREBID_GLOBAL$$;
   },
-  getLocal: function() {
+  getLocal: function () {
     return _localPBJS;
   }
 };

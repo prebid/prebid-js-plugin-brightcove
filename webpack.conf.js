@@ -22,10 +22,6 @@ module.exports = {
         }, {
             test: /\.js$/,
             exclude: /node_modules/,
-            loader: 'jscs-loader'
-        }, {
-            test: /\.js$/,
-            exclude: /node_modules/,
             loader: 'preprocessor-loader'
         }, {
             test: /\.js$/,
