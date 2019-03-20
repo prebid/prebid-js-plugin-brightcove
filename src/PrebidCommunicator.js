@@ -13,7 +13,7 @@ var prebidCommunicator = function () {
 	var _options;
 	var _callback;
 
-	function selectWinnerByCPM(arrBids) {
+	function selectWinnerByCPM (arrBids) {
 		var cpm = 0.0;
 		var creative;
 		var cacheKey;
@@ -34,7 +34,7 @@ var prebidCommunicator = function () {
 	}
 
 	// get prebid cache url if available
-	function getPrebidCacheUrl(creative, arrBids) {
+	function getPrebidCacheUrl (creative, arrBids) {
 		for (var i = 0; i < arrBids.length; i++) {
 			if (arrBids[i].vastUrl === creative) {
 				// winner is creative from bid array
@@ -50,10 +50,10 @@ var prebidCommunicator = function () {
 		return creative;
 	}
 
-	function doPrebid() {
+	function doPrebid () {
 		// call bidding
     	if (_options.biddersSpec) {
-    		_options.doPrebid(_options, function(bids) {
+    		_options.doPrebid(_options, function (bids) {
 				var arrBids = (_options.biddersSpec && bids && typeof bids !== 'string' && bids[_options.biddersSpec.code])	? bids[_options.biddersSpec.code].bids : [];
     			_logger.log(_prefix, 'bids for bidding: ', arrBids);
     			if (arrBids && Array.isArray(arrBids)) {
@@ -100,14 +100,14 @@ var prebidCommunicator = function () {
 							func = window[_options.adServerCallback];
 						}
 						if (func) {
-							func(arrBids, function(adServerCreative) {
+							func(arrBids, function (adServerCreative) {
 								var cr = getPrebidCacheUrl(adServerCreative, arrBids);
 								_logger.log(_prefix, 'Selected VAST url: ' + cr);
 								if (_callback) {
 									_callback(cr);
 								}
 								else {
-									$$PREBID_GLOBAL$.prebid_creative = cr;
+									$$PREBID_GLOBAL$$.prebid_creative = cr;
 								}
 							});
 						}
@@ -160,7 +160,7 @@ var prebidCommunicator = function () {
     		}
     		else {
     			// wait until prebid.js is loaded
-    			var waitPbjs = setInterval(function() {
+    			var waitPbjs = setInterval(function () {
     	    		if (_localPBJS.bc_pbjs || _localPBJS.bc_pbjs_error) {
     	    			clearInterval(waitPbjs);
     	    			waitPbjs = null;
@@ -179,7 +179,7 @@ var prebidCommunicator = function () {
     // @exclude
     // Method exposed only for unit Testing Purpose
     // Gets stripped off in the actual build artifact
-	this.test = function() {
+	this.test = function () {
 		return {
 		};
 	};
