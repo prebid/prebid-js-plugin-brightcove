@@ -9,7 +9,7 @@ var webpack_config_dev = require('./webpack.dev.js')(null, null);
 var webpack_config_prod = require('./webpack.prod.js')(null, null);
 
 var getWebpackCallback = function getWebpackCallback (done) {
-    return function(err, stats) {
+    return function (err, stats) {
         if (err) {
             throw new gutil.PluginError('webpack', err);
         }
@@ -35,7 +35,7 @@ gulp.task('copy-css', function (done) {
 });
 
 gulp.task('test', function () {
-    return cp.execFile('./test.sh', function(error, stdout, stderr) {
+    return cp.execFile('./test.sh', function  (error, stdout, stderr) {
         console.log(stdout);
     });
 });
@@ -43,8 +43,11 @@ gulp.task('test', function () {
 // NOTE: This task must be defined after the tasks it depends on
 gulp.task('default', gulp.series('build-prod', 'copy-css', 'test'));
 
+// NOTE: This task must be defined after the tasks it depends on
+gulp.task('build', gulp.series('build-prod', 'copy-css', 'test'));
 
-gulp.task('dev-server', function(callback) {
+
+gulp.task('dev-server', function (callback) {
 
     var debugPort = 8082;
     var target_entry = 'http://local.prebid.com:' + debugPort + '/prebid-main.html';
@@ -66,7 +69,7 @@ gulp.task('dev-server', function(callback) {
         stats: {
             colors: true
         }
-    }).listen(debugPort, 'local.prebid.com', function(err) {
+    }).listen(debugPort, 'local.prebid.com', function (err) {
         if (err) throw new gutil.PluginError('webpack-dev-server', err);
         gutil.log('[webpack-dev-server]', 'Webpack Dev Server Started at: ' + target_entry);
     });
@@ -74,7 +77,7 @@ gulp.task('dev-server', function(callback) {
 
 var Server = require('karma').Server;
 
-gulp.task('ci-test', function(done) {
+gulp.task('ci-test', function (done) {
     console.log('DIRNAME = ', __dirname);
     new Server({
         configFile: path.join(__dirname, 'karma.conf.ci.js'),
