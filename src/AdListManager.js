@@ -20,6 +20,7 @@ var adListManager = function () {
 	var _playlistIdx = -1;
 	var _arrOptions;
 	var _options;
+	var _adRenderer;
 	var _arrAdList = [];
 	var _adMarkerStyle;
 	var _frequencyRules;
@@ -254,6 +255,7 @@ var adListManager = function () {
 
 	// event handler for 'playlistitem' event
 	function nextListItemHandler() {
+		_logger.log(_prefix, 'nextListItemHandler called');
 		if (!_player.playlist.currentIndex || typeof _player.playlist.currentIndex !== 'function') {
 			// player not support playlisting
 			return;
@@ -269,12 +271,19 @@ var adListManager = function () {
 		if (_player.playlist && _player.playlist.currentIndex) {
 			_playlistIdx = _player.playlist.currentIndex();
 		}
+		if (_adRenderer === 'ima') {
+			if (_player.ima3 && typeof _player.ima3 !== 'function' && _player.ima3.hasOwnProperty('adsManager')) {
+				delete _player.ima3.adsManager;
+				delete _player.ima3.adsRequest;
+			}
+		}
 		_contentDuration = 0;
 		_player.one('loadedmetadata', function() {
 			_mainVideoEnded = false;
 			if (needPlayAdForPlaylistItem(_player.playlist.currentIndex())) {
 				// for first video in playlist we already handle loadedmatadata event
 				if (_player.playlist.currentIndex() > 0) {
+					_logger.log(_prefix, 'start ads preparation for current playlist item');
 					startRenderingPreparation();
 				}
 				return;
@@ -296,6 +305,7 @@ var adListManager = function () {
 
 	// event handler for 'playlistitem' event
 	function nextListItemHandlerAuto() {
+		_logger.log(_prefix, 'nextListItemHandlerAuto called');
 		if (!_mainVideoEnded) {
 			// handle 'next playlist item' event when current playlist video have been interrupted
 			nextListItemHandler();
@@ -502,8 +512,20 @@ var adListManager = function () {
 				traceMessage({data: {message: 'Play Ad at time = ' + adTime}});
 				if (adData.options.adRenderer === 'ima') {
 					showCover(true);
-					adData.status = AD_STATUS_PLAYING;
-					playAd(adData);
+					if (adTime === 0) {
+						_player.play();
+						setTimeout(function() {
+							_logger.log(_prefix, 'play preroll by timeout');
+							_player.pause();
+							adData.status = AD_STATUS_PLAYING;
+							playAd(adData);
+						}, 500);
+					}
+					else {
+						_logger.log(_prefix, 'play preroll right now');
+						adData.status = AD_STATUS_PLAYING;
+						playAd(adData);
+					}
 					return;
 				}
 				_isPostroll = adTime === _contentDuration;
@@ -735,6 +757,7 @@ var adListManager = function () {
 
 	// starts next video in playlist
 	function startNextPlaylistVideo() {
+		_logger.log(_prefix, 'nextListItemHandler activated for one event');
 		_player.one('playlistitem', nextListItemHandler);
 		showCover(true);
 		if (_pageNotificationCallback) {
@@ -748,6 +771,7 @@ var adListManager = function () {
 		_player = vjsPlayer;
 		_playerId = _player.el_.id;
 		_arrOptions = options;
+		_adRenderer = _arrOptions && _arrOptions.length > 0 ? _arrOptions[0].adRenderer : null;
 
     	_cover = document.getElementById('plugin-break-cover' + _playerId);
     	if (!_cover) {
