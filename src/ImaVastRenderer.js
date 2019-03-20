@@ -27,7 +27,9 @@ var imaVastRenderer = function (player) {
             'ads-ad-skipped': 'vast.adSkip',
             'ima3-ad-error': 'vast.adError',
             'ima3-complete': 'adFinished',
-            'ima3-hardtimeout': 'vast.adsCancel'
+            'ima3-hardtimeout': 'vast.adsCancel',
+            'ima3-hard-timeout': 'vast.adsCancel',
+            'ad-hard-timeout': 'vast.adsCancel'
         };
         _logger.log(_prefix, 'IMA3 plugin event: ' + event.type + '. ', event);
 
@@ -76,6 +78,8 @@ var imaVastRenderer = function (player) {
                 str += 'An ad completes playing.';
             break;
             case 'ima3-hardtimeout':
+            case 'ima3-hard-timeout':
+            case 'ad-hard-timeout':
                 str += 'Reached a timeout';
             break;
             case 'ima3-loaded':
@@ -94,7 +98,7 @@ var imaVastRenderer = function (player) {
         }
         _player.trigger({type: 'trace.message', data: {message: str}});
         if (mapCloseEvents[event.type]) {
-            closeEvent(mapCloseEvents[event.type]);
+            closeEvent({type: mapCloseEvents[event.type], data: {}});
         }
     }
 
@@ -117,6 +121,8 @@ var imaVastRenderer = function (player) {
         _player.on('ima3-click', onEvent);
         _player.on('ima3-complete', onEvent);
         _player.on('ima3-hardtimeout', onEvent);
+        _player.on('ima3-hard-timeout', onEvent);
+        _player.on('ad-hard-timeout', onEvent);
         _player.on('ima3-loaded', onEvent);
         _player.on('ima3-started', onEvent);
         _player.on('ima3-volume-change', onEvent);
@@ -143,6 +149,8 @@ var imaVastRenderer = function (player) {
         _player.off('ima3-click', onEvent);
         _player.off('ima3-complete', onEvent);
         _player.off('ima3-hardtimeout', onEvent);
+        _player.off('ima3-hard-timeout', onEvent);
+        _player.off('ad-hard-timeout', onEvent);
         _player.off('ima3-loaded', onEvent);
         _player.off('ima3-started', onEvent);
         _player.off('ima3-volume-change', onEvent);
@@ -180,31 +188,17 @@ var imaVastRenderer = function (player) {
 
         _player.trigger({type: 'internal', data: {name: 'cover', cover: false}});
 
-        // var adsRenderingSettings = new google.ima.AdsRenderingSettings();
-        // _logger.log(_prefix, 'adsRenderingSettings: ', adsRenderingSettings);
-        // adsRenderingSettings.bitrate = 2500;
-        // adsRenderingSettings.enablePreloading = true;
-        // player.ima3.setAdsRenderingSettings(adsRenderingSettings);
-
+        // request IMA plugin to render ad
         _player.ima3.adrequest(xml);
-        // _player.ima3.adsRequest.setAdWillAutoPlay(_options.initialPlayback === 'auto');
-        // _player.ima3.adsRequest.setAdWillAutoPlay(false);
-        // _player.ima3.adsRequest.setAdWillPlayMuted(_options.initialAudio === 'off');
-        // _player.ima3.adsRequest.setAdWillPlayMuted(true);
     };
 
     // @exclude
     // Method exposed only for unit Testing Purpose
     // Gets stripped off in the actual build artifact
 	this.test = function() {
-		/* return {
-			setOptions: function(options) {
-				_options = options;
-			},
-			options: function() { return _options; },
-            setPlaybackMethodData: setPlaybackMethodData,
-            getMobileSafariVersion: getMobileSafariVersion
-		}; */
+		return {
+            // to do unit tests
+		};
 	};
 	// @endexclude
 };

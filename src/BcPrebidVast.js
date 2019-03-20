@@ -729,13 +729,16 @@ function setAdRenderer(options) {
 			rendObj = getAdRendererFromAdOptions(options);
 			// set renderer explicitly
 			if (rendObj) {
+				adRenderer = rendObj.adRenderer;
 				options.adRenderer = rendObj.adRenderer;
 			}
 			else {
 				options.adRenderer = adRenderer;
 			}
 		}
+		return adRenderer;
 	}
+	return null;
 }
 
 (function () {
@@ -760,9 +763,10 @@ var _vastManagerObj;
 var _adListManagerObj;
 var _prebidCommunicatorObj;
 var _defaultAdCancelTimeout = 3000;
+var _adRenderer;
 
 function renderAd(options) {
-	if (options.adRenderer === 'ima') {
+	if (_adRenderer === 'ima') {
 		if (_player.ima3 && typeof _player.ima3 === 'function') {
 			// initialize some setting values for IMA plugin
 			_player.ima3({
@@ -865,7 +869,7 @@ var prebidVastPlugin = function(player) {
 				// ignore call if player is not ready
 				return;
 			}
-			setAdRenderer(options);
+			_adRenderer = setAdRenderer(options);
 			// get Brightcove Player Id
 			var playerId = '';
 			if (_player.bcinfo) {
@@ -886,7 +890,7 @@ var prebidVastPlugin = function(player) {
 			}
 			if (!options.onlyPrebid) {
 				var pluginLoader = loadMolPlugin;
-				if (options.adRenderer === 'ima') {
+				if (_adRenderer === 'ima') {
 					pluginLoader = loadImaPlugin;
 				}
 				pluginLoader(function(succ) {
