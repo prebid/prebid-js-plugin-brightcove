@@ -33,6 +33,7 @@
 		"eslint-plugin-standard": "^3.0.1",
 		"eslint-stylish-config": "0.0.2",
 		"gulp": "^4.0.0",
+		"gulp-eslint": "^5.0.0",
 		"gulp-replace": "1.0.0",
 		"gulp-util": "^3.0.8",
 		"karma": "^1.7.0",
@@ -57,7 +58,5 @@
 		"webpack-dev-server": "^3.2.1",
 		"webpack-merge": "^4.2.1"
 	},
-	"dependencies": {
-		"gulp-eslint": "^5.0.0"
-	}
+	"dependencies": {}
 }
