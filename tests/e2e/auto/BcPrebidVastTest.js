@@ -1,13 +1,13 @@
 var bcPrebidVast = require('./../../../src/BcPrebidVast.js');
 
-describe('BcPrebidVast unit test', function() {
+describe('BcPrebidVast unit test', function () {
     var Mock;
 	var mockObject;
 	var sinonStub;
 	var BcPrebidVast = new bcPrebidVast({});
 
-	before(function(done) {
-		setTimeout(function() {
+	before(function (done) {
+		setTimeout(function () {
 			done();
 		}, 1500);
 	});
@@ -16,7 +16,7 @@ describe('BcPrebidVast unit test', function() {
 		console.log(this.currentTest.title);
 		window.pbjs = {
 			que: [],
-			requestBids: function(obj) {}
+			requestBids: function (obj) {}
 		};
         Mock = function () {
             this.options = {
@@ -71,11 +71,11 @@ describe('BcPrebidVast unit test', function() {
 	it('doPrebid test - success bidding for 1 bidder', function (done) {
 		this.timeout(5000);
 		BcPrebidVast.test().loadPrebidScript(mockObject.options, false);
-		setTimeout(function() {
+		setTimeout(function () {
 			var localPBJS = BcPrebidVast.test().localPBJS;
 			var options = mockObject.options;
 			options.biddersSpec.bids[0].params.placementId = 11653264;
-			sinonStub = sinon.stub(localPBJS.bc_pbjs, 'requestBids', function(obj) {
+			sinonStub = sinon.stub(localPBJS.bc_pbjs, 'requestBids', function (obj) {
 				var response = {
 					'my-video-tag': {
 						bids: [
@@ -86,11 +86,11 @@ describe('BcPrebidVast unit test', function() {
 						]
 					}
 				};
-				setTimeout(function() {
+				setTimeout(function () {
 					obj.bidsBackHandler(response);
 				}, 0);
 			});
-			BcPrebidVast.test().doPrebid(options, function(bids) {
+			BcPrebidVast.test().doPrebid(options, function (bids) {
 				   var arrBids = (bids && bids[options.biddersSpec.code]) ? bids[options.biddersSpec.code].bids : [];
 				assert.strictEqual(arrBids.length, 1, 'failed - expected 1 bid');
 				assert.strictEqual(arrBids[0].vastUrl && arrBids[0].vastUrl.length > 0, true, 'failed - empty vastUrl property');
@@ -101,7 +101,7 @@ describe('BcPrebidVast unit test', function() {
 
 	it('specifyBidderAliases test - specify alias for appnexus bidder', function (done) {
 		var pbjs = {
-			aliasBidder: function(bidder, alias) {
+			aliasBidder: function (bidder, alias) {
 				assert.equal(bidder, 'appnexus', 'expected appnexus bidder');
 				assert.equal(alias, 'appnexus2', 'expected appnexus2 alias');
 				done();
@@ -138,14 +138,15 @@ describe('BcPrebidVast unit test', function() {
 	});
 
 	it('loadMolPlugin test - loads MailOnline Plugin on a page (in an iFrame)', function (done) {
-		BcPrebidVast.test().loadMolPlugin(function(succ) {
+		BcPrebidVast.test().loadMolPlugin(function (succ) {
 			assert.isTrue(succ);
 			done();
 		});
 	});
 
 	it('loadImaPlugin test - loads IMA Plugin on a page', function (done) {
-		BcPrebidVast.test().loadImaPlugin(function(succ) {
+		this.timeout(3000);
+		BcPrebidVast.test().loadImaPlugin(function (succ) {
 			assert.isTrue(succ);
 			done();
 		});
@@ -160,7 +161,7 @@ describe('BcPrebidVast unit test', function() {
 	});
 
     it('loadMolPlugin test - loads MailOnline Plugin on a page (in an iFrame)', function (done) {
-		BcPrebidVast.test().loadMolPlugin(function(succ) {
+		BcPrebidVast.test().loadMolPlugin(function (succ) {
 			assert.isTrue(succ);
 			done();
 		});

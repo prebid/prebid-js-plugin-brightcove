@@ -194,7 +194,10 @@ var imaVastRenderer = function (player) {
     // Gets stripped off in the actual build artifact
 	this.test = function () {
 		return {
-            // to do unit tests
+            setEventCallback: function (callback) {
+                _eventCallback = callback
+            },
+            addListeners: addListeners
 		};
 	};
 	// @endexclude
