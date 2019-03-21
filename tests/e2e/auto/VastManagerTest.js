@@ -21,7 +21,7 @@ describe('VastManager unit test', function () {
     	var testObj = vastManager.test();
     	var title = this.test.title;
     	testObj.setDuration(mockObject.duration);
-    	var seconds = testObj.convertStringToSeconds('00:10:10', function(seconds) {});
+    	var seconds = testObj.convertStringToSeconds('00:10:10', function (seconds) {});
  		assert(seconds === 610, title + ' failed. Expected - 610, got - ' + seconds);
     });
 
@@ -31,7 +31,7 @@ describe('VastManager unit test', function () {
     	var testObj = vastManager.test();
     	var title = this.test.title;
     	testObj.setDuration(mockObject.duration);
-    	var seconds = testObj.convertStringToSeconds('00:10:10.600', function(seconds) {});
+    	var seconds = testObj.convertStringToSeconds('00:10:10.600', function (seconds) {});
     	assert(seconds === 611, title + ' failed. Expected - 611, got - ' + seconds);
     });
 
@@ -41,7 +41,7 @@ describe('VastManager unit test', function () {
     	var testObj = vastManager.test();
     	var title = this.test.title;
     	testObj.setDuration(mockObject.duration);
-    	var seconds = testObj.convertStringToSeconds('20%', function(seconds) {});
+    	var seconds = testObj.convertStringToSeconds('20%', function (seconds) {});
     	assert(seconds === 180, title + ' failed. Expected - 180, got - ' + seconds);
     });
 
@@ -51,7 +51,7 @@ describe('VastManager unit test', function () {
     	var testObj = vastManager.test();
     	var title = this.test.title;
     	testObj.setDuration(mockObject.duration);
-    	var seconds = testObj.convertStringToSeconds('start', function(seconds) {});
+    	var seconds = testObj.convertStringToSeconds('start', function (seconds) {});
     	assert(seconds === 0, title + ' failed. Expected - 0, got - ' + seconds);
     });
 
@@ -61,13 +61,13 @@ describe('VastManager unit test', function () {
     	var testObj = vastManager.test();
     	var title = this.test.title;
     	testObj.setDuration(mockObject.duration);
-    	var seconds = testObj.convertStringToSeconds('end', function(seconds) {});
+    	var seconds = testObj.convertStringToSeconds('end', function (seconds) {});
     	assert(seconds === 900, title + ' failed. Expected - 900, got - ' + seconds);
     });
 
     describe('player related', function () {
-        before(function(done) {
-            setTimeout(function() {
+        before(function (done) {
+            setTimeout(function () {
                 BcPrebidVast.init();
                 BcPrebidVast.renderAd({}, 'test_player');
                 done();
@@ -114,7 +114,7 @@ describe('VastManager unit test', function () {
             done();
         });
 
-        afterEach(function(done) {
+        afterEach(function (done) {
             if (spy) {
                 spy.restore();
                 spy = null;
@@ -151,14 +151,14 @@ describe('VastManager unit test', function () {
 
         it('nextListItemHandler test - plays ad for next item in playlist', function (done) {
             var orig = player.playlist;
-            var stub1 = sinon.stub(player, 'currentSource', function(tm) {
+            var stub1 = sinon.stub(player, 'currentSource', function (tm) {
                 stub1.restore();
                 player.playlist = orig;
                 done();
             });
             player.playlist = {
-                currentIndex: function() { return 0; },
-                autoadvance: function() {}
+                currentIndex: function () { return 0; },
+                autoadvance: function () {}
             };
             testObj.setCreative('http://bla_bla');
             testObj.setOptions({});
@@ -169,12 +169,12 @@ describe('VastManager unit test', function () {
         });
 
         it('doPrebidForNextPlaylistItem test - prepares creative for next video in playlist', function (done) {
-            var stub1 = sinon.stub(player, 'playlist', function() {
+            var stub1 = sinon.stub(player, 'playlist', function () {
                 player.playlist = {
-                    currentIndex: function() {
+                    currentIndex: function () {
                         return 0;
                     },
-                    autoadvance: function(time) {
+                    autoadvance: function (time) {
                         assert.isNull(time);
                         done();
                     }
@@ -183,7 +183,7 @@ describe('VastManager unit test', function () {
             });
             var communicator = new prebidCommunicator();
             testObj.setCommunicator(communicator);
-            var stub2 = sinon.stub(communicator, 'doPrebid', function(opts, callback) {
+            var stub2 = sinon.stub(communicator, 'doPrebid', function (opts, callback) {
                 stub2.restore();
                 callback('http://bla_bla');
             });
@@ -192,25 +192,26 @@ describe('VastManager unit test', function () {
         });
 
         it('play test - prepares data to render VAST creative', function (done) {
-            player.vastClient = function(params) {
+            this.timeout(4000);
+            player.vastClient = function (params) {
                 assert.equal(params.adTagUrl, 'http://bla_bla');
                 done();
             };
-            testObj.setOptions({});
+            testObj.setOptions({adRenderer: 'mailonline'});
             testObj.play('http://bla_bla');
             player.trigger('loadeddata');
-            setTimeout(function() {
+            setTimeout(function () {
                 player.trigger('play');
             }, 300);
         });
 
         it('play test - prepares data to render VAST creative as mid-roll', function (done) {
-            player.vastClient = function(params) {
+            player.vastClient = function (params) {
                 assert.equal(params.adTagUrl, 'http://bla_bla');
                 assert.equal(params.wrapperLimit, 3);
                 done();
             };
-            testObj.setOptions({timeOffset: '00:05:00', wrapperLimit: 3});
+            testObj.setOptions({timeOffset: '00:05:00', wrapperLimit: 3, adRenderer: 'mailonline'});
             testObj.play('http://bla_bla');
             player.trigger('loadedmetadata');
             player.duration(600);
