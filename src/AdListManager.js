@@ -514,7 +514,7 @@ var adListManager = function () {
 					showCover(true);
 					if (adTime === 0) {
 						_player.play();
-						setTimeout(function() {
+						setTimeout(function () {
 							_logger.log(_prefix, 'play preroll by timeout');
 							_player.pause();
 							adData.status = AD_STATUS_PLAYING;

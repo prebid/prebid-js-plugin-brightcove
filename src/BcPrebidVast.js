@@ -689,7 +689,7 @@ function loadImaPlugin (callback) {
     }
 }
 
-function getAdRendererFromAdOptions(adOptions) {
+function getAdRendererFromAdOptions (adOptions) {
 	// if adRenderer option is present use it for all ads
 	if (adOptions.hasOwnProperty('adRenderer') && adOptions.adRenderer &&
 		(adOptions.adRenderer === _rendererNames.MOL || adOptions.adRenderer === _rendererNames.IMA)) {
@@ -702,7 +702,7 @@ function getAdRendererFromAdOptions(adOptions) {
 	return null;
 }
 
-function setAdRenderer(options) {
+function setAdRenderer (options) {
 	if (options) {
 		var adRenderer = _rendererNames.MOL;
 		var rendObj;
@@ -750,10 +750,10 @@ function setAdRenderer(options) {
 			loadPrebidScript($$PREBID_GLOBAL$$.plugin_prebid_options, true);
 		}
 		if ($$PREBID_GLOBAL$$.plugin_prebid_options.adRenderer === 'ima') {
-			loadImaPlugin(function() {});
+			loadImaPlugin(function () {});
 		}
 		else if ($$PREBID_GLOBAL$$.plugin_prebid_options.adRenderer === 'mailonline') {
-			loadMolPlugin(function() {});
+			loadMolPlugin(function () {});
 		}
 	}
 })();
@@ -893,7 +893,7 @@ var prebidVastPlugin = function (player) {
 				if (_adRenderer === 'ima') {
 					pluginLoader = loadImaPlugin;
 				}
-				pluginLoader(function(succ) {
+				pluginLoader(function (succ) {
 					if (succ) {
 						renderAd(options);
 					}

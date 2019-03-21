@@ -11,16 +11,16 @@ var imaVastRenderer = function (player) {
     var _player = player;
 
     // resend event to caller
-    function resendEvent(event) {
+    function resendEvent (event) {
         _eventCallback(event);
     }
 
-    function closeEvent(event) {
+    function closeEvent (event) {
         resendEvent(event);
         removeListeners();
     }
 
-    function onEvent(event) {
+    function onEvent (event) {
         var mapCloseEvents = {
             'ima3error': 'vast.adError',
             'ads-ended': 'vast.contentEnd',
@@ -103,10 +103,7 @@ var imaVastRenderer = function (player) {
     }
 
 	// add listeners for renderer events
-    function addListeners() {
-        _player.on('adsready', function() {
-            _logger.log(_prefix, 'adsready event');
-        });
+    function addListeners () {
         _player.on('ima3error', onEvent);
         _player.on('ads-request', onEvent);
         _player.on('ads-load', onEvent);
@@ -134,7 +131,7 @@ var imaVastRenderer = function (player) {
     }
 
 	// remove listeners for renderer events
-    function removeListeners() {
+    function removeListeners () {
         _player.off('ima3error', onEvent);
         _player.off('ads-request', onEvent);
         _player.off('ads-load', onEvent);
@@ -162,7 +159,7 @@ var imaVastRenderer = function (player) {
     }
 
     // play single ad
-    this.playAd = function(xml, options, firstVideoPreroll, mobilePrerollNeedClick, prerollNeedClickToPlay, eventCallback) {
+    this.playAd = function (xml, options, firstVideoPreroll, mobilePrerollNeedClick, prerollNeedClickToPlay, eventCallback) {
         // if IMA plugin is not registered in videojs immediatelly notify caller and return
         if (!_player.ima3) {
             if (eventCallback) {
@@ -195,7 +192,7 @@ var imaVastRenderer = function (player) {
     // @exclude
     // Method exposed only for unit Testing Purpose
     // Gets stripped off in the actual build artifact
-	this.test = function() {
+	this.test = function () {
 		return {
             // to do unit tests
 		};

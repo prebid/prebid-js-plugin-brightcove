@@ -370,7 +370,7 @@ var vastManager = function () {
 					if (_markerXml[marker.time]) {
 						if (_options.adRenderer === 'ima') {
 							if (marker.time === 0) {
-								setTimeout(function() {
+								setTimeout(function () {
 									showCover(true);
 									playAd(_markerXml[marker.time]);
 									delete _markerXml[marker.time];
