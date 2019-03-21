@@ -1,6 +1,5 @@
 var fs = require('fs');
 var path = require('path');
-var cp = require('child_process');
 var gulp = require('gulp');
 var gutil = require('gulp-util');
 var Server = require('karma').Server;
@@ -55,7 +54,7 @@ gulp.task('build', gulp.series('build-prod', 'copy-css', 'test'));
 gulp.task('dev-server', function (callback) {
 
     var debugPort = 8082;
-    var target_entry = 'http://local.prebid.com:' + debugPort + '/prebid-main.html';
+    var target_entry = 'http://local.prebid:' + debugPort + '/prebid-main.html';
 
     // Start a webpack-dev-server
     // note- setting "publicPath" to /dist/ hides the actual
@@ -74,7 +73,7 @@ gulp.task('dev-server', function (callback) {
         stats: {
             colors: true
         }
-    }).listen(debugPort, 'local.prebid.com', function (err) {
+    }).listen(debugPort, 'local.prebid', function (err) {
         if (err) throw new gutil.PluginError('webpack-dev-server', err);
         gutil.log('[webpack-dev-server]', 'Webpack Dev Server Started at: ' + target_entry);
     });
