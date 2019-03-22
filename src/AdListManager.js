@@ -815,12 +815,20 @@ var adListManager = function () {
     this.stop = function () {
     	// stop ad if playing and remove marker from timeline
     	if (_adPlaying) {
-    		_player.trigger('vast.adsCancel');
+			if (_adRenderer === 'ima') {
+				if (_imaVastRendererObj) {
+					_imaVastRendererObj.stop();
+				}
+			}
+			else if (_adRenderer === 'mailonline') {
+				_player.trigger('vast.adsCancel');
+			}
     	}
 		if (_markersHandler) {
-  	  		_player.markers.destroy();
+			_player.markers.destroy();
+			_markersHandler = null;
 		}
-    };
+	};
 
     // @exclude
     // Method exposed only for unit Testing Purpose
