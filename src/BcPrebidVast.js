@@ -517,7 +517,7 @@ function convertOptionsToArray (options) {
 // this function loads MailOnline Plugin
 var _molLoadingInProgress = false;
 var _molLoaded = false;
-var _imaLoaded = false;
+var _imaTriedToLoad = false;
 var _vastClientFunc;
 
 function loadMolPlugin (callback) {
@@ -650,13 +650,29 @@ function loadImaPlugin (callback) {
         return;
 	}
 
-    if (!_imaLoaded) {
-		_imaLoaded = true;	// load IMA plugin script only once
-
+    if (!_imaTriedToLoad) {
 		// check if IMA plugin is imbedded in player
-		if (vjs.getPlugin('ima3')) {
+		if (_player.ima3) {
 			_logger.warn(_prefix, 'IMA Plugin already loaded within player.');
 			callback(true);
+			return;
+		}
+
+		// if ima script node already in document wait until it loaded or failed
+		if (document.getElementById('bc_ima_plugin')) {
+			var imaInt = setInterval(function () {
+				if (_player.ima3) {
+					clearInterval(imaInt);
+					callback(true);
+				}
+			}, 100);
+			// wait no longer than DEFAULT_SCRIPT_LOAD_TIMEOUT
+			setTimeout(function () {
+				clearInterval(imaInt);
+				if (!_player.ima3) {
+					callback(false);
+				}
+			}, DEFAULT_SCRIPT_LOAD_TIMEOUT);
 			return;
 		}
 
@@ -670,22 +686,27 @@ function loadImaPlugin (callback) {
 		// add ima plugin script to the document body
 		var script = document.createElement('script');
 		script.src = 'https://players.brightcove.net/videojs-ima3/3/videojs.ima3.min.js';
+		script.id = 'bc_ima_plugin';
 		script.onerror = function (e) {
 			_logger.error(_prefix, 'Failed to load IMA Plugin. Error event: ', e);
+			_imaTriedToLoad = true;	// flag to load IMA plugin script only once
 			callback(false);
 		};
 		script.onload = function () {
 			_logger.log(_prefix, 'IMA Plugin loaded successfully');
+			_imaTriedToLoad = true;	// flag to load IMA plugin script only once
 			callback(true);
 		};
 		document.body.appendChild(script);
    	}
     else {
 		_logger.log(_prefix, 'IMA Plugin already loaded');
-		if (vjs.getPlugin('ima3')) {
+		if (_player.ima3) {
 			callback(true);
 		}
-		// IMA plugin script is loading right now. Wait until it is loaded or failed
+		else {
+			callback(false);
+		}
     }
 }
 
