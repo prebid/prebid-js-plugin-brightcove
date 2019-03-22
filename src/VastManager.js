@@ -538,15 +538,23 @@ var vastManager = function () {
     };
 
 	// stop play ad
-    this.stop = function () {
-    	// stop ad if playing and remove marker from timeline
-    	if (_adPlaying) {
-    		_player.trigger('vast.adsCancel');
-    	}
-		if (_markersHandler) {
-  	  		_player.markers.destroy();
+  this.stop = function () {
+    // stop ad if playing and remove marker from timeline
+    if (_adPlaying) {
+			if (_options.adRenderer === 'ima') {
+				if (_imaVastRendererObj) {
+					_imaVastRendererObj.stop();
+				}
+			}
+			else if (_options.adRenderer === 'mailonline') {
+				_player.trigger('vast.adsCancel');
+			}
 		}
-    };
+		if (_markersHandler) {
+			_player.markers.destroy();
+			_markersHandler = null;
+		}
+	};
 
     // @exclude
     // Method exposed only for unit Testing Purpose

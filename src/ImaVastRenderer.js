@@ -92,7 +92,7 @@ var imaVastRenderer = function (player) {
             break;
             case 'ima3-volume-change':
                 str += 'An ad volume has changed. Volume: ';
-                vol = myPlayer.ima3.adsManager.getVolume();
+                vol = _player.ima3.adsManager.getVolume();
                 str += vol;
             break;
         }
@@ -187,6 +187,15 @@ var imaVastRenderer = function (player) {
 
         // request IMA plugin to render ad
         _player.ima3.adrequest(xml);
+    };
+
+    // stop ad
+    this.stop = function () {
+        if (_player.ima3 && typeof _player.ima3 !== 'function' && _player.ima3.adsManager) {
+            _player.ima3.adsManager.stop();
+            // notify caller
+            closeEvent({type: 'vast.adsCancel', data: {}});
+        }
     };
 
     // @exclude
