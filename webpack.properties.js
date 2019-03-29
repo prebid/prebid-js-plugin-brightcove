@@ -1,6 +1,5 @@
 var fs = require('fs');
 var path = require('path');
-var webpack = require('webpack');
 
 // For build comments at top of file
 var pkg = require('./package.json');

@@ -38,11 +38,5 @@ module.exports = function (env, argv) {
     loaderConfig = merge(loaderConfig, commonConfig);
     pluginConfig = merge(pluginConfig, commonConfig);
 
-    // console.log('---------------------------------------------');
-    // buildProps.util.traceObj(loaderConfig);
-    // console.log('---------------------------------------------');
-    // buildProps.util.traceObj(pluginConfig);
-    // console.log('---------------------------------------------');
-
     return devConfig.concat([loaderConfig, pluginConfig]);
 };
