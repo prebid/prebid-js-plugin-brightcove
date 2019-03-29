@@ -28,11 +28,16 @@ When registering the plugin, either on the page or in Brightcove Studio, you sho
 
 The other components partners include:
 
-- **MailOnline plugin** - By default this plugin uses a customized build of the public MailOnline plugin to render the video ad.
-  - This rendering plugin is available from: `https://github.com/prebid/videojs-mailonline-plugin.git`.  
-  - You can use the MailOnline plugin as-is or you can create your own build.  
-  - Alternatively, you may also partner the Prebid plugin with your own rendering code.  Details about how to do this is provided below under [Build and Run a Project Locally](#Run).
+- **Ad Renderer** - By default this plugin uses one of the following renderers to render the video ad depending on plugin configuration options passed into the plugin at run-time:
+  - A customized build of the public MailOnline plugin
+        - The default MailOnline rendering plugin is available from: https://github.com/prebid/videojs-mailonline-plugin.git.  
+        - You can use the MailOnline plugin as-is or you can create your own build. 
+  - Client-side Brightcove IMA plugin  
+        - The Brightcove IMA plugin is loaded from https://players.brightcove.net/videojs-ima3/3/videojs.ima3.min.js automatically within Brightcove Prebid plugin.
 
+    Alternatively, you may also partner the Prebid plugin with your own rendering code. Details about how to do this is provided below under [Build and Run a Project Locally](#Run).
+
+ 
 - **MailOnline CSS** - If you are using the MailOnline rendering plugin, you also need to load the CSS file associated with the MailOnline plugin.  This CSS file is provided in the companion MailOnline repository mentioned above at the following location: `./videojs-mailonline-plugin/bin/bc_vpaid_vast_mo.css`.
 
 - **Prebid Plugin CSS** - This Prebid plugin also supplies an additional CSS file that must be loaded along with this plugin.  This CSS file is located in this repository at: `./prebid-js-plugin-brightcove/src/bc_prebid_vast_vjs.css`.
