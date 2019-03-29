@@ -120,7 +120,7 @@ You can either create your own custom build of the MailOnline plugin or you can 
 If you have either created your own build of the MailOnline plugin or are replacing the MailOnline plugin with your own rendering code, you will need to modify the path that the plugin uses to load the rendering plugin.
 
 - The path to the rendering plugin is defined in `./src/BcPrebidVast.js>loadMolPlugin(callback)`
-- The MailOnline plugin is invoked in `./src/VasRenderer.js>playAd(xml)`
+- The MailOnline plugin is invoked in `./src/VastRenderer.js>playAd(xml)`
 
 #### Using your own rendering code
 
