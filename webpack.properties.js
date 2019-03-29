@@ -1,6 +1,5 @@
 var fs = require('fs');
 var path = require('path');
-var webpack = require('webpack');
 
 // For build comments at top of file
 var pkg = require('./package.json');
@@ -73,7 +72,6 @@ var PROPS = {
                 console.log(space + k + ' --> ' + obj[k]);
                 if (typeof obj[k] === 'object') {
                     traceObj(obj[k], depth + 1);
-                    continue;
                 }
             }
         }
