@@ -72,7 +72,6 @@ var PROPS = {
                 console.log(space + k + ' --> ' + obj[k]);
                 if (typeof obj[k] === 'object') {
                     traceObj(obj[k], depth + 1);
-                    continue;
                 }
             }
         }

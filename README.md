@@ -49,7 +49,7 @@ The other components partners include:
     $ cd prebid-js-plugin-brightcove
     $ npm install
 
-*Note:* You need to have `NodeJS` 4.x or greater installed.
+*Note:* You need to have `NodeJS` 6.x or greater installed.
 
 <a name="Build"></a>
 
@@ -58,6 +58,8 @@ The other components partners include:
 To build the project on your local machine, run:
 
     $ gulp
+    or
+    $ gulp build
 
 This runs some code quality checks and generates the following files:
 
@@ -65,17 +67,12 @@ This runs some code quality checks and generates the following files:
 -	`./dist/bc_prebid_vast.js` - Non-minified production code of the loader
 -	`./dist/bc_prebid_vast_plugin.min.js` - Minified production code of the main plugin
 -	`./dist/bc_prebid_vast_plugin.js` - Non-minified production code of the main plugin
+-	`./dist/styles/bc_prebid_vast_vjs.css` - Non-minified CSS plugin file
 
 
 <a name="Test"></a>
 
 ## Test Locally
-
-To lint the code:
-
-```bash
-gulp lint
-```
 
 To run the unit tests:
 
@@ -122,19 +119,19 @@ You can either create your own custom build of the MailOnline plugin or you can 
 
 If you have either created your own build of the MailOnline plugin or are replacing the MailOnline plugin with your own rendering code, you will need to modify the path that the plugin uses to load the rendering plugin.
 
-- The path to the rendering plugin is defined in `./src/ApnPrebidVast.js>loadMolPlugin(callback)`
-- The MailOnline plugin is invoked in `./src/VastManager.js>playAd(xml)`
+- The path to the rendering plugin is defined in `./src/BcPrebidVast.js>loadMolPlugin(callback)`
+- The MailOnline plugin is invoked in `./src/VasRenderer.js>playAd(xml)`
 
 #### Using your own rendering code
 
 If you are replacing the MailOnline rendering plugin with your own custom rendering code, you need to change the code where currently the MailOnline plugin is loaded and invoked.
 
 - Your renderer must be compatible with the Brightcove Player environment.
-- Remove the following function, which is used to load the MailOnline plugin: `./src/ApnPrebidVast.js>loadMolPlugin(callback)`
+- Remove the following function, which is used to load the MailOnline plugin: `./src/BcPrebidVast.js>loadMolPlugin(callback)`
   - Make sure that all calls to this function have also been removed from your plugin code.
 - Add code to load in your rendering script, if needed.
-- Re-write the following function, which currently invokes the MailOnline plugin to play the ad:  `./src/VastManager.js>playAd(xml)`
-- Modify the communication code between your renderer and `./src/VastManager.js` so that ad playback is synchronized with the playing of the main content in the Brightcove Player.  Currently, the `VastManager` is using the following events to manage this synchronization:
+- Re-write the following function, which currently invokes the MailOnline plugin to play the ad:  `./src/VastRenderer.js>playAd(xml)`
+- Modify the communication code between your renderer and `./src/VastRenderer.js` so that ad playback is synchronized with the playing of the main content in the Brightcove Player.  Currently, the `VastRenderer` is using the following events to manage this synchronization:
   - `vast.adStart`
   - `vast.adError`
   - `vast.adsCancel`
@@ -152,7 +149,6 @@ gulp dev-server
 ```
 
 This builds the plugin and starts a web server at `http://local.prebid:8082` serving from the project root.
-Navigate to your example implementation to test, and if you use the `./dist/bc_prebid_vast.js` file, you will have sourcemaps available in your browser's developer tools.
 
 ### Select Test Page
 
@@ -169,18 +165,10 @@ You may select whichever style you want to test. See `http://prebid.org/dev-docs
     - This test page invokes the Prebid process in the header of the page.
     - The results of Prebid are then rendered by the plugin once the Brightcove Player is loaded.
     - You can configure the Prebid options to either use DFP as the primary ad server or to use no ad server.
-- `prebid-header-ad-server.html`
-    - This test page invokes the Prebid process in the header of the page.
-    - The results of the Prebid auction are then passed to a preferred ad server, via the `adServerCallback` option, so that the preferred ad server can make the final decision about which ad to play.
-    - The selected creative is then passed back to plugin so that the plugin can render the selected ad.
 - `prebid-body.html`
     - This test page invokes the Prebid process in the body of the page, after the Brightcove Player has been loaded.
     - The results of the Prebid auction are then rendered by plugin once the Brightcove Player is loaded.
     - You can configure the Prebid options to either use DFP as the primary ad server or to use no ad server.
-- `prebid-body-ad-server.html`
-    - This test page invokes the Prebid process in the body of the page, after the Brightcove Player has been loaded.
-    - The results of the Prebid auction are then passed to a preferred ad server, via the `adServerCallback` option, so that the preferred ad server can make the final decision about which ad to play.
-    - The selected creative is then passed back to plugin so that the plugin can render the selected ad.
 - `prebid-studio-config.html`
     - This page can be used to test using the plugin if you choose to configure the plugin in Brightcove Studio.
     - You will have to replace the player embed code with the embed code for your own player instance.
@@ -239,7 +227,7 @@ If you are contributing code, you should [configure your editor](http://eslint.o
 
         $ gulp test
 
-This will run the tests. To keep the Karma test browser open, you need to modify `karma.conf.js` to set `singleRun` to `false`. If you test with the `bc_prebid_vast.js` file, you will also have sourcemaps available when using your browser's developer tools.
+This will run the tests. To keep the Karma test browser open, you need to modify `karma.conf.js` to set `singleRun` to `false`.
 
 - To access the Karma debug page, go to `http://localhost:9876/debug.html`.
 - For test results, see the console.
