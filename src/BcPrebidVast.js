@@ -650,6 +650,13 @@ function loadImaPlugin (callback) {
         return;
 	}
 
+	// validation for header bidding
+	if (!_player) {
+        _logger.warn(_prefix, 'Can\'t load IMA Plugin now - Brightcove player isn\'t loaded yet. We need player for auto-registration IMA plugin.');
+        callback(false);
+        return;
+	}
+
     if (!_imaTriedToLoad) {
 		// check if IMA plugin is imbedded in player
 		if (_player.ima3) {
