@@ -459,6 +459,8 @@ var adListManager = function () {
 			_vastRendererObj.playAd(adData.adTag, _options, firstVideoPreroll, _mobilePrerollNeedClick, _prerollNeedClickToPlay, eventCallback);
 		}
 		else if (_options.adRenderer === 'custom') {
+			// HERE: developer can instantiate and call his/her own renderer
+
 			if (_pageNotificationCallback) {
 				_pageNotificationCallback('message', 'Custom renderer is not implemented in this version');
 			}

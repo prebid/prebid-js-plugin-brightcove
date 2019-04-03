@@ -308,7 +308,7 @@ var vastManager = function () {
 	}
 
 	// function to play ad
-    function play (creative) {
+  function play (creative) {
 		if (!creative) {
 			return;
 		}
@@ -348,6 +348,8 @@ var vastManager = function () {
 					_vastRendererObj.playAd(xml, _options, firstVideoPreroll, _mobilePrerollNeedClick, prerollNeedClickToPlay, eventCallback);
 				}
 				else if (_options.adRenderer === 'custom') {
+					// HERE: developer can instantiate and call his/her own renderer
+
 					if (_options.pageNotificationCallback) {
 						_options.pageNotificationCallback('message', 'Custom renderer is not implemented in this version');
 					}

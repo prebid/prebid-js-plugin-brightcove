@@ -918,7 +918,7 @@ var prebidVastPlugin = function (player) {
 					pluginLoader = loadImaPlugin;
 				}
 				else if (_adRenderer === 'custom') {
-					pluginLoader = null;
+					pluginLoader = null;	// HERE: developer can assign his/her own renderer loader if needed
 				}
 				if (pluginLoader) {
 					pluginLoader(function (succ) {
