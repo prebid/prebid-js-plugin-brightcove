@@ -652,7 +652,7 @@ function loadImaPlugin (callback) {
 
 	// validation for header bidding
 	if (!_player) {
-        _logger.warn(_prefix, 'Can\'t load IMA Plugin now - Brightcove player isn\'t loaded yet. We need player for auto-registration IMA plugin.');
+        _logger.warn(_prefix, 'Can\'t load IMA Plugin now - Brightcove player isn\'t loaded yet. The player must be loaded for auto-registration of the IMA plugin. Will attempt to load the IMA Plugin later.');
         callback(false);
         return;
 	}
