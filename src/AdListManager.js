@@ -40,6 +40,7 @@ var adListManager = function () {
 	var _mobilePrerollNeedClick = false;
 	var _prerollNeedClickToPlay = false;
 	var _needForceToPlayMainContent = false;
+	var _nextListItemTime = 0;
 
 	var _pageNotificationCallback;
 
@@ -87,13 +88,12 @@ var adListManager = function () {
 	// force next playlist video
 	var forceNextVideoForLastAd = function forceNextVideoForLastAd () {
 		// after ad played brightcove player stopped to fire 'playlistitem' events !?!?
+		_player.off('ended', startNextPlaylistVideo);
 		var isLastAd = _arrAdList[_arrAdList.length - 1].adTime === _adTime;
 		if (isLastAd && _player.playlist.currentIndex && _player.playlist.currentIndex() < _player.playlist.lastIndex()) {
 			// when last ad done, and main video is ended, and main video is not last video in playlist
 			// force to play next video in playlist
-			_player.one('ended', function () {
-				startNextPlaylistVideo();
-			});
+			_player.one('ended', startNextPlaylistVideo);
 		}
 	};
 
@@ -256,6 +256,12 @@ var adListManager = function () {
 	// event handler for 'playlistitem' event
 	function nextListItemHandler () {
 		_logger.log(_prefix, 'nextListItemHandler called');
+		if (Date.now() - _nextListItemTime < 1000) {
+			// protects again 'playlistitem' event fired twice within 1 second
+			_logger.log(_prefix, 'Already got playlistitem event. Ignore current one.');
+			return;
+		}
+		_nextListItemTime = Date.now();
 		if (!_player.playlist.currentIndex || typeof _player.playlist.currentIndex !== 'function') {
 			// player not support playlisting
 			return;
@@ -275,10 +281,12 @@ var adListManager = function () {
 			if (_player.ima3 && typeof _player.ima3 !== 'function' && _player.ima3.hasOwnProperty('adsManager')) {
 				delete _player.ima3.adsManager;
 				delete _player.ima3.adsRequest;
+				delete _player.ima3._playSeen;
 			}
 		}
-		_contentDuration = 0;
-		_player.one('loadedmetadata', function () {
+		var loadedmetadataHandler = function () {
+			_player.off('loadedmetadata', loadedmetadataHandler);
+			_player.off('playing', playHandler);
 			_mainVideoEnded = false;
 			if (needPlayAdForPlaylistItem(_player.playlist.currentIndex())) {
 				// for first video in playlist we already handle loadedmatadata event
@@ -295,12 +303,30 @@ var adListManager = function () {
 			_logger.log(_prefix, 'Ad did not play due to frequency settings');
 			// disable autostart playing next video in playlist
 			_player.playlist.autoadvance(null);
-		});
-		setTimeout(function () {
-			if (_contentDuration === 0) {
-				showCover(false);
+		};
+		var playHandler = function () {
+			if (_contentDuration === 0 && _player.duration() > 0) {
+				loadedmetadataHandler();
 			}
-		}, 1000);
+		};
+
+		_contentDuration = 0;
+		// start waiting for loadedmetadata or playing event to start preparing ads data
+		_player.one('loadedmetadata', loadedmetadataHandler);
+		_player.one('playing', playHandler);
+		setTimeout(function () {
+			// make sure event listeners removed
+			_player.off('loadedmetadata', loadedmetadataHandler);
+			_player.off('playing', playHandler);
+			if (_contentDuration === 0) {
+				if (_player.duration() > 0) {
+					loadedmetadataHandler();
+				}
+				else {
+					showCover(false);
+				}
+			}
+		}, 2000);
 	}
 
 	// event handler for 'playlistitem' event
@@ -677,9 +703,23 @@ var adListManager = function () {
 
 	// prepares ad data array, markers data, and starts ad list renderring
 	function startRenderingPreparation () {
-		_contentDuration = _player.duration();	// parseInt(_player.duration()) - 0.5;
+		_contentDuration = _player.duration();
 		if (_hasPreroll) {
 			_player.pause();
+		}
+		if (_adRenderer === 'ima') {
+			// !!! SPECIAL CASE FOR IMA PLUGIN
+			// Brightcove IMA plugin expected the 'loadstart' event for main content has to be fired
+			// within 5 seconds after plugin initialization.
+			// In our case we may load and initialize IMA plugin after 'loadstart' event fired that could case
+			// in some cases nor correct ad behaivior.
+			// The flag _player.ads._hasThereBeenALoadStartDuringPlayerLife indicates if 'loadstart' event is fired
+			// after IMA plugin has initialized.
+			// If this flag is not set to true ('loadstart' event fired before IMA plugin initialization)
+			// we are going to simulate 'loadstart' event to trigger it to player.
+			if (!_player.ads._hasThereBeenALoadStartDuringPlayerLife) {
+				_player.trigger('loadstart');
+			}
 		}
 		_arrAdList = [];
 		var arrTimes = [];
