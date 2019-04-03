@@ -458,6 +458,13 @@ var adListManager = function () {
 			}
 			_vastRendererObj.playAd(adData.adTag, _options, firstVideoPreroll, _mobilePrerollNeedClick, _prerollNeedClickToPlay, eventCallback);
 		}
+		else if (_options.adRenderer === 'custom') {
+			if (_pageNotificationCallback) {
+				_pageNotificationCallback('message', 'Custom renderer is not implemented in this version');
+			}
+			_logger.log(_prefix, 'Custom renderer is not implemented in this version');
+			resetContent();
+		}
 	};
 
 	// function to get break data for ad renderring

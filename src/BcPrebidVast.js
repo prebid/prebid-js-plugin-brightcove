@@ -31,7 +31,8 @@ var DEFAULT_SCRIPT_LOAD_TIMEOUT = 3000;
 
 var _rendererNames = {
 	MOL: 'mailonline',
-	IMA: 'ima'
+	IMA: 'ima',
+	CUSTOM: 'custom'
 };
 
 // UTIL FUNCTIONS FOR LOADING JS IFRAMES
@@ -713,7 +714,9 @@ function loadImaPlugin (callback) {
 function getAdRendererFromAdOptions (adOptions) {
 	// if adRenderer option is present use it for all ads
 	if (adOptions.hasOwnProperty('adRenderer') && adOptions.adRenderer &&
-		(adOptions.adRenderer === _rendererNames.MOL || adOptions.adRenderer === _rendererNames.IMA)) {
+		(adOptions.adRenderer === _rendererNames.MOL ||
+		 adOptions.adRenderer === _rendererNames.IMA ||
+		 adOptions.adRenderer === _rendererNames.CUSTOM)) {
 		return {adRenderer: adOptions.adRenderer, userSet: true};
 	}
 	// for DFP use IMA plugin as renderer
@@ -914,11 +917,19 @@ var prebidVastPlugin = function (player) {
 				if (_adRenderer === 'ima') {
 					pluginLoader = loadImaPlugin;
 				}
-				pluginLoader(function (succ) {
-					if (succ) {
-						renderAd(options);
-					}
-				});
+				else if (_adRenderer === 'custom') {
+					pluginLoader = null;
+				}
+				if (pluginLoader) {
+					pluginLoader(function (succ) {
+						if (succ) {
+							renderAd(options);
+						}
+					});
+				}
+				else {
+					renderAd(options);
+				}
 			}
 			else {
 				renderAd(options);

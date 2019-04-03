@@ -347,6 +347,13 @@ var vastManager = function () {
 					}
 					_vastRendererObj.playAd(xml, _options, firstVideoPreroll, _mobilePrerollNeedClick, prerollNeedClickToPlay, eventCallback);
 				}
+				else if (_options.adRenderer === 'custom') {
+					if (_options.pageNotificationCallback) {
+						_options.pageNotificationCallback('message', 'Custom renderer is not implemented in this version');
+					}
+					_logger.log(_prefix, 'Custom renderer is not implemented in this version');
+					resetContent();
+				}
 			};
 
     	if (_player.duration() > 0) {
