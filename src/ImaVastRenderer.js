@@ -33,6 +33,9 @@ var imaVastRenderer = function (player) {
         };
         _logger.log(_prefix, 'IMA3 plugin event: ' + event.type + '. ', event);
 
+        // make sure big play button not visible when ad is playing
+        _player.bigPlayButton.el_.style.display = 'none';
+
         var str = 'IMA3 plugin event: ' + event.type + '. ';
         switch (event.type) {
             case 'ima3error':
@@ -181,12 +184,29 @@ var imaVastRenderer = function (player) {
         _options = options;
 
 		// player event listeners
-		addListeners();
+        addListeners();
 
-        _player.trigger({type: 'internal', data: {name: 'cover', cover: false}});
+        if (prerollNeedClickToPlay) {
+            // hide black cover before show play button
+            _player.trigger({type: 'internal', data: {name: 'cover', cover: false}});
+            // pause main content just in case
+            _player.pause();
+            _player.trigger({type: 'trace.message', data: {message: 'Video main content - activate play button'}});
+            _player.bigPlayButton.el_.style.display = 'block';
+            _player.bigPlayButton.el_.style.opacity = 1;
+            _player.bigPlayButton.el_.style.zIndex = 99999;
+            _player.one('play', function () {
+                _player.bigPlayButton.el_.style.display = 'none';
+                // request IMA plugin to render ad
+                _player.ima3.adrequest(xml);
+            });
+        }
+        else {
+            _player.trigger({type: 'internal', data: {name: 'cover', cover: false}});
 
-        // request IMA plugin to render ad
-        _player.ima3.adrequest(xml);
+            // request IMA plugin to render ad
+            _player.ima3.adrequest(xml);
+        }
     };
 
     // stop ad
