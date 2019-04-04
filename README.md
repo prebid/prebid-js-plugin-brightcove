@@ -129,14 +129,18 @@ If you have either created your own build of the MailOnline plugin or are replac
 
 #### Using your own rendering code
 
-If you are replacing the MailOnline rendering plugin with your own custom rendering code, you need to change the code where currently the MailOnline plugin is loaded and invoked.
+If you are replacing the MailOnline rendering plugin with your own custom rendering code, you need to change the code where currently an ad renderer is loaded and invoked.
 
+- You MUST explicitly add the `adRenderer` parameter to your cofiguration object with this value: `adRenderer: "custom"`.
 - Your renderer must be compatible with the Brightcove Player environment.
-- Remove the following function, which is used to load the MailOnline plugin: `./src/BcPrebidVast.js>loadMolPlugin(callback)`
+- Add your custom function to load your renderer in `./src/BcPrebidVast.js`.
+- If you don't want to use the MailOnline plugin, remove the following function, which is used to load the MailOnline plugin: `./src/BcPrebidVast.js>loadMolPlugin(callback)`
+  - Make sure that all calls to this function have also been removed from your plugin code.
+- If you don't want to use the IMA plugin, remove the following function, which is used to load the IMA plugin: `./src/BcPrebidVast.js>loadImaPlugin(callback)`
   - Make sure that all calls to this function have also been removed from your plugin code.
 - Add code to load in your rendering script, if needed.
-- Re-write the following function, which currently invokes the MailOnline plugin to play the ad:  `./src/VastRenderer.js>playAd(xml)`
-- Modify the communication code between your renderer and `./src/VastRenderer.js` so that ad playback is synchronized with the playing of the main content in the Brightcove Player.  Currently, the `VastRenderer` is using the following events to manage this synchronization:
+- Re-write the following function, which currently invokes the MailOnline or IMA plugin to play the ad:  `./src/VastManager.js>play(...)` and `./src/AdListManager.js>playAd(...)`
+- Modify the communication code between your renderer and `./src/VastManager.js` and also between your renderer and `./src/AdListManager.js` so that ad playback is synchronized with the playing of the main content in the Brightcove Player.  Currently, the `VastManager` and `AdListManager` are using the following events to manage this synchronization:
   - `vast.adStart`
   - `vast.adError`
   - `vast.adsCancel`
