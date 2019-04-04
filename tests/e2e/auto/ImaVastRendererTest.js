@@ -25,7 +25,7 @@ describe('ImaVastRenderer unit test', function () {
         done();
     });
 
-    it('onEvent test - test ima3error event', function (done) {
+    it('ImpVastRenderer onEvent test - test ima3error event', function (done) {
         testObj.setEventCallback(function (event) {
             if (event.type !== 'trace.message') {
                 assert.equal(event.type, 'vast.adError');
@@ -36,7 +36,7 @@ describe('ImaVastRenderer unit test', function () {
         player.trigger('ima3error');
     });
 
-    it('onEvent test - test ads-ended event', function (done) {
+    it('ImpVastRenderer onEvent test - test ads-ended event', function (done) {
         testObj.setEventCallback(function (event) {
             if (event.type !== 'trace.message') {
                 assert.equal(event.type, 'vast.contentEnd');
@@ -47,7 +47,7 @@ describe('ImaVastRenderer unit test', function () {
         player.trigger('ads-ended');
     });
 
-    it('onEvent test - test ads-ad-skipped event', function (done) {
+    it('ImpVastRenderer onEvent test - test ads-ad-skipped event', function (done) {
         testObj.setEventCallback(function (event) {
             if (event.type !== 'trace.message') {
                 assert.equal(event.type, 'vast.adSkip');
@@ -58,7 +58,7 @@ describe('ImaVastRenderer unit test', function () {
         player.trigger('ads-ad-skipped');
     });
 
-    it('onEvent test - test ima3-ad-error event', function (done) {
+    it('ImpVastRenderer onEvent test - test ima3-ad-error event', function (done) {
         testObj.setEventCallback(function (event) {
             if (event.type !== 'trace.message') {
                 assert.equal(event.type, 'vast.adError');
@@ -69,7 +69,7 @@ describe('ImaVastRenderer unit test', function () {
         player.trigger('ima3-ad-error');
     });
 
-    it('onEvent test - test ima3-complete event', function (done) {
+    it('ImpVastRenderer onEvent test - test ima3-complete event', function (done) {
         testObj.setEventCallback(function (event) {
             if (event.type !== 'trace.message') {
                 assert.equal(event.type, 'adFinished');
@@ -80,7 +80,7 @@ describe('ImaVastRenderer unit test', function () {
         player.trigger('ima3-complete');
     });
 
-    it('onEvent test - test ima3-hardtimeout event', function (done) {
+    it('ImpVastRenderer onEvent test - test ima3-hardtimeout event', function (done) {
         testObj.setEventCallback(function (event) {
             if (event.type !== 'trace.message') {
                 assert.equal(event.type, 'vast.adsCancel');
@@ -91,7 +91,7 @@ describe('ImaVastRenderer unit test', function () {
         player.trigger('ima3-hardtimeout');
     });
 
-    it('onEvent test - test ad-hard-timeout event', function (done) {
+    it('ImpVastRenderer onEvent test - test ad-hard-timeout event', function (done) {
         testObj.setEventCallback(function (event) {
             if (event.type !== 'trace.message') {
                 assert.equal(event.type, 'vast.adsCancel');
@@ -102,17 +102,25 @@ describe('ImaVastRenderer unit test', function () {
         player.trigger('ad-hard-timeout');
     });
 
-    it('playAd test - requests render ad', function (done) {
+    it('ImpVastRenderer playAd test - requests render ad', function (done) {
+        var playSave = player.play;
         player.ima3 = {
             adrequest: function (xml) {
+                player.play = playSave;
                 assert.equal(xml, 'http://bla-bla');
                 done();
             }
         };
+        player.play = function () {
+            return new Promise(function (resolve, reject) {
+                resolve();
+            });
+        };
         imaVastRenderer.playAd('http://bla-bla', {}, null, null, null, function () {});
         setTimeout(function () {
             delete player.ima3;
-        }, 0);
+            player.play = playSave;
+        }, 400);
     });
 
 });
