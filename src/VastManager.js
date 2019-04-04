@@ -8,6 +8,7 @@ var _prebidCommunicator = require('./PrebidCommunicator.js');
 var _MarkersHandler = require('./MarkersHandler.js');
 var _vastRenderer = require('./VastRenderer.js');
 var _imaVastRenderer = require('./ImaVastRenderer.js');
+var _rendererNames = require('./Constants.js').rendererNames;
 var _prefix = 'PrebidVast->vastManager';
 
 var vastManager = function () {
@@ -335,19 +336,19 @@ var vastManager = function () {
 					_savedMarkers = JSON.stringify(_player.markers.getMarkers());
 				}
 				var firstVideoPreroll = _player.currentTime() < 0.5 && _playlistIdx <= 0;
-				if (_options.adRenderer === 'ima') {
+				if (_options.adRenderer === _rendererNames.IMA) {
 					if (!_imaVastRendererObj) {
 						_imaVastRendererObj = new _imaVastRenderer(_player);
 					}
 					_imaVastRendererObj.playAd(xml, _options, firstVideoPreroll, _mobilePrerollNeedClick, prerollNeedClickToPlay, eventCallback);
 				}
-				else if (_options.adRenderer === 'mailonline') {
+				else if (_options.adRenderer === _rendererNames.MOL) {
 					if (!_vastRendererObj) {
 						_vastRendererObj = new _vastRenderer(_player);
 					}
 					_vastRendererObj.playAd(xml, _options, firstVideoPreroll, _mobilePrerollNeedClick, prerollNeedClickToPlay, eventCallback);
 				}
-				else if (_options.adRenderer === 'custom') {
+				else if (_options.adRenderer === _rendererNames.CUSTOM) {
 					// HERE: developer can instantiate and call his/her own renderer
 
 					if (_options.pageNotificationCallback) {
@@ -377,7 +378,7 @@ var vastManager = function () {
 				},
 				onMarkerReached: function (marker) {
 					if (_markerXml[marker.time]) {
-						if (_options.adRenderer === 'ima') {
+						if (_options.adRenderer === _rendererNames.IMA) {
 							if (marker.time === 0) {
 								setTimeout(function () {
 									showCover(true);
@@ -550,12 +551,12 @@ var vastManager = function () {
   this.stop = function () {
     // stop ad if playing and remove marker from timeline
     if (_adPlaying) {
-			if (_options.adRenderer === 'ima') {
+			if (_options.adRenderer === _rendererNames.IMA) {
 				if (_imaVastRendererObj) {
 					_imaVastRendererObj.stop();
 				}
 			}
-			else if (_options.adRenderer === 'mailonline') {
+			else if (_options.adRenderer === _rendererNames.MOL) {
 				_player.trigger('vast.adsCancel');
 			}
 		}

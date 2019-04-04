@@ -8,6 +8,7 @@ var _prebidCommunicator = require('./PrebidCommunicator.js');
 var _MarkersHandler = require('./MarkersHandler.js');
 var _vastRenderer = require('./VastRenderer.js');
 var _imaVastRenderer = require('./ImaVastRenderer.js');
+var _rendererNames = require('./Constants.js').rendererNames;
 var _prefix = 'PrebidVast->adListManager';
 
 var adListManager = function () {
@@ -271,7 +272,7 @@ var adListManager = function () {
 		if (_player.playlist && _player.playlist.currentIndex) {
 			_playlistIdx = _player.playlist.currentIndex();
 		}
-		if (_adRenderer === 'ima') {
+		if (_adRenderer === _rendererNames.IMA) {
 			if (_player.ima3 && typeof _player.ima3 !== 'function' && _player.ima3.hasOwnProperty('adsManager')) {
 				delete _player.ima3.adsManager;
 				delete _player.ima3.adsRequest;
@@ -446,19 +447,19 @@ var adListManager = function () {
 		if (forceAdToAutoplay) {
 			_options.initialPlayback = 'auto';
 		}
-		if (_options.adRenderer === 'ima') {
+		if (_options.adRenderer === _rendererNames.IMA) {
 			if (!_imaVastRendererObj) {
 				_imaVastRendererObj = new _imaVastRenderer(_player);
 			}
 			_imaVastRendererObj.playAd(adData.adTag, _options, firstVideoPreroll, _mobilePrerollNeedClick, _prerollNeedClickToPlay, eventCallback);
 		}
-		else if (_options.adRenderer === 'mailonline') {
+		else if (_options.adRenderer === _rendererNames.MOL) {
 			if (!_vastRendererObj) {
 				_vastRendererObj = new _vastRenderer(_player);
 			}
 			_vastRendererObj.playAd(adData.adTag, _options, firstVideoPreroll, _mobilePrerollNeedClick, _prerollNeedClickToPlay, eventCallback);
 		}
-		else if (_options.adRenderer === 'custom') {
+		else if (_options.adRenderer === _rendererNames.CUSTOM) {
 			// HERE: developer can instantiate and call his/her own renderer
 
 			if (_pageNotificationCallback) {
@@ -519,7 +520,7 @@ var adListManager = function () {
 		getAdData(adTime, function (adData, status) {
 			if (adData) {
 				traceMessage({data: {message: 'Play Ad at time = ' + adTime}});
-				if (adData.options.adRenderer === 'ima') {
+				if (adData.options.adRenderer === _rendererNames.IMA) {
 					showCover(true);
 					if (adTime === 0) {
 						_player.play();
@@ -824,12 +825,12 @@ var adListManager = function () {
     this.stop = function () {
     	// stop ad if playing and remove marker from timeline
     	if (_adPlaying) {
-			if (_adRenderer === 'ima') {
+			if (_adRenderer === _rendererNames.IMA) {
 				if (_imaVastRendererObj) {
 					_imaVastRendererObj.stop();
 				}
 			}
-			else if (_adRenderer === 'mailonline') {
+			else if (_adRenderer === _rendererNames.MOL) {
 				_player.trigger('vast.adsCancel');
 			}
     	}

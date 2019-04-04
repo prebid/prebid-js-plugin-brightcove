@@ -29,11 +29,7 @@ var BC_prebid_in_progress = $$PREBID_GLOBAL$$.plugin_prebid_options && $$PREBID_
 
 var DEFAULT_SCRIPT_LOAD_TIMEOUT = 3000;
 
-var _rendererNames = {
-	MOL: 'mailonline',
-	IMA: 'ima',
-	CUSTOM: 'custom'
-};
+var _rendererNames = require('./Constants.js').rendererNames;
 
 // UTIL FUNCTIONS FOR LOADING JS IFRAMES
 function isEdge () {
@@ -914,10 +910,10 @@ var prebidVastPlugin = function (player) {
 			}
 			if (!options.onlyPrebid) {
 				var pluginLoader = loadMolPlugin;
-				if (_adRenderer === 'ima') {
+				if (_adRenderer === _rendererNames.IMA) {
 					pluginLoader = loadImaPlugin;
 				}
-				else if (_adRenderer === 'custom') {
+				else if (_adRenderer === _rendererNames.CUSTOM) {
 					pluginLoader = null;	// HERE: developer can assign his/her own renderer loader if needed
 				}
 				if (pluginLoader) {
