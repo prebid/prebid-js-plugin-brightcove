@@ -12,7 +12,7 @@ var _prebidCommunicator = require('./PrebidCommunicator.js');
 var _dfpUrlGenerator = require('./DfpUrlGenerator.js');
 var _logger = require('./Logging.js');
 
-var PLUGIN_VERSION = '0.5.1';
+var PLUGIN_VERSION = '0.5.1n';
 var _prefix = 'PrebidVast->';
 var _molIFrame = null;
 
@@ -801,6 +801,7 @@ function renderAd (options) {
 				showVpaidControls: true,
 				requestMode: 'ondemand',
 				timeout: options.adStartTimeout ? options.adStartTimeout : _defaultAdCancelTimeout,
+				disableCustomPlaybackForIOS10Plus: true,
 				vpaidMode: 'ENABLED'
 			});
 		}

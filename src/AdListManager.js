@@ -551,6 +551,7 @@ var adListManager = function () {
 					if (adTime === 0) {
 						if (isMobile() && !isIDevice()) {
 							// android
+							traceMessage({data: {message: 'It is Android device'}});
 							if (_player.paused()) {
 								if (_player.tech_ && _player.tech_.el_ && !_player.tech_.el_.autoplay) {
 									showCover(false);
@@ -566,6 +567,13 @@ var adListManager = function () {
 							else {
 								showCover(true);
 							}
+							adData.status = AD_STATUS_PLAYING;
+							playAd(adData);
+						}
+						else if (isMobile() && isIPhone()) {
+							// iPhone
+							traceMessage({data: {message: 'It is iPhone'}});
+							_logger.log(_prefix, 'play preroll right now');
 							adData.status = AD_STATUS_PLAYING;
 							playAd(adData);
 						}
@@ -877,8 +885,10 @@ var adListManager = function () {
 
     	if (_player.duration() > 0) {
 			startRenderingPreparation();
-			_player.bigPlayButton.el_.style.display = 'block';
-			_player.bigPlayButton.el_.style.opacity = 1;
+			if (!isIPhone()) {
+				_player.bigPlayButton.el_.style.display = 'block';
+				_player.bigPlayButton.el_.style.opacity = 1;
+			}
 		}
     	else {
 			_player.one('loadedmetadata', startRenderingPreparation);
