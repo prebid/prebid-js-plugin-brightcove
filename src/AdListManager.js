@@ -570,9 +570,9 @@ var adListManager = function () {
 							adData.status = AD_STATUS_PLAYING;
 							playAd(adData);
 						}
-						else if (isMobile() && isIPhone()) {
-							// iPhone
-							traceMessage({data: {message: 'It is iPhone'}});
+						else if (isMobile() && isIDevice()) {
+							// iOS
+							traceMessage({data: {message: 'It is iOS'}});
 							_logger.log(_prefix, 'play preroll right now');
 							adData.status = AD_STATUS_PLAYING;
 							playAd(adData);
@@ -885,6 +885,7 @@ var adListManager = function () {
 
     	if (_player.duration() > 0) {
 			startRenderingPreparation();
+			// Do not activate big play button for iPhone. The button will be activated by player if needed.
 			if (!isIPhone()) {
 				_player.bigPlayButton.el_.style.display = 'block';
 				_player.bigPlayButton.el_.style.opacity = 1;

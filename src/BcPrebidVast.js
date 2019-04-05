@@ -12,7 +12,7 @@ var _prebidCommunicator = require('./PrebidCommunicator.js');
 var _dfpUrlGenerator = require('./DfpUrlGenerator.js');
 var _logger = require('./Logging.js');
 
-var PLUGIN_VERSION = '0.5.1n';
+var PLUGIN_VERSION = '0.5.1';
 var _prefix = 'PrebidVast->';
 var _molIFrame = null;
 
@@ -801,7 +801,7 @@ function renderAd (options) {
 				showVpaidControls: true,
 				requestMode: 'ondemand',
 				timeout: options.adStartTimeout ? options.adStartTimeout : _defaultAdCancelTimeout,
-				disableCustomPlaybackForIOS10Plus: true,
+				disableCustomPlaybackForIOS10Plus: true,	// this flag needed for skippable ads for iOS version 10+
 				vpaidMode: 'ENABLED'
 			});
 		}
