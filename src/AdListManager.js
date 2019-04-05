@@ -549,13 +549,35 @@ var adListManager = function () {
 				if (adData.options.adRenderer === _rendererNames.IMA) {
 					showCover(true);
 					if (adTime === 0) {
-						_player.play();
-						setTimeout(function () {
-							_logger.log(_prefix, 'play preroll by timeout');
-							_player.pause();
+						if (isMobile() && !isIDevice()) {
+							// android
+							if (_player.paused()) {
+								if (_player.tech_ && _player.tech_.el_ && !_player.tech_.el_.autoplay) {
+									showCover(false);
+									// show play button if brightcove player is configured for not autoplay
+									_prerollNeedClickToPlay = true;
+									_player.bigPlayButton.el_.style.display = 'block';
+									_player.bigPlayButton.el_.style.opacity = 1;
+								}
+								else {
+									showCover(true);
+								}
+							}
+							else {
+								showCover(true);
+							}
 							adData.status = AD_STATUS_PLAYING;
 							playAd(adData);
-						}, 500);
+						}
+						else {
+							_player.play();
+							setTimeout(function () {
+								_logger.log(_prefix, 'play preroll by timeout');
+								_player.pause();
+								adData.status = AD_STATUS_PLAYING;
+								playAd(adData);
+							}, 500);
+						}
 					}
 					else {
 						_logger.log(_prefix, 'play preroll right now');
@@ -855,10 +877,21 @@ var adListManager = function () {
 
     	if (_player.duration() > 0) {
 			startRenderingPreparation();
-    	}
+			_player.bigPlayButton.el_.style.display = 'block';
+			_player.bigPlayButton.el_.style.opacity = 1;
+		}
     	else {
 			_player.one('loadedmetadata', startRenderingPreparation);
-    	}
+		}
+
+		if (_hasPreroll) {
+			var time = _arrOptions && _arrOptions.length > 0 ? (_arrOptions[0].adStartTimeout ? _arrOptions[0].adStartTimeout : 5000) : 5000;
+			setTimeout(function () {
+				if (_arrAdList.length === 0) {
+					showCover(false);
+				}
+			}, time)
+		}
     };
 
 	// stop play ad
