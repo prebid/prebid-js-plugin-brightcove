@@ -71,7 +71,7 @@ module.exports = function (mode) {
                                 /* Remove any debugger statements for a production build */
                                 pattern: /debugger;|debugger/g,
                                 replacement: function (match, p1, offset, string) {
-                                    if (mode === MODE_PROD) {
+                                    if (mode === buildProps.MODE_PRODUCTION) {
                                         return '';
                                     } else {
                                         console.warn('********************************************************************************');
