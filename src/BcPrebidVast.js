@@ -801,6 +801,7 @@ function renderAd (options) {
 				showVpaidControls: true,
 				requestMode: 'ondemand',
 				timeout: options.adStartTimeout ? options.adStartTimeout : _defaultAdCancelTimeout,
+				disableCustomPlaybackForIOS10Plus: true,	// this flag needed for skippable ads for iOS version 10+
 				vpaidMode: 'ENABLED'
 			});
 		}
