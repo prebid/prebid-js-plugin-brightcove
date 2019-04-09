@@ -36,6 +36,11 @@ function isEdge () {
 	return /(edge)\/((\d+)?[\w\.]+)/i.test(navigator.userAgent);
 }
 
+function isIE11 () {
+	var res = navigator.userAgent.search(/(trident).+rv[:\s]([\w\.]+).+like\sgecko/i);
+	return res >= 0;
+}
+
 function canLoadInIframe () {
 	var docClassList = document.documentElement.classList;
 	var playerInIframe = docClassList && docClassList.contains('bc-iframe'); // html of player has bc-iframe class when Brightcove player emded in iFrame
@@ -792,18 +797,31 @@ var _prebidCommunicatorObj;
 var _defaultAdCancelTimeout = 3000;
 var _adRenderer;
 
+function initIMA (options) {
+	// Sometimes we see the method inAdBreak is not exist which causes black screen instead ad when ad is playing.
+	// Make sure at least the fake inAdBreak method is present.
+	_logger.log(_prefix, 'Check for inAdBreak method');
+	if (!_player.ads.inAdBreak) {
+		_player.ads.inAdBreak = function () {
+			return false;
+		};
+	}
+	// initialize some setting values for IMA plugin
+	_player.ima3({
+		debug: true,
+		showVpaidControls: true,
+		requestMode: 'ondemand',
+		timeout: options.adStartTimeout ? options.adStartTimeout : _defaultAdCancelTimeout,
+		disableCustomPlaybackForIOS10Plus: true,	// this flag needed for skippable ads for iOS version 10+
+		vpaidMode: 'ENABLED'
+	});
+}
+
 function renderAd (options) {
-	if (_adRenderer === 'ima') {
+	if (_adRenderer === _rendererNames.IMA) {
 		if (_player.ima3 && typeof _player.ima3 === 'function') {
 			// initialize some setting values for IMA plugin
-			_player.ima3({
-				debug: true,
-				showVpaidControls: true,
-				requestMode: 'ondemand',
-				timeout: options.adStartTimeout ? options.adStartTimeout : _defaultAdCancelTimeout,
-				disableCustomPlaybackForIOS10Plus: true,	// this flag needed for skippable ads for iOS version 10+
-				vpaidMode: 'ENABLED'
-			});
+			initIMA(options);
 		}
 	}
 	if (options.creative) {
@@ -852,6 +870,48 @@ function renderAd (options) {
 		});
 		_adListManagerObj.play(_player, arrOptions);
 	}
+}
+
+function prepareRenderAd (options) {
+	// special preparation for Edge and IE
+	if (isEdge() || isIE11()) {
+		var players = document.getElementsByClassName('video-js');
+		// more than 1 player within document
+		if (players && players.length > 1) {
+			_logger.log(_prefix, 'More than 1 player within same document');
+			// !!! When IMA plugin has loaded in script tag it causes some side effect for other players in document during IMA initialization.
+			if (_adRenderer === _rendererNames.IMA && document.getElementById('bc_ima_plugin') &&
+				_player.ima3 && typeof _player.ima3 === 'function') {
+				_logger.log(_prefix, 'Delay IMA initialization for 1 second');
+				// Delay IMA initialization to make sure other players could start first.
+				setTimeout(function () {
+					initIMA(options);
+					renderAd(options);
+				}, 1000);
+				return;
+			}
+			if (_adRenderer === _rendererNames.MOL) {
+				// If player has both plugins and IMA plugin has been loaded in script tag replace renderer to IMA
+				if (document.getElementById('bc_ima_plugin') && _player.ima3) {
+					_logger.log(_prefix, 'Replace MOL renderer to IMA renderer');
+					options.adRenderer = _rendererNames.IMA;
+					_adRenderer = _rendererNames.IMA;
+					setTimeout(function () {
+						initIMA(options);
+						renderAd(options);
+					}, 1000);
+					return;
+				}
+				else {
+					_logger.log(_prefix, 'Ignore ad because IMA renderer used for other player');
+					// We cannot use MOL plugin together with IMA within same document. Ignore ad.
+					options.adRenderer = _rendererNames.NONE;
+					_adRenderer = _rendererNames.NONE;
+				}
+			}
+		}
+	}
+	renderAd(options);
 }
 
 var prebidVastPlugin = function (player) {
@@ -927,16 +987,16 @@ var prebidVastPlugin = function (player) {
 				if (pluginLoader) {
 					pluginLoader(function (succ) {
 						if (succ) {
-							renderAd(options);
+							prepareRenderAd(options);
 						}
 					});
 				}
 				else {
-					renderAd(options);
+					prepareRenderAd(options);
 				}
 			}
 			else {
-				renderAd(options);
+				prepareRenderAd(options);
 			}
 		},
 
