@@ -818,6 +818,10 @@ function initIMA (options) {
 }
 
 function renderAd (options) {
+	if (_adRenderer === _rendererNames.NONE && !options.onlyPrebid) {
+		// do nothing
+		return;
+	}
 	if (_adRenderer === _rendererNames.IMA) {
 		if (_player.ima3 && typeof _player.ima3 === 'function') {
 			// initialize some setting values for IMA plugin
