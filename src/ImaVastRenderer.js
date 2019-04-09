@@ -10,6 +10,10 @@ var imaVastRenderer = function (player) {
     var _eventCallback;
     var _player = player;
 
+    var isMobile = function isMobile () {
+    	return /iP(hone|ad|od)|Android|Windows Phone/.test(navigator.userAgent);
+    };
+
     var isIDevice = function isIDevice () {
     	return /iP(hone|ad)/.test(navigator.userAgent);
     };
@@ -212,6 +216,7 @@ var imaVastRenderer = function (player) {
                 else {
                     var requestImaPlayAd = function () {
                         // for iOS start to render an ad only when main content start playing
+                        // we have to do it because 'adrequest' not support preroll
                         if (isIDevice()) {
                             _player.trigger({type: 'internal', data: {name: 'cover', cover: true}});
                             _player.bigPlayButton.el_.style.display = 'none';
@@ -222,6 +227,27 @@ var imaVastRenderer = function (player) {
                                 // request IMA plugin to render ad
                                 _player.ima3.adrequest(xml);
                             }, 200);
+                        }
+                        else if (isMobile() && !isIDevice()) {
+                            // for android start ad renderer when main start playing
+                            // we have to do it because 'adrequest' not support preroll
+                            _player.trigger({type: 'internal', data: {name: 'cover', cover: true}});
+                            _player.bigPlayButton.el_.style.display = 'none';
+                            var checkTime = function () {
+                                if (_player.currentTime() > 0.5) {
+                                    _player.off('timeupdate', checkTime);
+                                    _player.pause();
+                                    // request IMA plugin to render ad
+                                    _player.ima3.adrequest(xml);
+                                }
+                            }
+                            if (_player.currentTime() > 0.5) {
+                                // request IMA plugin to render ad
+                                _player.ima3.adrequest(xml);
+                            }
+                            else {
+                                _player.on('timeupdate', checkTime);
+                            }
                         }
                         else {
                             _player.bigPlayButton.el_.style.display = 'none';

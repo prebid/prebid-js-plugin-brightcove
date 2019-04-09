@@ -889,6 +889,9 @@ var adListManager = function () {
 			if (!isIPhone()) {
 				_player.bigPlayButton.el_.style.display = 'block';
 				_player.bigPlayButton.el_.style.opacity = 1;
+				_player.one('play', function () {
+					_player.bigPlayButton.el_.style.display = 'none';
+				});
 			}
 		}
     	else {
