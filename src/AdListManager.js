@@ -346,7 +346,8 @@ var adListManager = function () {
 		}
 		else if (strTime === 'end') {
 			// post-roll
-			return duration;
+			// we have start postroll for IMA renderer a little earlier because ima3.adrequest() does not work for postroll
+			return _adRenderer === _rendererNames.IMA ? duration - 0.5 : duration;
 		}
 		else if (strTime.indexOf(':') > 0) {
 			// convert hh:mm:ss or hh:mm:ss.msec to seconds
@@ -548,6 +549,7 @@ var adListManager = function () {
 				traceMessage({data: {message: 'Play Ad at time = ' + adTime}});
 				if (adData.options.adRenderer === _rendererNames.IMA) {
 					showCover(true);
+					_isPostroll = (_contentDuration - adTime) < 1.0;
 					if (adTime === 0) {
 						if (isMobile() && !isIDevice()) {
 							// android
@@ -588,6 +590,9 @@ var adListManager = function () {
 						}
 					}
 					else {
+						if (_isPostroll) {
+							_player.pause();
+						}
 						_logger.log(_prefix, 'play preroll right now');
 						adData.status = AD_STATUS_PLAYING;
 						playAd(adData);
