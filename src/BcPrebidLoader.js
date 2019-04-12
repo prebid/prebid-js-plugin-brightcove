@@ -72,9 +72,11 @@ function start () {
 			var prebidPluginPath = getPluginPath($$PREBID_GLOBAL$$.plugin_prebid_options);
 
 			var runPlugin = function () {
-				var apiFunc = getLoadedPluginAPI(true);								// keep PluginAPI in que for future call
-                var _prebidPluginObj = apiFunc(_player);							// uses private closure var _player
-                _prebidPluginObj.run($$PREBID_GLOBAL$$.plugin_prebid_options);		// uses $$PREBID_GLOBAL$$.plugin_prebid_options (set from page)
+				var apiFunc = getLoadedPluginAPI(true);		// keep PluginAPI in que for future call
+				if (!apiFunc.placeholder) {
+					_prebidPluginObj = apiFunc(_player);
+					_prebidPluginObj.run($$PREBID_GLOBAL$$.plugin_prebid_options);	// uses $$PREBID_GLOBAL$$.plugin_prebid_options (set from page)
+				}
 			};
 
             _isLoadedFromPage = true;
@@ -87,10 +89,7 @@ function start () {
 function getLoadedPluginAPI (keepInQue) {
     if (!$$PREBID_GLOBAL$$.BCVideo_PrebidPluginApiQue || !$$PREBID_GLOBAL$$.BCVideo_PrebidPluginApiQue.length) {
 		_logger.log(LOGGER_PREFIX, 'ERROR - No loaded Plugin API available to run!');
-		var placeholder = function () {
-			return { run: function () {} };
-		};
-        return placeholder;
+        return { placeholder: true };
 	}
 	if (keepInQue) {
 		return $$PREBID_GLOBAL$$.BCVideo_PrebidPluginApiQue[0];
@@ -209,9 +208,11 @@ function apiInit () {
         var runPlugin = function (success) {
         	if (success) {
 				var apiFunc = getLoadedPluginAPI();
-				_playerElID = player.el().id;
-				_prebidPluginObj = apiFunc(player);					// uses local var player
-				_prebidPluginObj.run(options);						// uses local var options
+				if (!apiFunc.placeholder) {
+					_playerElID = player.el().id;
+					_prebidPluginObj = apiFunc(player);					// uses local var player
+					_prebidPluginObj.run(options);						// uses local var options
+				}
 			} else {
         		// Handle the error
 				var cover = document.getElementById('plugin-break-cover' + playerId);
@@ -231,9 +232,9 @@ function apiInit () {
 
 	var commandPluginFunc = function (command) {
         if (command === 'stop') {
-            if (_prebidPluginObj) {
+            if (_prebidPluginObj && _prebidPluginObj.stop) {
                 _prebidPluginObj.stop();
-            }
+			}
         }
 	};
 
