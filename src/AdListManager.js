@@ -474,6 +474,8 @@ var adListManager = function () {
 			_options.initialPlayback = 'auto';
 		}
 		if (_options.adRenderer === _rendererNames.IMA) {
+			// set this flag to true foe every preroll
+			firstVideoPreroll = adData.adTime === 0;
 			if (!_imaVastRendererObj) {
 				_imaVastRendererObj = new _imaVastRenderer(_player);
 			}
