@@ -285,7 +285,11 @@ var imaVastRenderer = function (player) {
         };
 
         if (firstVideoPreroll) {
-             if ((isIDevice() && !_player.muted()) || isIPhone()) {
+            var firstVideoInPlaylist = function () {
+
+            };
+
+            if ((isIDevice() && !_player.muted()) || isIPhone()) {
                 // no ad autoplay for iPhone and not muted main content on iOS
                 renderAd(false);
             }
