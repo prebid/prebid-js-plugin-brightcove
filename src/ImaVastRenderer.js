@@ -217,20 +217,7 @@ var imaVastRenderer = function (player) {
                     var requestImaPlayAd = function () {
                         // for iOS start to render an ad only when main content start playing
                         // we have to do it because 'adrequest' not support preroll
-                        if (isIDevice()) {
-                            _player.trigger({type: 'internal', data: {name: 'cover', cover: true}});
-                            _player.bigPlayButton.el_.style.display = 'none';
-                            setTimeout(function () {
-                                _player.pause();
-                            }, 100);
-                            setTimeout(function () {
-                                // request IMA plugin to render ad
-                                _player.ima3.adrequest(xml);
-                            }, 200);
-                        }
-                        else if (isMobile() && !isIDevice()) {
-                            // for android start ad renderer when main start playing
-                            // we have to do it because 'adrequest' not support preroll
+                        if (isMobile()) {
                             _player.trigger({type: 'internal', data: {name: 'cover', cover: true}});
                             _player.bigPlayButton.el_.style.display = 'none';
                             var checkTime = function () {
