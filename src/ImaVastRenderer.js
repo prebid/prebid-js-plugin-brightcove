@@ -209,39 +209,39 @@ var imaVastRenderer = function (player) {
 
         var renderAd = function (canAutoplay) {
             setTimeout(function () {
-                if (canAutoplay) {
-                    // request IMA plugin to render ad
-                    _player.ima3.adrequest(xml);
-                }
-                else {
-                    var requestImaPlayAd = function () {
-                        // for iOS start to render an ad only when main content start playing
-                        // we have to do it because 'adrequest' not support preroll
-                        if (isMobile()) {
-                            _player.trigger({type: 'internal', data: {name: 'cover', cover: true}});
-                            _player.bigPlayButton.el_.style.display = 'none';
-                            var checkTime = function () {
-                                if (_player.currentTime() > 0.5) {
-                                    _player.off('timeupdate', checkTime);
-                                    _player.pause();
-                                    // request IMA plugin to render ad
-                                    _player.ima3.adrequest(xml);
-                                }
-                            }
+                var requestImaPlayAd = function () {
+                    // for iOS/android start to render an ad only when main content start playing
+                    // we have to do it because 'adrequest' not support preroll
+                    if (isMobile()) {
+                        _player.trigger({type: 'internal', data: {name: 'cover', cover: true}});
+                        _player.bigPlayButton.el_.style.display = 'none';
+                        var checkTime = function () {
                             if (_player.currentTime() > 0.5) {
+                                _player.off('timeupdate', checkTime);
+                                _player.pause();
                                 // request IMA plugin to render ad
                                 _player.ima3.adrequest(xml);
                             }
-                            else {
-                                _player.on('timeupdate', checkTime);
-                            }
                         }
-                        else {
-                            _player.bigPlayButton.el_.style.display = 'none';
+                        if (_player.currentTime() > 0.5) {
                             // request IMA plugin to render ad
                             _player.ima3.adrequest(xml);
                         }
-                    };
+                        else {
+                            _player.on('timeupdate', checkTime);
+                        }
+                    }
+                    else {
+                        _player.bigPlayButton.el_.style.display = 'none';
+                        // request IMA plugin to render ad
+                        _player.ima3.adrequest(xml);
+                    }
+                };
+                if (canAutoplay) {
+                    requestImaPlayAd();
+                    _player.play();
+                }
+                else {
                     // make short delay to make sure we can pause main content
                     setTimeout(function () {
                         // hide black cover before show play button
@@ -272,10 +272,6 @@ var imaVastRenderer = function (player) {
         };
 
         if (firstVideoPreroll) {
-            var firstVideoInPlaylist = function () {
-
-            };
-
             if ((isIDevice() && !_player.muted()) || isIPhone()) {
                 // no ad autoplay for iPhone and not muted main content on iOS
                 renderAd(false);
