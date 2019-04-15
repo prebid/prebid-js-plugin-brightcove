@@ -315,6 +315,7 @@ var adListManager = function () {
 		// start waiting for loadedmetadata or playing event to start preparing ads data
 		_player.one('loadedmetadata', loadedmetadataHandler);
 		_player.one('playing', playHandler);
+		var waitTime = 4;
 		setTimeout(function () {
 			// make sure event listeners removed
 			_player.off('loadedmetadata', loadedmetadataHandler);
@@ -324,10 +325,11 @@ var adListManager = function () {
 					loadedmetadataHandler();
 				}
 				else {
+					_logger.log(_prefix, 'Did not receive main video duration during ' + waitTime + 'seconds');
 					showCover(false);
 				}
 			}
-		}, 2000);
+		}, waitTime * 1000);
 	}
 
 	// event handler for 'playlistitem' event
@@ -691,6 +693,8 @@ var adListManager = function () {
 				}
 			}
 			else {
+				_logger.log(_prefix, 'No data to play Ad. _arrAdList = ', _arrAdList);
+				traceMessage({data: {message: 'No data to play Ad at time = ' + adTime}});
 				if (!_mainVideoEnded) {
 					showCover(false);
 				}
