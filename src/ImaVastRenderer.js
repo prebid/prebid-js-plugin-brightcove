@@ -9,6 +9,8 @@ var _prefix = 'PrebidVast->imaVastRenderer';
 var imaVastRenderer = function (player) {
     var _eventCallback;
     var _player = player;
+    var _cbStyleDisplay;
+    var _cdStyleDisplayChanged = false;
 
     var isMobile = function isMobile () {
     	return /iP(hone|ad|od)|Android|Windows Phone/.test(navigator.userAgent);
@@ -30,6 +32,24 @@ var imaVastRenderer = function (player) {
     function closeEvent (event) {
         resendEvent(event);
         removeListeners();
+    }
+
+    function activateImaAdControlBar (activate) {
+        var elems = _player.el_.getElementsByClassName('vjs-ad-control-bar');
+        if (elems && elems.length > 0) {
+            var cb = elems[0];
+            if (activate) {
+                _cbStyleDisplay = cb.style.display;
+                _cdStyleDisplayChanged = true;
+                cb.style.display = 'flex';
+            }
+            else {
+                if (_cdStyleDisplayChanged) {
+                    cb.style.display = _cbStyleDisplay;
+                    _cdStyleDisplayChanged = false;
+                }
+            }
+        }
     }
 
     function onEvent (event) {
@@ -106,6 +126,7 @@ var imaVastRenderer = function (player) {
                 var media = _player.ima3.currentAd.getMediaUrl();
                 str += media;
                 _player.trigger({type: 'internal', data: {name: 'cover', cover: false}});
+                activateImaAdControlBar(true);
             break;
             case 'ima3-volume-change':
                 str += 'An ad volume has changed. Volume: ';
@@ -123,6 +144,7 @@ var imaVastRenderer = function (player) {
                     _player.play();
                 }, 0);
             }
+            activateImaAdControlBar(false);
         }
     }
 
