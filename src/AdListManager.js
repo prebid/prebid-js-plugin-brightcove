@@ -896,11 +896,15 @@ var adListManager = function () {
 			startRenderingPreparation();
 			// Do not activate big play button for iPhone. The button will be activated by player if needed.
 			if (!isIPhone()) {
+				var hideButton = function () {
+					_player.off('play', hideButton);
+					_player.off('playing', hideButton);
+					_player.bigPlayButton.el_.style.display = 'none';
+				};
 				_player.bigPlayButton.el_.style.display = 'block';
 				_player.bigPlayButton.el_.style.opacity = 1;
-				_player.one('play', function () {
-					_player.bigPlayButton.el_.style.display = 'none';
-				});
+				_player.one('play', hideButton);
+				_player.one('playing', hideButton);
 			}
 		}
     	else {
