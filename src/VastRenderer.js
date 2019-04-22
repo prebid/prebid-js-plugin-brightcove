@@ -111,6 +111,20 @@ var vastRenderer = function (player) {
         _eventCallback = eventCallback;
         _options = options;
 
+        // Reassign control bar.
+        // If player has its own IMA plugin, the control bar of IMA plugin going to use,
+        // but we need the player control bar (not IMA control bar) for MOL plugin.
+        var elems = _player.el_.getElementsByClassName('vjs-ad-control-bar');
+        if (elems && elems.length > 0) {
+            var imaCB = elems[0];
+            elems = _player.el_.getElementsByClassName('vjs-control-bar');
+            // make sure we have two control bars: player control bar and IMA plugin control bar
+            if (elems && elems.length === 2 && elems[1] === imaCB) {
+                imaCB.parentNode.removeChild(imaCB);    // delete IMA control bar
+                elems[0].style.display = 'flex';    // activate player control bar
+            }
+        }
+
 		// player event listeners
 		addListeners();
 
