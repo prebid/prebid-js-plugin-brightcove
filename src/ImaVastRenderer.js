@@ -138,8 +138,8 @@ var imaVastRenderer = function (player) {
         if (mapCloseEvents[event.type]) {
             _player.trigger({type: 'internal', data: {name: 'cover', cover: false}});
             closeEvent({type: mapCloseEvents[event.type], data: {}});
-            // for iOS force main content to play
-            if (isIDevice()) {
+            // for iPhone force main content to play
+            if (isIPhone()) {
                 setTimeout(function () {
                     _player.play();
                 }, 0);

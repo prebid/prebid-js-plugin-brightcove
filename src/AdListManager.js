@@ -42,6 +42,8 @@ var adListManager = function () {
 	var _prerollNeedClickToPlay = false;
 	var _needForceToPlayMainContent = false;
 	var _nextListItemTime = 0;
+	var _mainContentSrc;
+	var _mainContentDuration;
 
 	var _pageNotificationCallback;
 
@@ -116,7 +118,7 @@ var adListManager = function () {
 				});
 			}
 			else {	// not playlist mode or last video in playlist
-				_player.one('ended', function () {
+				var endedHandler = function () {
 					_player.muted(state);
 					if (_player.playlist && _player.playlist.autoadvance) {
 						if (_markersHandler && _player.markers && _player.markers.destroy) {
@@ -132,7 +134,41 @@ var adListManager = function () {
 					else {
 						showCover(false);
 					}
-				});
+				};
+				if (_options.adRenderer === _rendererNames.IMA && isIDevice()) {
+					// We need this special implementation for postroll because IMA plugin uses
+					// main content video tag for ad.
+					var seekToEnd = function () {
+						_player.off('playing', seekToEnd);
+						_player.off('play', seekToEnd);
+						// navigate close to the video end
+						_player.currentTime(_player.duration() - 0.5);
+					};
+					var int = setInterval(function () {
+						// make sure the ad is completely finished and main content ready to continue play
+						if (_player.src() === _mainContentSrc && Math.abs(_mainContentDuration - _player.duration()) < 2) {
+							clearInterval(int);
+							clearTimeout(tmt);
+							_player.one('playing', seekToEnd);
+							_player.one('play', seekToEnd);
+							_player.one('ended', function () {
+								_player.off('playing', seekToEnd);
+								_player.off('play', seekToEnd);
+								endedHandler();
+							});
+						}
+					}, 50);
+					// protection against infinite loop
+					var tmt = setTimeout(function () {
+						clearInterval(int);
+						_player.one('ended', endedHandler);
+						showCover(false);
+						_player.currentTime(_player.duration() - 0.5);
+					}, 5000);
+				}
+				else {
+					_player.one('ended', endedHandler);
+				}
 			}
 			_options = null;
 			_adPlaying = false;
@@ -477,6 +513,10 @@ var adListManager = function () {
 			_options.initialPlayback = 'auto';
 		}
 		if (_options.adRenderer === _rendererNames.IMA) {
+			// We need this player info for postroll in iOS,
+			// because IMA plugin uses main content video tag for ad.
+			_mainContentSrc = _player.src();
+			_mainContentDuration = _player.duration();
 			if (!_imaVastRendererObj) {
 				_imaVastRendererObj = new _imaVastRenderer(_player);
 			}
