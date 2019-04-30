@@ -907,10 +907,8 @@ function prepareRenderAd (options) {
 					return;
 				}
 				else {
-					_logger.log(_prefix, 'Ignore ad because IMA renderer used for other player');
-					// We cannot use MOL plugin together with IMA within same document. Ignore ad.
-					options.adRenderer = _rendererNames.NONE;
-					_adRenderer = _rendererNames.NONE;
+					// use MailOnline renderer
+					options.adRenderer = _rendererNames.MOL;
 				}
 			}
 		}
