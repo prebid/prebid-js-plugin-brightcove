@@ -622,10 +622,13 @@ var adListManager = function () {
 							playAd(adData);
 						}
 						else {
+							var muted = _player.muted();
+							_player.muted(true);
 							_player.play();
 							setTimeout(function () {
 								_logger.log(_prefix, 'play preroll by timeout');
 								_player.pause();
+								_player.muted(muted);
 								adData.status = AD_STATUS_PLAYING;
 								playAd(adData);
 							}, 500);
@@ -734,7 +737,6 @@ var adListManager = function () {
 			}
 			else {
 				_logger.log(_prefix, 'No data to play Ad. _arrAdList = ', _arrAdList);
-				traceMessage({data: {message: 'No data to play Ad at time = ' + adTime}});
 				if (!_mainVideoEnded) {
 					showCover(false);
 				}
