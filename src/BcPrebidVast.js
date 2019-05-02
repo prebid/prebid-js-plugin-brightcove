@@ -41,6 +41,10 @@ function isIE11 () {
 	return res >= 0;
 }
 
+var isIPhone = function isIPhone () {
+	return /iP(hone|od)/.test(navigator.userAgent);
+};
+
 function canLoadInIframe () {
 	var docClassList = document.documentElement.classList;
 	var playerInIframe = docClassList && docClassList.contains('bc-iframe'); // html of player has bc-iframe class when Brightcove player emded in iFrame
@@ -809,11 +813,13 @@ function initIMA (options) {
 	// initialize some setting values for IMA plugin
 	_player.ima3({
 		debug: true,
-		showVpaidControls: true,
+		vpaidMode: 'ENABLED',
+		showVpaidControls: !isIPhone(),
 		requestMode: 'ondemand',
 		timeout: options.adStartTimeout ? options.adStartTimeout : _defaultAdCancelTimeout,
-		disableCustomPlaybackForIOS10Plus: true,	// this flag needed for skippable ads for iOS version 10+
-		vpaidMode: 'ENABLED'
+		ima3SdkSettings: {
+			disableCustomPlaybackForIOS10Plus: true,	// this flag needed for skippable ads for iOS version 10+
+		}
 	});
 }
 
