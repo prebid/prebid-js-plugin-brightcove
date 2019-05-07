@@ -1,7 +1,8 @@
 var fs = require('fs');
-var cp = require('child_process');
+var path = require('path');
 var gulp = require('gulp');
 var gutil = require('gulp-util');
+var Server = require('karma').Server;
 var webpack = require('webpack');
 var WebpackDevServer = require('webpack-dev-server');
 
@@ -34,10 +35,13 @@ gulp.task('copy-css', function (done) {
     done();
 });
 
-gulp.task('test', function () {
-    return cp.execFile('./test.sh', function  (error, stdout, stderr) {
-        console.log(stdout);
-    });
+gulp.task('test', function (done) {
+    new Server({
+        configFile: path.join(__dirname, 'karma.conf.js')
+    }, function (err) {
+        console.log('===================== Karma: Unit tests ' + (err > 0 ? 'FAILED' : 'PASSED') + '! ===================== ');
+        done();
+    }).start();
 });
 
 // NOTE: This task must be defined after the tasks it depends on
@@ -50,7 +54,7 @@ gulp.task('build', gulp.series('build-prod', 'copy-css', 'test'));
 gulp.task('dev-server', function (callback) {
 
     var debugPort = 8082;
-    var target_entry = 'http://local.prebid.com:' + debugPort + '/prebid-main.html';
+    var target_entry = 'http://local.prebid:' + debugPort + '/prebid-main.html';
 
     // Start a webpack-dev-server
     // note- setting "publicPath" to /dist/ hides the actual
@@ -69,13 +73,11 @@ gulp.task('dev-server', function (callback) {
         stats: {
             colors: true
         }
-    }).listen(debugPort, 'local.prebid.com', function (err) {
+    }).listen(debugPort, 'local.prebid', function (err) {
         if (err) throw new gutil.PluginError('webpack-dev-server', err);
         gutil.log('[webpack-dev-server]', 'Webpack Dev Server Started at: ' + target_entry);
     });
 });
-
-var Server = require('karma').Server;
 
 gulp.task('ci-test', function (done) {
     console.log('DIRNAME = ', __dirname);

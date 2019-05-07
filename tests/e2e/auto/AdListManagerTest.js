@@ -48,11 +48,9 @@ describe('AdListManager unit test', function () {
 
     describe('player related', function () {
         before(function (done) {
-            setTimeout(function () {
-                BcPrebidVast.init();
-                BcPrebidVast.renderAd({}, 'test_player');
-                done();
-            }, 1500);
+            BcPrebidVast.init();
+            BcPrebidVast.renderAd({}, 'test_player');
+            done();
         });
 
         var player, adListManager, testObj, cover, spinner, spy, adIndicator;
@@ -152,8 +150,8 @@ describe('AdListManager unit test', function () {
                 assert.isTrue(firstVideoPreroll);
                 done();
             });
-            testObj.options({});
-            var adData = {status: 2, adTag: '<VAST>...</VAST>', options: {}, adTime: 0};
+            testObj.options({adRenderer: 'mailonline'});
+            var adData = {status: 2, adTag: '<VAST>...</VAST>', options: {adRenderer: 'mailonline'}, adTime: 0};
             testObj.playAd(adData);
         });
 
