@@ -7,17 +7,21 @@ var _logger = require('./Logging.js');
 var _prebidCommunicator = require('./PrebidCommunicator.js');
 var _MarkersHandler = require('./MarkersHandler.js');
 var _vastRenderer = require('./VastRenderer.js');
+var _imaVastRenderer = require('./ImaVastRenderer.js');
+var _rendererNames = require('./Constants.js').rendererNames;
 var _prefix = 'PrebidVast->adListManager';
 
 var adListManager = function () {
 	'use strict';
 	var _prebidCommunicatorObj = new _prebidCommunicator();
 	var _vastRendererObj;
+	var _imaVastRendererObj;
 	var _player;
 	var _playerId;
 	var _playlistIdx = -1;
 	var _arrOptions;
 	var _options;
+	var _adRenderer;
 	var _arrAdList = [];
 	var _adMarkerStyle;
 	var _frequencyRules;
@@ -37,6 +41,9 @@ var adListManager = function () {
 	var _mobilePrerollNeedClick = false;
 	var _prerollNeedClickToPlay = false;
 	var _needForceToPlayMainContent = false;
+	var _nextListItemTime = 0;
+	var _mainContentSrc;
+	var _mainContentDuration;
 
 	var _pageNotificationCallback;
 
@@ -48,25 +55,25 @@ var adListManager = function () {
 
 	var BEFORE_AD_PREPARE_TIME = 5;		// 5 seconds
 
-    var isMobile = function isMobile() {
+    var isMobile = function isMobile () {
     	return /iP(hone|ad|od)|Android|Windows Phone/.test(navigator.userAgent);
     };
 
-    var isIDevice = function isIDevice() {
+    var isIDevice = function isIDevice () {
     	return /iP(hone|ad)/.test(navigator.userAgent);
     };
 
-    var isIPhone = function isIPhone() {
+    var isIPhone = function isIPhone () {
     	return /iP(hone|od)/.test(navigator.userAgent);
 	};
 
 	// show/hide black div witrh spinner
-	var showCover = function showCover(show) {
+	var showCover = function showCover (show) {
 		_logger.log(_prefix, (show ? 'Show' : 'Hide') + ' ad cover with spinner');
 		if (show) {
     		_cover.style.display = 'block';
     		_showSpinner = true;
-    		setTimeout(function() {
+    		setTimeout(function () {
     			if (_showSpinner) {
     	    		_spinnerDiv.style.display = 'block';
     			}
@@ -82,55 +89,111 @@ var adListManager = function () {
 	};
 
 	// force next playlist video
-	var forceNextVideoForLastAd = function forceNextVideoForLastAd() {
+	var forceNextVideoForLastAd = function forceNextVideoForLastAd () {
 		// after ad played brightcove player stopped to fire 'playlistitem' events !?!?
+		_player.off('ended', startNextPlaylistVideo);
 		var isLastAd = _arrAdList[_arrAdList.length - 1].adTime === _adTime;
 		if (isLastAd && _player.playlist.currentIndex && _player.playlist.currentIndex() < _player.playlist.lastIndex()) {
 			// when last ad done, and main video is ended, and main video is not last video in playlist
 			// force to play next video in playlist
-			_player.one('ended', function() {
-				startNextPlaylistVideo();
-			});
+			_player.one('ended', startNextPlaylistVideo);
 		}
 	};
 
 	// restore main content after ad is finished
-	var resetContent = function resetContent() {
+	var resetContent = function resetContent () {
 		if (_isPostroll) {
 			var state = _player.muted();
 			_player.muted(true);
 			showCover(true);
 			_mainVideoEnded = true;
-			_player.one('ended', function() {
-				_player.muted(state);
-				if (_player.playlist && _player.playlist.autoadvance) {
+			// playlist mode. now playing not last video in playlist
+			if (_player.playlist && _player.playlist.currentIndex && _player.playlist.currentIndex() < _player.playlist.lastIndex()) {
+				_player.one('ended', function () {
+					_player.muted(state);
 					if (_markersHandler && _player.markers && _player.markers.destroy) {
 						_player.markers.destroy();
 					}
-					if (_player.playlist.currentIndex && _player.playlist.currentIndex() < _player.playlist.lastIndex()) {
-						startNextPlaylistVideo();
+					startNextPlaylistVideo();
+				});
+			}
+			else {	// not playlist mode or last video in playlist
+				var endedHandler = function () {
+					_player.muted(state);
+					if (_player.playlist && _player.playlist.autoadvance) {
+						if (_markersHandler && _player.markers && _player.markers.destroy) {
+							_player.markers.destroy();
+						}
+						if (_player.playlist.currentIndex && _player.playlist.currentIndex() < _player.playlist.lastIndex()) {
+							startNextPlaylistVideo();
+						}
+						else {
+							showCover(false);
+						}
 					}
 					else {
 						showCover(false);
 					}
+				};
+				if (_options.adRenderer === _rendererNames.IMA && isIDevice()) {
+					// We need this special implementation for postroll because IMA plugin uses
+					// main content video tag for ad.
+					var seekToEnd = function () {
+						_player.off('playing', seekToEnd);
+						_player.off('play', seekToEnd);
+						// navigate close to the video end
+						_player.currentTime(_player.duration() - 0.5);
+					};
+					var int = setInterval(function () {
+						// make sure the ad is completely finished and main content ready to continue play
+						if (_player.src() === _mainContentSrc && Math.abs(_mainContentDuration - _player.duration()) < 2) {
+							clearInterval(int);
+							clearTimeout(tmt);
+							_player.one('playing', seekToEnd);
+							_player.one('play', seekToEnd);
+							_player.one('ended', function () {
+								_player.off('playing', seekToEnd);
+								_player.off('play', seekToEnd);
+								endedHandler();
+							});
+						}
+					}, 50);
+					// protection against infinite loop
+					var tmt = setTimeout(function () {
+						clearInterval(int);
+						_player.one('ended', endedHandler);
+						showCover(false);
+						_player.currentTime(_player.duration() - 0.5);
+					}, 5000);
 				}
 				else {
-					showCover(false);
+					_player.one('ended', endedHandler);
 				}
+			}
+			_options = null;
+			_adPlaying = false;
+			_adIndicator.style.display = 'none';
+			var adDataPostroll = _arrAdList.find(function (data) {
+				return data.status === AD_STATUS_PLAYING;
 			});
+			if (adDataPostroll) {
+				adDataPostroll.status = AD_STATUS_DONE;
+			}
+			_isPostroll = false;
+			return;
 		}
 		else {
 			showCover(false);
 		}
 		_options = null;
-		setTimeout(function() {
+		setTimeout(function () {
 			_adPlaying = false;
 			if (!_mainVideoEnded && _savedMarkers && _player.markers && _player.markers.reset) {
 				_player.markers.reset(JSON.parse(_savedMarkers));
 			}
 		}, 500);
 		_adIndicator.style.display = 'none';
-		var adData = _arrAdList.find(function(data) {
+		var adData = _arrAdList.find(function (data) {
 			return data.status === AD_STATUS_PLAYING;
 		});
 		if (adData) {
@@ -154,23 +217,23 @@ var adListManager = function () {
 					_needForceToPlayMainContent = false;
 					var playPromise = _player.tech().el().play();
 					if (playPromise !== undefined && typeof playPromise.then === 'function') {
-						playPromise.then(function() {
+						playPromise.then(function () {
 							_logger.log(_prefix, 'playPromise resolves to play video');
 							_player.play();
-						}).catch(function() {
+						}).catch(function () {
 							_logger.log(_prefix, 'playPromise rejects to play video');
 							var gotPlayEvent = false;
-							_player.one('play', function() {
+							_player.one('play', function () {
 								_logger.log(_prefix, 'got play event');
 								gotPlayEvent = true;
 							});
-							setTimeout(function() {
+							setTimeout(function () {
 								if (!gotPlayEvent || _player.paused()) {
 									// show play button
 									_player.bigPlayButton.el_.style.display = 'block';
 									_player.bigPlayButton.el_.style.opacity = 1;
 									_logger.log(_prefix, 'show BIG play button');
-									_player.one('play', function() {
+									_player.one('play', function () {
 										_logger.log(_prefix, 'Main content - play event');
 										_player.bigPlayButton.el_.style.display = 'none';
 										_logger.log(_prefix, 'hide BIG play button');
@@ -219,7 +282,7 @@ var adListManager = function () {
 	}
 
 	// check frequency capping rules
-	function needPlayAdForPlaylistItem(plIdx) {
+	function needPlayAdForPlaylistItem (plIdx) {
 		if (_frequencyRules && _frequencyRules.playlistClips && _frequencyRules.playlistClips > 1) {
 			var mod = plIdx % _frequencyRules.playlistClips;
 			return mod === 0;
@@ -228,7 +291,14 @@ var adListManager = function () {
 	}
 
 	// event handler for 'playlistitem' event
-	function nextListItemHandler() {
+	function nextListItemHandler () {
+		_logger.log(_prefix, 'nextListItemHandler called');
+		if (Date.now() - _nextListItemTime < 1000) {
+			// protects again 'playlistitem' event fired twice within 1 second
+			_logger.log(_prefix, 'Already got playlistitem event. Ignore current one.');
+			return;
+		}
+		_nextListItemTime = Date.now();
 		if (!_player.playlist.currentIndex || typeof _player.playlist.currentIndex !== 'function') {
 			// player not support playlisting
 			return;
@@ -244,12 +314,21 @@ var adListManager = function () {
 		if (_player.playlist && _player.playlist.currentIndex) {
 			_playlistIdx = _player.playlist.currentIndex();
 		}
-		_contentDuration = 0;
-		_player.one('loadedmetadata', function() {
+		if (_adRenderer === _rendererNames.IMA) {
+			if (_player.ima3 && typeof _player.ima3 !== 'function' && _player.ima3.hasOwnProperty('adsManager')) {
+				delete _player.ima3.adsManager;
+				delete _player.ima3.adsRequest;
+				delete _player.ima3._playSeen;
+			}
+		}
+		var loadedmetadataHandler = function () {
+			_player.off('loadedmetadata', loadedmetadataHandler);
+			_player.off('playing', playHandler);
 			_mainVideoEnded = false;
 			if (needPlayAdForPlaylistItem(_player.playlist.currentIndex())) {
 				// for first video in playlist we already handle loadedmatadata event
 				if (_player.playlist.currentIndex() > 0) {
+					_logger.log(_prefix, 'start ads preparation for current playlist item');
 					startRenderingPreparation();
 				}
 				return;
@@ -259,17 +338,39 @@ var adListManager = function () {
 			}
 			showCover(false);
 			_logger.log(_prefix, 'Ad did not play due to frequency settings');
-			_player.playlist.autoadvance(0);
-		});
-		setTimeout(function() {
-			if (_contentDuration === 0) {
-				showCover(false);
+			// disable autostart playing next video in playlist
+			_player.playlist.autoadvance(null);
+		};
+		var playHandler = function () {
+			if (_contentDuration === 0 && _player.duration() > 0) {
+				loadedmetadataHandler();
 			}
-		}, 1000);
+		};
+
+		_contentDuration = 0;
+		// start waiting for loadedmetadata or playing event to start preparing ads data
+		_player.one('loadedmetadata', loadedmetadataHandler);
+		_player.one('playing', playHandler);
+		var waitTime = 4;
+		setTimeout(function () {
+			// make sure event listeners removed
+			_player.off('loadedmetadata', loadedmetadataHandler);
+			_player.off('playing', playHandler);
+			if (_contentDuration === 0) {
+				if (_player.duration() > 0) {
+					loadedmetadataHandler();
+				}
+				else {
+					_logger.log(_prefix, 'Did not receive main video duration during ' + waitTime + 'seconds');
+					showCover(false);
+				}
+			}
+		}, waitTime * 1000);
 	}
 
 	// event handler for 'playlistitem' event
-	function nextListItemHandlerAuto() {
+	function nextListItemHandlerAuto () {
+		_logger.log(_prefix, 'nextListItemHandlerAuto called');
 		if (!_mainVideoEnded) {
 			// handle 'next playlist item' event when current playlist video have been interrupted
 			nextListItemHandler();
@@ -277,13 +378,14 @@ var adListManager = function () {
 	}
 
 	// convert string represetation of time to number represents seconds
-	function convertStringToSeconds(strTime, duration) {
+	function convertStringToSeconds (strTime, duration) {
 		if (!strTime || strTime === 'start') {
 			return 0;
 		}
 		else if (strTime === 'end') {
 			// post-roll
-			return duration;
+			// we have start postroll for IMA renderer a little earlier because ima3.adrequest() does not work for postroll
+			return _adRenderer === _rendererNames.IMA ? duration - 0.5 : duration;
 		}
 		else if (strTime.indexOf(':') > 0) {
 			// convert hh:mm:ss or hh:mm:ss.msec to seconds
@@ -323,7 +425,7 @@ var adListManager = function () {
 	}
 
 	// send notification to page
-	function traceMessage(event) {
+	function traceMessage (event) {
 		_logger.log(_prefix, 'trace event message: ' + event.data.message);
 		if (_pageNotificationCallback) {
 			_pageNotificationCallback('message', event.data.message);
@@ -331,7 +433,7 @@ var adListManager = function () {
 	}
 
 	// send notification to page
-	function traceEvent(event) {
+	function traceEvent (event) {
 		_logger.log(_prefix, 'trace event: ' + event.data.event);
 		if (_pageNotificationCallback) {
 			_pageNotificationCallback('event', event.data.event);
@@ -339,10 +441,10 @@ var adListManager = function () {
 	}
 
 	// handles events from VAST renderer
-	function eventCallback(event) {
+	function eventCallback (event) {
 		var arrResetEvents = ['vast.adError', 'vast.adsCancel', 'vast.adSkip', 'vast.reset',
 							  'vast.contentEnd', 'adFinished'];
-		var isResetEvent = function(name) {
+		var isResetEvent = function (name) {
 			for (var i = 0; i < arrResetEvents.length; i++) {
 				if (arrResetEvents[i] === name) {
 					return true;
@@ -381,14 +483,11 @@ var adListManager = function () {
 	}
 
 	// function to play vast xml
-	var playAd = function(adData, forceAdToAutoplay) {
+	var playAd = function (adData, forceAdToAutoplay) {
 		if (_adPlaying) {
 			// not interrupt playing ad
 			showCover(false);
 			return;
-		}
-		if (!_vastRendererObj) {
-			_vastRendererObj = new _vastRenderer(_player);
 		}
 		_adPlaying = true;
 		if (_markersHandler && _player.markers) {
@@ -413,12 +512,36 @@ var adListManager = function () {
 		if (forceAdToAutoplay) {
 			_options.initialPlayback = 'auto';
 		}
-		_vastRendererObj.playAd(adData.adTag, _options, firstVideoPreroll, _mobilePrerollNeedClick, _prerollNeedClickToPlay, eventCallback);
+		if (_options.adRenderer === _rendererNames.IMA) {
+			// We need this player info for postroll in iOS,
+			// because IMA plugin uses main content video tag for ad.
+			_mainContentSrc = _player.src();
+			_mainContentDuration = _player.duration();
+			if (!_imaVastRendererObj) {
+				_imaVastRendererObj = new _imaVastRenderer(_player);
+			}
+			_imaVastRendererObj.playAd(adData.adTag, _options, firstVideoPreroll, _mobilePrerollNeedClick, _prerollNeedClickToPlay, eventCallback);
+		}
+		else if (_options.adRenderer === _rendererNames.MOL) {
+			if (!_vastRendererObj) {
+				_vastRendererObj = new _vastRenderer(_player);
+			}
+			_vastRendererObj.playAd(adData.adTag, _options, firstVideoPreroll, _mobilePrerollNeedClick, _prerollNeedClickToPlay, eventCallback);
+		}
+		else if (_options.adRenderer === _rendererNames.CUSTOM) {
+			// HERE: developer can instantiate and call his/her own renderer
+
+			if (_pageNotificationCallback) {
+				_pageNotificationCallback('message', 'Custom renderer is not implemented in this version');
+			}
+			_logger.log(_prefix, 'Custom renderer is not implemented in this version');
+			resetContent();
+		}
 	};
 
 	// function to get break data for ad renderring
-	function getAdData(adTime, callback) {
-		var adData = _arrAdList.find(function(data) {
+	function getAdData (adTime, callback) {
+		var adData = _arrAdList.find(function (data) {
 			return data.adTime === adTime && (data.status === AD_STATUS_NOT_PLAYED || data.status === AD_STATUS_READY_PLAY);
 		});
 		if (adData) {
@@ -428,7 +551,7 @@ var adListManager = function () {
 			else {
 				adData.status = AD_STATUS_TAG_REQUEST;
 				adData.options.clearPrebid = _arrOptions && _arrOptions.length > 1;
-				_prebidCommunicatorObj.doPrebid(adData.options, function(creative) {
+				_prebidCommunicatorObj.doPrebid(adData.options, function (creative) {
 					adData.adTag = creative;
 					if (creative) {
 						adData.status = AD_STATUS_READY_PLAY;
@@ -442,11 +565,11 @@ var adListManager = function () {
 			}
 		}
 		else {
-			adData = _arrAdList.find(function(data) {
+			adData = _arrAdList.find(function (data) {
 				return data.adTime === adTime && data.status === AD_STATUS_TAG_REQUEST;
 			});
 			if (adData) {
-				var interval = setInterval(function() {
+				var interval = setInterval(function () {
 					if (adData.status != AD_STATUS_TAG_REQUEST) {
 						clearInterval(interval);
 						callback(adData.adTag ? adData : null, adData.status);
@@ -460,12 +583,67 @@ var adListManager = function () {
 	}
 
 	// callback to handle marker reached event from marker component
-	var markerReached = function markerReached(marker) {
+	var markerReached = function markerReached (marker) {
 		var adTime = marker.time;
 		_needForceToPlayMainContent = false;
-		getAdData(adTime, function(adData, status) {
+		getAdData(adTime, function (adData, status) {
 			if (adData) {
 				traceMessage({data: {message: 'Play Ad at time = ' + adTime}});
+				if (adData.options.adRenderer === _rendererNames.IMA) {
+					showCover(true);
+					_isPostroll = (_contentDuration - adTime) < 1.0;
+					if (adTime === 0) {
+						if (isMobile() && !isIDevice()) {
+							// android
+							traceMessage({data: {message: 'It is Android device'}});
+							if (_player.paused()) {
+								if (_player.tech_ && _player.tech_.el_ && !_player.tech_.el_.autoplay) {
+									showCover(false);
+									// show play button if brightcove player is configured for not autoplay
+									_prerollNeedClickToPlay = true;
+									_player.bigPlayButton.el_.style.display = 'block';
+									_player.bigPlayButton.el_.style.opacity = 1;
+								}
+								else {
+									showCover(true);
+								}
+							}
+							else {
+								showCover(true);
+							}
+							adData.status = AD_STATUS_PLAYING;
+							playAd(adData);
+						}
+						else if (isMobile() && isIDevice()) {
+							// iOS
+							traceMessage({data: {message: 'It is iOS'}});
+							_logger.log(_prefix, 'play preroll right now');
+							adData.status = AD_STATUS_PLAYING;
+							playAd(adData);
+						}
+						else {
+							var muted = _player.muted();
+							_player.muted(true);
+							_player.play();
+							setTimeout(function () {
+								_logger.log(_prefix, 'play preroll by timeout');
+								_player.pause();
+								_player.muted(muted);
+								adData.status = AD_STATUS_PLAYING;
+								playAd(adData);
+							}, 500);
+						}
+					}
+					else {
+						if (_isPostroll) {
+							_player.pause();
+						}
+						_logger.log(_prefix, 'play preroll right now');
+						adData.status = AD_STATUS_PLAYING;
+						playAd(adData);
+					}
+					return;
+				}
 				_isPostroll = adTime === _contentDuration;
 				adData.status = AD_STATUS_READY_PLAY;
 				_mobilePrerollNeedClick = isMobile() && adTime === 0;
@@ -476,7 +654,7 @@ var adListManager = function () {
 						if (isIPhone()) {
 							// iPhone
 							showCover(false);
-							_player.one('play', function() {
+							_player.one('play', function () {
 								_mobilePrerollNeedClick = false;	// don't need more click for preroll on iPhone
 								adData.status = AD_STATUS_PLAYING;
 								// force player to autoplay after user click play button
@@ -486,14 +664,15 @@ var adListManager = function () {
 						}
 						else {
 							// iPad
-							traceMessage({data: {message: 'Player ready state = ' + _player.readyState()}});
+							var state = _player.readyState();
+							traceMessage({data: {message: 'iPad -> Player ready state = ' + state}});
 							if (_player.paused()) {
 								traceMessage({data: {message: 'iPad -> Player paused'}});
 								showCover(false);
 								// show play button
 								_player.bigPlayButton.el_.style.display = 'block';
 								_player.bigPlayButton.el_.style.opacity = 1;
-								_player.one('playing', function() {
+								_player.one('playing', function () {
 									traceMessage({data: {message: 'Main content - playing event'}});
 									// we use this flag to activate special code to protect main video from freezing
 									_needForceToPlayMainContent = true;
@@ -509,6 +688,7 @@ var adListManager = function () {
 							else {
 								traceMessage({data: {message: 'iPad -> Player not paused'}});
 								showCover(true);
+								_mobilePrerollNeedClick = false;	// don't need click for preroll on iPad
 								adData.status = AD_STATUS_PLAYING;
 								playAd(adData);
 							}
@@ -556,6 +736,7 @@ var adListManager = function () {
 				}
 			}
 			else {
+				_logger.log(_prefix, 'No data to play Ad. _arrAdList = ', _arrAdList);
 				if (!_mainVideoEnded) {
 					showCover(false);
 				}
@@ -574,7 +755,7 @@ var adListManager = function () {
 	};
 
 	// function to check if it is a time to prepare ad tag
-	function checkPrepareTime() {
+	function checkPrepareTime () {
 		if (_adPlaying) {
 			// not interrupt playing ad
 			return;
@@ -586,7 +767,7 @@ var adListManager = function () {
 				if (!_arrAdList[i].adTag && _arrAdList[i].status === AD_STATUS_NOT_PLAYED) {
 					_arrAdList[i].status = AD_STATUS_TAG_REQUEST;
 					_arrAdList[i].options.clearPrebid = _arrOptions && _arrOptions.length > 1;
-					_prebidCommunicatorObj.doPrebid(_arrAdList[i].options, function(creative) {		// jshint ignore:line
+					_prebidCommunicatorObj.doPrebid(_arrAdList[i].options, function (creative) {		// jshint ignore:line
 						_arrAdList[i].status = !!creative ? AD_STATUS_READY_PLAY : AD_STATUS_DONE;
 						_arrAdList[i].adTag = creative;
 					});
@@ -597,7 +778,7 @@ var adListManager = function () {
 	}
 
 	// checks if list of ad options has preroll option
-	function optionsHavePreroll() {
+	function optionsHavePreroll () {
 		for (var i = 0; i < _arrOptions.length; i++) {
 			if (_arrOptions[i].timeOffset &&
 				(_arrOptions[i].timeOffset === 'start' ||
@@ -612,14 +793,28 @@ var adListManager = function () {
 	}
 
 	// prepares ad data array, markers data, and starts ad list renderring
-	function startRenderingPreparation() {
-		_contentDuration = _player.duration();	// parseInt(_player.duration()) - 0.5;
+	function startRenderingPreparation () {
+		_contentDuration = _player.duration();
 		if (_hasPreroll) {
 			_player.pause();
 		}
+		if (_adRenderer === 'ima') {
+			// !!! SPECIAL CASE FOR IMA PLUGIN
+			// Brightcove IMA plugin expected the 'loadstart' event for main content has to be fired
+			// within 5 seconds after plugin initialization.
+			// In our case we may load and initialize IMA plugin after 'loadstart' event fired that could case
+			// in some cases nor correct ad behaivior.
+			// The flag _player.ads._hasThereBeenALoadStartDuringPlayerLife indicates if 'loadstart' event is fired
+			// after IMA plugin has initialized.
+			// If this flag is not set to true ('loadstart' event fired before IMA plugin initialization)
+			// we are going to simulate 'loadstart' event to trigger it to player.
+			if (!_player.ads._hasThereBeenALoadStartDuringPlayerLife) {
+				_player.trigger('loadstart');
+			}
+		}
 		_arrAdList = [];
 		var arrTimes = [];
-		_arrOptions.forEach(function(options) {
+		_arrOptions.forEach(function (options) {
 			if (options.adMarkerStyle && !_adMarkerStyle) {
 				_adMarkerStyle = options.adMarkerStyle;
 			}
@@ -632,7 +827,7 @@ var adListManager = function () {
 			var adTime = convertStringToSeconds(options.timeOffset, _contentDuration);
 			if (adTime >= 0 && adTime <= _contentDuration) {
 				// avoid ad time duplication
-				var timeVal = arrTimes.find(function(time) {
+				var timeVal = arrTimes.find(function (time) {
 					return time === adTime;
 				});
 				if (!timeVal) {
@@ -692,7 +887,8 @@ var adListManager = function () {
 	}
 
 	// starts next video in playlist
-	function startNextPlaylistVideo() {
+	function startNextPlaylistVideo () {
+		_logger.log(_prefix, 'nextListItemHandler activated for one event');
 		_player.one('playlistitem', nextListItemHandler);
 		showCover(true);
 		if (_pageNotificationCallback) {
@@ -706,6 +902,7 @@ var adListManager = function () {
 		_player = vjsPlayer;
 		_playerId = _player.el_.id;
 		_arrOptions = options;
+		_adRenderer = _arrOptions && _arrOptions.length > 0 ? _arrOptions[0].adRenderer : null;
 
     	_cover = document.getElementById('plugin-break-cover' + _playerId);
     	if (!_cover) {
@@ -733,38 +930,70 @@ var adListManager = function () {
 		showCover(_hasPreroll);
 
 		_player.on('playlistitem', nextListItemHandlerAuto);
+		if (_player.playlist && _player.playlist.autoadvance) {
+			_player.playlist.autoadvance(null);
+		}
 
     	if (_player.duration() > 0) {
 			startRenderingPreparation();
-    	}
+			// Do not activate big play button for iPhone. The button will be activated by player if needed.
+			if (!isIPhone()) {
+				var hideButton = function () {
+					_player.off('play', hideButton);
+					_player.off('playing', hideButton);
+					_player.bigPlayButton.el_.style.display = 'none';
+				};
+				_player.bigPlayButton.el_.style.display = 'block';
+				_player.bigPlayButton.el_.style.opacity = 1;
+				_player.one('play', hideButton);
+				_player.one('playing', hideButton);
+			}
+		}
     	else {
 			_player.one('loadedmetadata', startRenderingPreparation);
-    	}
+		}
+
+		if (_hasPreroll) {
+			var time = _arrOptions && _arrOptions.length > 0 ? (_arrOptions[0].adStartTimeout ? _arrOptions[0].adStartTimeout : 5000) : 5000;
+			setTimeout(function () {
+				if (_arrAdList.length === 0) {
+					showCover(false);
+				}
+			}, time)
+		}
     };
 
 	// stop play ad
-    this.stop = function() {
+    this.stop = function () {
     	// stop ad if playing and remove marker from timeline
     	if (_adPlaying) {
-    		_player.trigger('vast.adsCancel');
+			if (_adRenderer === _rendererNames.IMA) {
+				if (_imaVastRendererObj) {
+					_imaVastRendererObj.stop();
+				}
+			}
+			else if (_adRenderer === _rendererNames.MOL) {
+				_player.trigger('vast.adsCancel');
+			}
     	}
 		if (_markersHandler) {
-  	  		_player.markers.destroy();
+			_player.markers.destroy();
+			_markersHandler = null;
 		}
-    };
+	};
 
     // @exclude
     // Method exposed only for unit Testing Purpose
     // Gets stripped off in the actual build artifact
-	this.test = function() {
+	this.test = function () {
 		return {
-			setDuration: function(duration) {
+			setDuration: function (duration) {
 				_contentDuration = duration;
 			},
-			setOptions: function(arrOptions) {
+			setOptions: function (arrOptions) {
 				_arrOptions = arrOptions;
 			},
-			options: function(opts) {
+			options: function (opts) {
 				if (opts) {
 					_options = opts;
 				}
@@ -772,17 +1001,17 @@ var adListManager = function () {
 					 return _options;
 				}
 			},
-			setPlayer: function(player) {
+			setPlayer: function (player) {
 				_player = player;
 			},
-			setCover: function(cover) { _cover = cover; },
-			setSpinner: function(spinner) { _spinnerDiv = spinner; },
-			setCommunicator: function(comm) { _prebidCommunicatorObj = comm; },
-			getCommunicator: function() { return _prebidCommunicatorObj; },
-			setAdIndicator: function(indic) { _adIndicator = indic; },
-			setArrAdList: function(adList) { _arrAdList = adList; },
-			setFrequencyRules: function(rules) { _frequencyRules = rules; },
-			setVastRenderer: function(player) {
+			setCover: function (cover) { _cover = cover; },
+			setSpinner: function (spinner) { _spinnerDiv = spinner; },
+			setCommunicator: function (comm) { _prebidCommunicatorObj = comm; },
+			getCommunicator: function () { return _prebidCommunicatorObj; },
+			setAdIndicator: function (indic) { _adIndicator = indic; },
+			setArrAdList: function (adList) { _arrAdList = adList; },
+			setFrequencyRules: function (rules) { _frequencyRules = rules; },
+			setVastRenderer: function (player) {
 				_vastRendererObj = !!player ? new _vastRenderer(_player) : null;
 				return _vastRendererObj;
 			},

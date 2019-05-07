@@ -16,19 +16,19 @@
 <div style="background: #ff8800; color: #ffffff; overflow:scroll; width:1000px; height:840px;">
     
 	<div id="parentContainer1" style="width:640px; position:absolute; top:20px; left:70px; z-index:1000;">
-		<p><b>Prebid in Body. Can be muted.</b></p>
-	
+		<p><b>Prebid in Body</b></p>
+
 		<video id="test_player"
-			data-video-id="5664543481001" 
-			data-account="5530036758001" 
-			data-player="HkbQZNXy7" 
-			data-embed="default" 
-			data-application-id 
-			class="video-js" 
-			controls 
-			autoplay
-			width="600" 
-			height="337.5">
+			   data-video-id="5664543481001"
+			   data-account="5530036758001"
+			   data-player="9aJ5VABP4Y"
+			   data-embed="default"
+			   data-application-id
+			   class="video-js"
+			   controls
+			   autoplay
+			   width="600"
+			   height="338">
 		</video>
 		<script>
 			var muted = false;
@@ -47,14 +47,14 @@
 					}
 				}
 			}
-			
+
 			// set test player properties
 			if (muted) {
 				var vdo = document.getElementById('test_player');
 				vdo.setAttribute('muted', true);
-			}	    
+			}
 		</script>
-		<script src="//players.brightcove.net/5530036758001/HkbQZNXy7_default/index.min.js"></script>	
+		<script src="//players.brightcove.net/5530036758001/9aJ5VABP4Y_default/index.min.js"></script>
 	</div>
 
 	<script type="text/javascript" src="../../../dist/bc_prebid_vast.js"></script>
@@ -119,7 +119,7 @@
 			}
 		}
 	    
-	    var publisherCallback = function(key, value) {
+	    var publisherCallback = function (key, value) {
 	    	console.log("PAGE TRACE: " + key + ": ", value);
 	    }
 		

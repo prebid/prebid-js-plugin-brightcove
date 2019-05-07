@@ -12,7 +12,7 @@ var _prebidCommunicator = require('./PrebidCommunicator.js');
 var _dfpUrlGenerator = require('./DfpUrlGenerator.js');
 var _logger = require('./Logging.js');
 
-var PLUGIN_VERSION = '0.4.14';
+var PLUGIN_VERSION = '0.5.5';
 var _prefix = 'PrebidVast->';
 var _molIFrame = null;
 
@@ -29,18 +29,29 @@ var BC_prebid_in_progress = $$PREBID_GLOBAL$$.plugin_prebid_options && $$PREBID_
 
 var DEFAULT_SCRIPT_LOAD_TIMEOUT = 3000;
 
+var _rendererNames = require('./Constants.js').rendererNames;
+
 // UTIL FUNCTIONS FOR LOADING JS IFRAMES
-function isEdge() {
+function isEdge () {
 	return /(edge)\/((\d+)?[\w\.]+)/i.test(navigator.userAgent);
 }
 
-function canLoadInIframe() {
+function isIE11 () {
+	var res = navigator.userAgent.search(/(trident).+rv[:\s]([\w\.]+).+like\sgecko/i);
+	return res >= 0;
+}
+
+var isIPhone = function isIPhone () {
+	return /iP(hone|od)/.test(navigator.userAgent);
+};
+
+function canLoadInIframe () {
 	var docClassList = document.documentElement.classList;
 	var playerInIframe = docClassList && docClassList.contains('bc-iframe'); // html of player has bc-iframe class when Brightcove player emded in iFrame
 	return !(playerInIframe && isEdge());
 }
 
-function getOrigin() {
+function getOrigin () {
     if (window.location.origin) {
         return window.location.origin;
     }
@@ -100,7 +111,7 @@ function writeAsyncScriptToFrame (targetFrame, jsPath, includeVJS, origin) {
 var BC_bidders_added = false;
 var _dfpUrlGeneratorObj;
 
-function doPrebid(options, callback) {
+function doPrebid (options, callback) {
 	if (_localPBJS.bc_pbjs && options.biddersSpec) {
 		if (options.clearPrebid) {
 			_localPBJS.bc_pbjs.adUnits = [];
@@ -113,11 +124,11 @@ function doPrebid(options, callback) {
 		//
 		// Prebid Video adUnit
 		//
-		var logBids = function(bids) {
+		var logBids = function (bids) {
 			_logger.log(_prefix, 'MESSAGE: got bids back: ', bids);
 		};
 
-		_localPBJS.bc_pbjs.que.push(function() {
+		_localPBJS.bc_pbjs.que.push(function () {
 			if (!BC_bidders_added) {
 				BC_bidders_added = true;
 				specifyBidderAliases(options.bidderAliases, _localPBJS.bc_pbjs);
@@ -152,7 +163,7 @@ function doPrebid(options, callback) {
 
 			_localPBJS.bc_pbjs.requestBids({
 				timeout: (options.prebidTimeout && options.prebidTimeout > 0) ? options.prebidTimeout : 700,
-				bidsBackHandler: function(bids) { // this function will be called once bids are returned
+				bidsBackHandler: function (bids) { // this function will be called once bids are returned
 					logBids(bids);
 					callback(bids);
 				}
@@ -179,7 +190,7 @@ function doPrebid(options, callback) {
 // This function enumerates all aliases for bidder adapters and defines them in prebid.js.
 // bidderAliases is array of object each of them defines pair of alias/bidder.
 // bc_pbjs is prebid.js instance.
-function specifyBidderAliases(bidderAliases, bc_pbjs) {
+function specifyBidderAliases (bidderAliases, bc_pbjs) {
 	if (bidderAliases && Array.isArray(bidderAliases) && bidderAliases.length > 0) {
 		for (var i = 0; i < bidderAliases.length; i++) {
 			if (bidderAliases[i].bidderName && bidderAliases[i].name) {
@@ -193,7 +204,7 @@ function specifyBidderAliases(bidderAliases, bc_pbjs) {
 // This function converts 'val' properties in bidderSettings represented as string array to inline functions.
 // We recommend to use string array in bidderSettings only when options are defined for Brightcove player
 // in Brightcove studio.
-function prepareBidderSettings(options) {
+function prepareBidderSettings (options) {
 	if (options.bidderSettings) {
 		var subtituteToEval = function (arr, obj) {
 			if (arr.length > 1 && arr[0] === 'valueIsFunction') {
@@ -202,7 +213,7 @@ function prepareBidderSettings(options) {
 				eval('obj.val = ' + str); // jshint ignore:line
 			}
 		};
-		var findValProperty = function findValProperty(obj) {
+		var findValProperty = function findValProperty (obj) {
 			for (var name in obj) {
 				if (name.toLowerCase() === 'val') {
 					if (Array.isArray(obj.val)) {
@@ -220,7 +231,7 @@ function prepareBidderSettings(options) {
 	}
 }
 
-function dispatchPrebidDoneEvent() {
+function dispatchPrebidDoneEvent () {
 	var event;
 	if (typeof Event === 'function') {
 		event = new Event('prebid_done_loading_script');
@@ -238,16 +249,16 @@ function dispatchPrebidDoneEvent() {
 // If second parameter is present and is 'true' we have to call prebid right now (header bidding).
 // That parameter is present and set to 'true' when $$PREBID_GLOBAL$$.plugin_prebid_options.biddersSpec has a value.
 // $$PREBID_GLOBAL$$.plugin_prebid_options.biddersSpec has to be set for header bidding BEFORE the plugin's script is loaded.
-function loadPrebidScript(options, fromHeader) {
+function loadPrebidScript (options, fromHeader) {
 	// internal function which will be called later
-	var setupAdCreative = function() {
+	var setupAdCreative = function () {
     	// do header bidding if fromHeader is 'true' and bidder setting are present in options
     	if (fromHeader && options) {
 			BC_prebid_in_progress = true;
 			// invoke prebid
-    		doPrebid(options, function(bids) {
+    		doPrebid(options, function (bids) {
 				// this function returns creative with higher CPM
-				var selectWinnerByCPM = function(arrBids) {
+				var selectWinnerByCPM = function (arrBids) {
 					var cpm = 0.0;
 					var creative = null;
 					var cacheKey;
@@ -267,7 +278,7 @@ function loadPrebidScript(options, fromHeader) {
 					return creative;
 				};
 				// get prebid cache url if available
-				function getPrebidCacheUrl(creative, arrBids) {
+				function getPrebidCacheUrl (creative, arrBids) {
 					for (var i = 0; i < arrBids.length; i++) {
 						if (arrBids[i].vastUrl === creative) {
 							// winner is creative from bid array
@@ -307,8 +318,8 @@ function loadPrebidScript(options, fromHeader) {
 							_localPBJS.prebid_creative = _localPBJS.bc_pbjs.adServers.dfp.buildVideoUrl(dfpOpts);
 						}
 						BC_prebid_in_progress = false;
-						dispatchPrebidDoneEvent();
 						_logger.log(_prefix, 'Selected VAST url: ' + _localPBJS.prebid_creative);
+						dispatchPrebidDoneEvent();
 					}
 	    			else if (options.adServerCallback) {
 	    				// use 3rd party ad server if ad server callback present in options
@@ -323,11 +334,11 @@ function loadPrebidScript(options, fromHeader) {
 							func = window[options.adServerCallback];
 						}
 						if (func) {
-							func(arrBids, function(creative) {
+							func(arrBids, function (creative) {
 								_localPBJS.prebid_creative = getPrebidCacheUrl(creative, arrBids);
 								BC_prebid_in_progress = false;
-								dispatchPrebidDoneEvent();
 								_logger.log(_prefix, 'Selected VAST url: ' + _localPBJS.prebid_creative);
+								dispatchPrebidDoneEvent();
 							});
 						}
 						else {
@@ -376,7 +387,7 @@ function loadPrebidScript(options, fromHeader) {
 		}
 
 		var pbjsScr = document.createElement('script');
-		pbjsScr.onload = function() {
+		pbjsScr.onload = function () {
 			// after prebid.js is successfully loaded try to invoke prebid.
 			_localPBJS.bc_pbjs = frame.contentWindow.pbjs;
 
@@ -384,7 +395,7 @@ function loadPrebidScript(options, fromHeader) {
 
             setupAdCreative();
 		};
-		pbjsScr.onerror = function(e) {
+		pbjsScr.onerror = function (e) {
 			// failed to load prebid.js.
 			_localPBJS.bc_pbjs_error = true;
 
@@ -408,7 +419,7 @@ function loadPrebidScript(options, fromHeader) {
 		node.appendChild(pbjsScr);
 	}
 	else {
-        var timeout = setTimeout(function() {
+        var timeout = setTimeout(function () {
 			// failed to load prebid.js in iframe.
 			_localPBJS.bc_pbjs_error = true;
 			timeout = null;
@@ -488,7 +499,7 @@ function loadPrebidScript(options, fromHeader) {
     }
 }
 
-function convertOptionsToArray(options) {
+function convertOptionsToArray (options) {
 	var arrOptions;
 	if (Array.isArray(options)) {
 		arrOptions = options;
@@ -512,9 +523,10 @@ function convertOptionsToArray(options) {
 // this function loads MailOnline Plugin
 var _molLoadingInProgress = false;
 var _molLoaded = false;
+var _imaTriedToLoad = false;
 var _vastClientFunc;
 
-function loadMolPlugin(callback) {
+function loadMolPlugin (callback) {
     var vjs = window.videojs || false;
     if (!vjs) {
         _logger.warn(_prefix, 'Can\'t load MOL Plugin now - Videojs isn\'t loaded yet.');
@@ -526,7 +538,7 @@ function loadMolPlugin(callback) {
 		var waitMolLoaded;
         if (_molIFrame && _molLoadingInProgress) {
             _logger.log(_prefix, 'MailOnline Plugin loading in progress - setting interval to run callback when loaded');
-            waitMolLoaded = setInterval(function() {
+            waitMolLoaded = setInterval(function () {
                 if (!_molLoadingInProgress) {
                     clearInterval(waitMolLoaded);
                     _logger.log(_prefix, 'MailOnline Plugin ' + (_molLoaded ? '' : 'not ') + 'loaded successfully - wait interval cleared');
@@ -593,7 +605,7 @@ function loadMolPlugin(callback) {
 		else {
 			if (_molLoadingInProgress) {
 				_logger.log(_prefix, 'MailOnline Plugin loading in progress - setting interval to run callback when loaded');
-				waitMolLoaded = setInterval(function() {
+				waitMolLoaded = setInterval(function () {
 					if (!_molLoadingInProgress) {
 						clearInterval(waitMolLoaded);
 						_logger.log(_prefix, 'MailOnline Plugin ' + (_molLoaded ? '' : 'not ') + 'loaded successfully - wait interval cleared');
@@ -606,14 +618,14 @@ function loadMolPlugin(callback) {
 			_molLoadingInProgress = true;
 			var script = document.createElement('script');
 			script.src = MOL_PLUGIN_URL + '?rand=' + PLUGIN_VERSION;
-			script.onload = function() {
+			script.onload = function () {
 				_molLoaded = true;
 				_player.vastClient = window.bc_vastClientFunc;
 				_molLoadingInProgress = false;
 				_logger.log(_prefix, 'MailOnline Plugin loaded successfully');
 				callback(true);
 			};
-			script.onerror = function(e) {
+			script.onerror = function (e) {
 				_molLoaded = false;
 				_molLoadingInProgress = false;
 				_logger.error(_prefix, 'Failed to load MailOnline Plugin. Error event: ', e);
@@ -636,21 +648,192 @@ function loadMolPlugin(callback) {
     }
 }
 
+function loadImaPlugin (callback) {
+    var vjs = window.videojs || false;
+    if (!vjs) {
+        _logger.warn(_prefix, 'Can\'t load IMA Plugin now - Videojs isn\'t loaded yet.');
+        callback(false);
+        return;
+	}
+
+	// validation for header bidding
+	if (!_player) {
+        _logger.warn(_prefix, 'Can\'t load IMA Plugin now - Brightcove player isn\'t loaded yet. The player must be loaded for auto-registration of the IMA plugin. Will attempt to load the IMA Plugin later.');
+        callback(false);
+        return;
+	}
+
+    if (!_imaTriedToLoad) {
+		// check if IMA plugin is imbedded in player
+		if (_player.ima3) {
+			_logger.warn(_prefix, 'IMA Plugin already loaded within player.');
+			callback(true);
+			return;
+		}
+
+		// if ima script node already in document wait until it loaded or failed
+		if (document.getElementById('bc_ima_plugin')) {
+			var imaInt = setInterval(function () {
+				if (_player.ima3) {
+					clearInterval(imaInt);
+					callback(true);
+				}
+			}, 100);
+			// wait no longer than DEFAULT_SCRIPT_LOAD_TIMEOUT
+			setTimeout(function () {
+				clearInterval(imaInt);
+				if (!_player.ima3) {
+					callback(false);
+				}
+			}, DEFAULT_SCRIPT_LOAD_TIMEOUT);
+			return;
+		}
+
+		// add ima css to the document head
+		var css = document.createElement('link');
+		css.href = 'https://players.brightcove.net/videojs-ima3/3/videojs.ima3.min.css';
+		css.rel = 'stylesheet';
+		var node = document.getElementsByTagName('head')[0];
+		node.appendChild(css);
+
+		// add ima plugin script to the document body
+		var script = document.createElement('script');
+		script.src = 'https://players.brightcove.net/videojs-ima3/3/videojs.ima3.min.js';
+		script.id = 'bc_ima_plugin';
+		script.onerror = function (e) {
+			_logger.error(_prefix, 'Failed to load IMA Plugin. Error event: ', e);
+			_imaTriedToLoad = true;	// flag to load IMA plugin script only once
+			callback(false);
+		};
+		script.onload = function () {
+			_logger.log(_prefix, 'IMA Plugin loaded successfully');
+			_imaTriedToLoad = true;	// flag to load IMA plugin script only once
+			callback(true);
+		};
+		document.body.appendChild(script);
+   	}
+    else {
+		_logger.log(_prefix, 'IMA Plugin already loaded');
+		if (_player.ima3) {
+			callback(true);
+		}
+		else {
+			callback(false);
+		}
+    }
+}
+
+function getAdRendererFromAdOptions (adOptions) {
+	// if adRenderer option is present use it for all ads
+	if (adOptions.hasOwnProperty('adRenderer') && adOptions.adRenderer &&
+		(adOptions.adRenderer === _rendererNames.MOL ||
+		 adOptions.adRenderer === _rendererNames.IMA ||
+		 adOptions.adRenderer === _rendererNames.CUSTOM)) {
+		return {adRenderer: adOptions.adRenderer, userSet: true};
+	}
+	// for DFP use IMA plugin as renderer
+	if (adOptions.hasOwnProperty('dfpParameters')) {
+		return {adRenderer: _rendererNames.IMA, userSet: false};
+	}
+	return null;
+}
+
+function setAdRenderer (options) {
+	if (options) {
+		var adRenderer = _rendererNames.MOL;
+		var rendObj;
+		var i;
+		// if options parameter is array of options from plugin embedded in player in studio
+		// array in brightcove studio converted to object {0: {...}, 1: {...}, ...}
+		if (Array.isArray(options) || options.hasOwnProperty('0')) {
+			// get renderer name
+			for (i = 0; options.hasOwnProperty(i); i++) {
+				rendObj = getAdRendererFromAdOptions(options[i]);
+				if (rendObj) {
+					adRenderer = rendObj.adRenderer;
+					if (rendObj.userSet) {
+						break;
+					}
+				}
+			}
+			// set the same renderer across all configurations
+			for (i = 0; options.hasOwnProperty(i); i++) {
+				options[i].adRenderer = adRenderer;
+			}
+		}
+		else {
+			rendObj = getAdRendererFromAdOptions(options);
+			// set renderer explicitly
+			if (rendObj) {
+				adRenderer = rendObj.adRenderer;
+				options.adRenderer = rendObj.adRenderer;
+			}
+			else {
+				options.adRenderer = adRenderer;
+			}
+		}
+		return adRenderer;
+	}
+	return null;
+}
+
 (function () {
 	// if bidders settings are present in the $$PREBID_GLOBAL$$.plugin_prebid_options variable load prebid.js and do the bidding
 	if ($$PREBID_GLOBAL$$.plugin_prebid_options && $$PREBID_GLOBAL$$.plugin_prebid_options.biddersSpec) {
-		BC_prebid_in_progress = true;
-		loadPrebidScript($$PREBID_GLOBAL$$.plugin_prebid_options, true);
+		setAdRenderer($$PREBID_GLOBAL$$.plugin_prebid_options);
+		if ($$PREBID_GLOBAL$$.plugin_prebid_options.biddersSpec) {
+			BC_prebid_in_progress = true;
+			loadPrebidScript($$PREBID_GLOBAL$$.plugin_prebid_options, true);
+		}
+		if ($$PREBID_GLOBAL$$.plugin_prebid_options.adRenderer === 'ima') {
+			loadImaPlugin(function () {});
+		}
+		else if ($$PREBID_GLOBAL$$.plugin_prebid_options.adRenderer === 'mailonline') {
+			loadMolPlugin(function () {});
+		}
 	}
-	loadMolPlugin(function() {});
 })();
 
 var _player;
 var _vastManagerObj;
 var _adListManagerObj;
 var _prebidCommunicatorObj;
+var _defaultAdCancelTimeout = 3000;
+var _adRenderer;
 
-function renderAd(options) {
+function initIMA (options) {
+	// Sometimes we see the method inAdBreak is not exist which causes black screen instead ad when ad is playing.
+	// Make sure at least the fake inAdBreak method is present.
+	_logger.log(_prefix, 'Check for inAdBreak method');
+	if (!_player.ads.inAdBreak) {
+		_player.ads.inAdBreak = function () {
+			return false;
+		};
+	}
+	// initialize some setting values for IMA plugin
+	_player.ima3({
+		debug: true,
+		vpaidMode: 'ENABLED',
+		showVpaidControls: !isIPhone(),
+		requestMode: 'ondemand',
+		timeout: options.adStartTimeout ? options.adStartTimeout : _defaultAdCancelTimeout,
+		ima3SdkSettings: {
+			disableCustomPlaybackForIOS10Plus: true,	// this flag needed for skippable ads for iOS version 10+
+		}
+	});
+}
+
+function renderAd (options) {
+	if (_adRenderer === _rendererNames.NONE && !options.onlyPrebid) {
+		// do nothing
+		return;
+	}
+	if (_adRenderer === _rendererNames.IMA) {
+		if (_player.ima3 && typeof _player.ima3 === 'function') {
+			// initialize some setting values for IMA plugin
+			initIMA(options);
+		}
+	}
 	if (options.creative) {
 		// render ad if vast url is ready
 		_vastManagerObj = new _vastManager();
@@ -659,7 +842,7 @@ function renderAd(options) {
 	}
 	else if (BC_prebid_in_progress) {
 		// wait until prebid done
-		document.addEventListener('prebid_done_loading_script', function() {
+		document.addEventListener('prebid_done_loading_script', function () {
 			if (_localPBJS.prebid_creative) {
 				// render ad
 				if (!options.onlyPrebid) {
@@ -692,25 +875,65 @@ function renderAd(options) {
 		// do prebid if needed and render ad(s)
 		_adListManagerObj = new _adListManager();
 		var arrOptions = convertOptionsToArray(options);
-		arrOptions.forEach(function(opt) {
+		arrOptions.forEach(function (opt) {
 			opt.doPrebid = doPrebid;
 		});
 		_adListManagerObj.play(_player, arrOptions);
 	}
 }
 
-var prebidVastPlugin = function(player) {
+function prepareRenderAd (options) {
+	// special preparation for Edge and IE
+	if (isEdge() || isIE11()) {
+		var players = document.getElementsByClassName('video-js');
+		// more than 1 player within document
+		if (players && players.length > 1) {
+			_logger.log(_prefix, 'More than 1 player within same document');
+			// !!! When IMA plugin has loaded in script tag it causes some side effect for other players in document during IMA initialization.
+			if (_adRenderer === _rendererNames.IMA && document.getElementById('bc_ima_plugin') &&
+				_player.ima3 && typeof _player.ima3 === 'function') {
+				_logger.log(_prefix, 'Delay IMA initialization for 1 second');
+				// Delay IMA initialization to make sure other players could start first.
+				setTimeout(function () {
+					initIMA(options);
+					renderAd(options);
+				}, 1000);
+				return;
+			}
+			if (_adRenderer === _rendererNames.MOL) {
+				// If player has both plugins and IMA plugin has been loaded in script tag replace renderer to IMA
+				if (document.getElementById('bc_ima_plugin') && _player.ima3) {
+					_logger.log(_prefix, 'Replace MOL renderer to IMA renderer');
+					options.adRenderer = _rendererNames.IMA;
+					_adRenderer = _rendererNames.IMA;
+					setTimeout(function () {
+						initIMA(options);
+						renderAd(options);
+					}, 1000);
+					return;
+				}
+				else {
+					// use MailOnline renderer
+					options.adRenderer = _rendererNames.MOL;
+				}
+			}
+		}
+	}
+	renderAd(options);
+}
+
+var prebidVastPlugin = function (player) {
 	_player = player;
 	return {
 		// @exclude
 		// Method exposed only for unit Testing Purpose
 		// Gets stripped off in the actual build artifact
-		test: function() {
+		test: function () {
 			return {
-				doPrebid: function(options, callback) {
+				doPrebid: function (options, callback) {
 					if (_localPBJS.bc_pbjs === undefined) {
 						loadPrebidScript(options, false);
-						var waitReady = setInterval(function() {
+						var waitReady = setInterval(function () {
 							if (_localPBJS.bc_pbjs !== undefined) {
 								clearInterval(waitReady);
 								doPrebid(options, callback);
@@ -724,21 +947,25 @@ var prebidVastPlugin = function(player) {
 				specifyBidderAliases: specifyBidderAliases,
 				prepareBidderSettings: prepareBidderSettings,
 				loadPrebidScript: loadPrebidScript,
-				bcPrebidInProgress: function() { return BC_prebid_in_progress; },
+				bcPrebidInProgress: function () { return BC_prebid_in_progress; },
 				loadMolPlugin: loadMolPlugin,
+				loadImaPlugin: loadImaPlugin,
 				renderAd: renderAd,
 				insertHiddenIframe: insertHiddenIframe,
+				getAdRendererFromAdOptions: getAdRendererFromAdOptions,
+				setAdRenderer: setAdRenderer,
 				player: _player,
 				localPBJS: _localPBJS
 			};
 		},
 		// @endexclude
 
-		run: function(options) {
+		run: function (options) {
 			if (!_player) {
 				// ignore call if player is not ready
 				return;
 			}
+			_adRenderer = setAdRenderer(options);
 			// get Brightcove Player Id
 			var playerId = '';
 			if (_player.bcinfo) {
@@ -753,23 +980,35 @@ var prebidVastPlugin = function(player) {
 			}
 			// Brightcove Player v5.28.1 issues alert on every tech() call
 			if (window.videojs && window.videojs.VERSION.substr(0, 2) <= '5.') {
-				_player.tech = function() {
+				_player.tech = function () {
 					return _player.tech_;
 				};
 			}
 			if (!options.onlyPrebid) {
-				loadMolPlugin(function(succ) {
-					if (succ) {
-						renderAd(options);
-					}
-				});
+				var pluginLoader = loadMolPlugin;
+				if (_adRenderer === _rendererNames.IMA) {
+					pluginLoader = loadImaPlugin;
+				}
+				else if (_adRenderer === _rendererNames.CUSTOM) {
+					pluginLoader = null;	// HERE: developer can assign his/her own renderer loader if needed
+				}
+				if (pluginLoader) {
+					pluginLoader(function (succ) {
+						if (succ) {
+							prepareRenderAd(options);
+						}
+					});
+				}
+				else {
+					prepareRenderAd(options);
+				}
 			}
 			else {
-				renderAd(options);
+				prepareRenderAd(options);
 			}
 		},
 
-		stop: function() {
+		stop: function () {
 			if (_vastManagerObj) {
 				_vastManagerObj.stop();
 			} else if (_adListManagerObj) {

@@ -44,17 +44,17 @@ var markersHandler = function (vjs, adMarkerStyle) {
 		},
 		markerTip: {
 			display: true,
-			text: function text(marker) {
+			text: function text (marker) {
 				return (marker && marker.text) ? ('Break: ' + marker.text) : '';
 			},
-			time: function time(marker) {
+			time: function time (marker) {
 				return marker.time;
 			}
 		},
 		breakOverlay: {
 			display: false,
 			displayTime: 3,
-			text: function text(marker) {
+			text: function text (marker) {
 				return 'Break overlay: ' + marker.overlayText;
 			},
 			style: {
@@ -65,13 +65,13 @@ var markersHandler = function (vjs, adMarkerStyle) {
 				'font-size': '17px'
 		    }
 		},
-		onMarkerClick: function onMarkerClick() {},
-		onMarkerReached: function onMarkerReached() {},
+		onMarkerClick: function onMarkerClick () {},
+		onMarkerReached: function onMarkerReached () {},
 		markers: []
 	};
 
 	// create a non-colliding random number
-	function generateUUID() {
+	function generateUUID () {
 		var d = new Date().getTime();
 		var uuid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
 			var r = ((d + Math.random() * 16) % 16) | 0;
@@ -83,7 +83,7 @@ var markersHandler = function (vjs, adMarkerStyle) {
 
 	var NULL_INDEX = -1;
 
-	var markers = function(options) {
+	var markers = function (options) {
 		var player = _player;
 
 	    /**
@@ -104,14 +104,14 @@ var markersHandler = function (vjs, adMarkerStyle) {
 	    	setting.markerStyle = _vjs.mergeOptions(setting.markerStyle, _adMarkerStyle);
 		}
 
-		function sortMarkersList() {
+		function sortMarkersList () {
 	      // sort the list by time in asc order
 	      markersList.sort(function (a, b) {
 	        return setting.markerTip.time(a) - setting.markerTip.time(b);
 	      });
 	    }
 
-	    function addMarkers(newMarkers) {
+	    function addMarkers (newMarkers) {
 	      newMarkers.forEach(function (marker) {
 	        marker.key = generateUUID();
 
@@ -125,11 +125,11 @@ var markersHandler = function (vjs, adMarkerStyle) {
 	      sortMarkersList();
 	    }
 
-	    function getPosition(marker) {
+	    function getPosition (marker) {
 	      return setting.markerTip.time(marker) / _videoDuration * 100;
 	    }
 
-	    function createMarkerDiv(marker) {
+	    function createMarkerDiv (marker) {
 				// In Brightcove player v5.28.1 property 'dom' not exist
 				var dom = !!_vjs.dom ? _vjs.dom : _vjs;
 	      var markerDiv = dom.createEl('div', {
@@ -152,20 +152,6 @@ var markersHandler = function (vjs, adMarkerStyle) {
 	      }
 	      catch (e) {}
 
-	      // bind click event to seek to marker time
-	      markerDiv.addEventListener('click', function () {
-	        var preventDefault = false;
-	        if (typeof setting.onMarkerClick === 'function') {
-	          // if return false, prevent default behavior
-	          preventDefault = setting.onMarkerClick(marker) === false;
-	        }
-
-	        if (!preventDefault) {
-	          var key = this.getAttribute('data-marker-key');
-	          player.currentTime(setting.markerTip.time(markersMap[key]));
-	        }
-	      });
-
 	      if (setting.markerTip.display) {
 	        registerMarkerTipHandler(markerDiv);
 	      }
@@ -173,7 +159,7 @@ var markersHandler = function (vjs, adMarkerStyle) {
 	      return markerDiv;
 	    }
 
-	    function updateMarkers() {
+	    function updateMarkers () {
 	      // update UI for markers whose time changed
 	      markersList.forEach(function (marker) {
 	        var markerDiv = player.el().querySelector(".vjs-marker[data-marker-key='" + marker.key + "']");
@@ -187,7 +173,7 @@ var markersHandler = function (vjs, adMarkerStyle) {
 	      sortMarkersList();
 	    }
 
-	    function removeMarkers(indexArray) {
+	    function removeMarkers (indexArray) {
 	      // reset overlay
 	      if (!!breakOverlay) {
 	        overlayIndex = NULL_INDEX;
@@ -220,7 +206,7 @@ var markersHandler = function (vjs, adMarkerStyle) {
 	    }
 
 	    // attach hover event handler
-	    function registerMarkerTipHandler(markerDiv) {
+	    function registerMarkerTipHandler (markerDiv) {
 	      markerDiv.addEventListener('mouseover', function () {
 	        var marker = markersMap[markerDiv.getAttribute('data-marker-key')];
 	        if (!!markerTip) {
@@ -239,7 +225,7 @@ var markersHandler = function (vjs, adMarkerStyle) {
 	      });
 	    }
 
-	    function initializeMarkerTip() {
+	    function initializeMarkerTip () {
 				// In Brightcove player v5.28.1 property 'dom' not exist
 				var dom = !!_vjs.dom ? _vjs.dom : _vjs;
 	      markerTip = dom.createEl('div', {
@@ -250,7 +236,7 @@ var markersHandler = function (vjs, adMarkerStyle) {
 	    }
 
 	    // show or hide break overlays
-	    function updateBreakOverlay() {
+	    function updateBreakOverlay () {
 	      if (!setting.breakOverlay.display || currentMarkerIndex < 0) {
 	        return;
 	      }
@@ -279,7 +265,7 @@ var markersHandler = function (vjs, adMarkerStyle) {
 	    }
 
 	    // problem when the next marker is within the overlay display time from the previous marker
-	    function initializeOverlay() {
+	    function initializeOverlay () {
 				// In Brightcove player v5.28.1 property 'dom' not exist
 				var dom = !!_vjs.dom ? _vjs.dom : _vjs;
 	      breakOverlay = dom.createEl('div', {
@@ -295,7 +281,7 @@ var markersHandler = function (vjs, adMarkerStyle) {
 	      overlayIndex = NULL_INDEX;
 	    }
 
-	    function onTimeUpdate() {
+	    function onTimeUpdate () {
 	      onUpdateMarker();
 	      updateBreakOverlay();
 	      if (options.onTimeUpdateAfterMarkerUpdate) {
@@ -303,7 +289,7 @@ var markersHandler = function (vjs, adMarkerStyle) {
 	      }
 	    }
 
-	    function onUpdateMarker() {
+	    function onUpdateMarker () {
 	      /*
 	        check marker reached in between markers
 	        the logic here is that it triggers a new marker reached event only if the player
@@ -313,7 +299,7 @@ var markersHandler = function (vjs, adMarkerStyle) {
 	        return;
 	      }
 
-	      var getNextMarkerTime = function getNextMarkerTime(index) {
+	      var getNextMarkerTime = function getNextMarkerTime (index) {
 	        if (index < markersList.length - 1) {
 	          return setting.markerTip.time(markersList[index + 1]);
 	        }
@@ -321,7 +307,7 @@ var markersHandler = function (vjs, adMarkerStyle) {
 	        return _videoDuration;
 	      };
 	      var currentTime = player.currentTime();
-	      var newMarkerIndex = NULL_INDEX;
+				var newMarkerIndex = NULL_INDEX;
 
 				var nextMarkerTime;
 
@@ -331,9 +317,19 @@ var markersHandler = function (vjs, adMarkerStyle) {
 					if (setting.markerTip.time(markersList[markersList.length - 1]) === _videoDuration) {
 						if (options.onMarkerReached) {
 							_waitingVideoEnd = true;
-							player.one('ended', function() {
+							// postroll whwn playlist is playing
+							if (player.playlist && player.playlist.currentIndex) {
 								options.onMarkerReached(markersList[markersList.length - 1]);
-							});
+								// stop checking time after postroll
+								player.off('timeupdate', onTimeUpdate);
+							}
+							else {	// postroll when no playlist is playing
+								player.one('ended', function () {
+									options.onMarkerReached(markersList[markersList.length - 1]);
+								// stop checking time after postroll
+								player.off('timeupdate', onTimeUpdate);
+								});
+							}
 						}
 					}
 					return;
@@ -377,7 +373,7 @@ var markersHandler = function (vjs, adMarkerStyle) {
 	    }
 
 	    // setup the whole thing
-	    function initialize() {
+	    function initialize () {
 				_waitingVideoEnd = false;
 				_videoDuration = player.duration();
 	      if (setting.markerTip.display) {
@@ -390,7 +386,7 @@ var markersHandler = function (vjs, adMarkerStyle) {
 
 	      if (setting.breakOverlay.display) {
 	        initializeOverlay();
-	      }
+				}
 	      onTimeUpdate();
 	      player.on('timeupdate', onTimeUpdate);
 	      player.off('loadedmetadata', loadedMetadataHandler);
@@ -401,7 +397,7 @@ var markersHandler = function (vjs, adMarkerStyle) {
 		}
 
 	    if (setting.metadataLoaded || player.duration() > 0) {
-	    	setTimeout(function() {
+	    	setTimeout(function () {
 		    	initialize();
 	    	}, 0);
 	    }
@@ -412,10 +408,10 @@ var markersHandler = function (vjs, adMarkerStyle) {
 
 	    // exposed plugin API
 	    player.markers = {
-	      getMarkers: function getMarkers() {
+	      getMarkers: function getMarkers () {
 	        return markersList;
 	      },
-	      next: function next() {
+	      next: function next () {
 	        // go to the next marker from current timestamp
 	        var currentTime = player.currentTime();
 	        for (var i = 0; i < markersList.length; i++) {
@@ -426,7 +422,7 @@ var markersHandler = function (vjs, adMarkerStyle) {
 	          }
 	        }
 	      },
-	      prev: function prev() {
+	      prev: function prev () {
 	        // go to previous marker
 	        var currentTime = player.currentTime();
 	        for (var i = markersList.length - 1; i >= 0; i--) {
@@ -438,31 +434,31 @@ var markersHandler = function (vjs, adMarkerStyle) {
 	          }
 	        }
 	      },
-	      add: function add(newMarkers) {
+	      add: function add (newMarkers) {
 	        // add new markers given an array of index
 	        addMarkers(newMarkers);
 	      },
-	      remove: function remove(indexArray) {
+	      remove: function remove (indexArray) {
 	        // remove markers given an array of index
 	        removeMarkers(indexArray);
 	      },
-	      removeAll: function removeAll() {
+	      removeAll: function removeAll () {
 	        var indexArray = [];
 	        for (var i = 0; i < markersList.length; i++) {
 	          indexArray.push(i);
 	        }
 	        removeMarkers(indexArray);
 	      },
-	      updateTime: function updateTime() {
+	      updateTime: function updateTime () {
 	        // notify the plugin to update the UI for changes in marker times
 	        updateMarkers();
 	      },
-	      reset: function reset(newMarkers) {
+	      reset: function reset (newMarkers) {
 	        // remove all the existing markers and add new ones
 	        player.markers.removeAll();
 	        addMarkers(newMarkers);
 	      },
-	      destroy: function destroy() {
+	      destroy: function destroy () {
 	        // unregister the plugins and clean up even handlers
 	        player.markers.removeAll();
 	        if (breakOverlay) {
@@ -484,7 +480,7 @@ var markersHandler = function (vjs, adMarkerStyle) {
     	regFn('markersHandler', markers);
     };
 
-    this.markers = function(timeMarkers) {
+    this.markers = function (timeMarkers) {
     	_player.markersHandler(timeMarkers);
     };
 };

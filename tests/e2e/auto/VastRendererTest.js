@@ -2,10 +2,9 @@ var _vastRenderer = require('../../../src/VastRenderer.js');
 var BcPrebidVast = require('./../../../src/BcPrebidLoader.js');
 
 describe('VastRenderer unit test', function () {
-    before(function(done) {
-        setTimeout(function() {
+    before(function (done) {
+        setTimeout(function () {
             BcPrebidVast.init();
-            // BcPrebidVast.renderAd({}, 'test_player');
             done();
         }, 1500);
     });
@@ -20,7 +19,7 @@ describe('VastRenderer unit test', function () {
         done();
     });
 
-    afterEach(function(done) {
+    afterEach(function (done) {
         testObj = null;
         vastRenderer = null;
         done();
@@ -40,22 +39,22 @@ describe('VastRenderer unit test', function () {
     });
 
     it('playAd test - play fake ad xml (preroll, need click)', function (done) {
-        player.vastClient = function(params) {
+        player.vastClient = function (params) {
             assert.equal(params.adTagUrl, 'http://bla_bla');
             done();
         };
-        vastRenderer.playAd('http://bla_bla', {}, true, true, true, function() {});
+        vastRenderer.playAd('http://bla_bla', {}, true, true, true, function () {});
         player.trigger('loadeddata');
     });
 
     it('playAd test - play fake ad xml (preroll, autoplay)', function (done) {
-        player.vastClient = function(params) {
+        player.vastClient = function (params) {
             assert.equal(params.adTagUrl, 'http://bla_bla');
             done();
         };
-        vastRenderer.playAd('http://bla_bla', {}, true, false, false, function() {});
+        vastRenderer.playAd('http://bla_bla', {}, true, false, false, function () {});
         player.trigger('loadeddata');
-        setTimeout(function() {
+        setTimeout(function () {
             player.trigger('play');
         }, 300);
     });

@@ -29,7 +29,7 @@ var _playerElId;
 
 // PRIVATE FUNCTIONS
 
-function getPluginPath(options) {
+function getPluginPath (options) {
 	if (options) {
 		var i;
 		if (Array.isArray(options)) {
@@ -87,7 +87,7 @@ function start () {
 function getLoadedPluginAPI (keepInQue) {
     if (!$$PREBID_GLOBAL$$.BCVideo_PrebidPluginApiQue || !$$PREBID_GLOBAL$$.BCVideo_PrebidPluginApiQue.length) {
 		_logger.log(LOGGER_PREFIX, 'ERROR - No loaded Plugin API available to run!');
-		var placeholder = function() {
+		var placeholder = function () {
 			return { run: function () {} };
 		};
         return placeholder;
@@ -100,7 +100,7 @@ function getLoadedPluginAPI (keepInQue) {
 	}
 }
 
-function loadPrebidPlugin(path, callback) {
+function loadPrebidPlugin (path, callback) {
 	_loaderId = Date.now().valueOf();
 
     _pluginScrEl = document.createElement('script');
@@ -124,7 +124,7 @@ function loadPrebidPlugin(path, callback) {
 	node.appendChild(_pluginScrEl);
 }
 
-function isPluginRegistered() {
+function isPluginRegistered () {
     if (_vjs.registerPlugin) {
 		// Brightcove v6.x.x Players have the registerPlugin() and getPlugin() methods
 		return _vjs.getPlugins()[PREBID_PLUGIN_ID];
@@ -136,7 +136,7 @@ function isPluginRegistered() {
     }
 }
 
-function registerPlugins(prebidFunc, commandFunc) {
+function registerPlugins (prebidFunc, commandFunc) {
     // ONLY register plugins ONCE with global videojs
     if (_vjs.registerPlugin) {
         // Brightcove v6.x.x Players have the registerPlugin() and getPlugin() methods
@@ -162,7 +162,7 @@ function registerPlugins(prebidFunc, commandFunc) {
 // PUBLIC API
 
 // register videojs prebid plugins
-function apiInit() {
+function apiInit () {
     // Create que to store plugin API objects as each one loads
     $$PREBID_GLOBAL$$.BCVideo_PrebidPluginApiQue = $$PREBID_GLOBAL$$.BCVideo_PrebidPluginApiQue || [];
 
@@ -201,7 +201,7 @@ function apiInit() {
     		cover.style.position = 'absolute';
     		cover.style.zIndex = 101;
     		_player.el().appendChild(cover);
-    	}
+		}
 
 		// load prebid plugin and run it when it is loaded
         var path = getPluginPath(options);
@@ -229,7 +229,7 @@ function apiInit() {
 		}
     };
 
-	var commandPluginFunc = function(command) {
+	var commandPluginFunc = function (command) {
         if (command === 'stop') {
             if (_prebidPluginObj) {
                 _prebidPluginObj.stop();

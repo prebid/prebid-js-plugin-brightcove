@@ -36,7 +36,7 @@ var _debugLevelFunctionSet = TRACE_LEVEL_DEFAULT;
 
 var _playerId;
 
-function getCurrentTimeString() {
+function getCurrentTimeString () {
     var dateToReturn = '';
     try {
         var curDate = new Date();
@@ -45,7 +45,7 @@ function getCurrentTimeString() {
     return dateToReturn;
 }
 
-function getTraceMethodName(messageLogLevel) {
+function getTraceMethodName (messageLogLevel) {
     switch (messageLogLevel) {
         case 0:
             break;
@@ -68,7 +68,7 @@ function getTraceMethodName(messageLogLevel) {
     }
 }
 
-function traceMessageAtLevel(messageLogLevel, args) {
+function traceMessageAtLevel (messageLogLevel, args) {
     try {
         // if method has been defined, and the correct debug level has been set, log it
         if (typeof messageLogLevel !== 'undefined' && okToLogMessage(messageLogLevel)) {
@@ -103,7 +103,7 @@ function traceMessageAtLevel(messageLogLevel, args) {
 }
 
 // get a named parameter from the querystring
-function getParameterByName(name) {
+function getParameterByName (name) {
     // accesing window might fail at the browser level, we can't really test for it,
     // so there are a few nested try/catch blocks here
     try {
@@ -129,7 +129,7 @@ function getParameterByName(name) {
     }
 }
 
-function parseDebugLevelInput(incomingDebugLevel) {
+function parseDebugLevelInput (incomingDebugLevel) {
     var debugLevelToReturn = TRACE_LEVEL_DEFAULT;
     try {
         if (typeof incomingDebugLevel !== 'undefined') {
@@ -162,7 +162,7 @@ function parseDebugLevelInput(incomingDebugLevel) {
     return debugLevelToReturn;
 }
 
-function getLogLevelFromLocalStorage() {
+function getLogLevelFromLocalStorage () {
     try {
         if (localStorage) {
             return localStorage.getItem(LOCAL_STORAGE_KEY_NAME);
@@ -175,7 +175,7 @@ function getLogLevelFromLocalStorage() {
 }
 
 // determine the maximum debug level from the page URL
-function setDebugLevelFromPage() {
+function setDebugLevelFromPage () {
     try {
         // keep track of the new level
         _debugLevelQueryString = parseDebugLevelInput(getParameterByName('ast_debug').toUpperCase());
@@ -186,7 +186,7 @@ function setDebugLevelFromPage() {
     } catch (e) {}
 }
 
-function handleSetDebugLevel(newDebugLevel) {
+function handleSetDebugLevel (newDebugLevel) {
     try {
         // keep track of the new level
         _debugLevelFunctionSet = parseDebugLevelInput(newDebugLevel);
@@ -196,12 +196,12 @@ function handleSetDebugLevel(newDebugLevel) {
     } catch (e) {}
 }
 
-function okToLogMessage(level) {
+function okToLogMessage (level) {
     return level <= _curDebugLevel; // getReqestedMaxDebugLevel();
 }
 
 // DEPRECATED
-function tryLogMessageLegacy(level, message, source) {
+function tryLogMessageLegacy (level, message, source) {
     try {
         var messageToLog = '[Prebid-Plugin-' + level + '-' + new Date().toISOString() + '] ';
         if (source !== null && source && source.length > 0) {
@@ -225,7 +225,7 @@ module.exports = {
      * Call the appropriate trace method at the given level
      * @param (string) debugLevel = Level to debug at
      */
-    traceAtLevel: function() {
+    traceAtLevel: function () {
         try {
             if (arguments.length > 0) {
                 var targetTraceLevel = arguments[0];
@@ -241,7 +241,7 @@ module.exports = {
      * @see https://developer.mozilla.org/en-US/docs/Web/API/console#Outputting_text_to_the_console
      * for more details about how to use console.log style logging.
      */
-    always: function() {
+    always: function () {
         traceMessageAtLevel.call(this, TRACE_LEVEL_ALWAYS, Array.prototype.slice.call(arguments));
     },
 
@@ -251,7 +251,7 @@ module.exports = {
      * @see https://developer.mozilla.org/en-US/docs/Web/API/console#Outputting_text_to_the_console
      * for more details about how to use console.error style logging.
      */
-    error: function() {
+    error: function () {
         traceMessageAtLevel.call(this, TRACE_LEVEL_ERROR, Array.prototype.slice.call(arguments));
     },
 
@@ -261,7 +261,7 @@ module.exports = {
      * @see https://developer.mozilla.org/en-US/docs/Web/API/console#Outputting_text_to_the_console
      * for more details about how to use console.log style logging.
      */
-    log: function() {
+    log: function () {
         traceMessageAtLevel.call(this, TRACE_LEVEL_LOG, Array.prototype.slice.call(arguments));
     },
 
@@ -271,7 +271,7 @@ module.exports = {
      * @see https://developer.mozilla.org/en-US/docs/Web/API/console#Outputting_text_to_the_console
      * for more details about how to use console.warn style logging.
      */
-    warn: function() {
+    warn: function () {
         traceMessageAtLevel.call(this, TRACE_LEVEL_WARN, Array.prototype.slice.call(arguments));
     },
 
@@ -281,7 +281,7 @@ module.exports = {
      * @see https://developer.mozilla.org/en-US/docs/Web/API/console#Outputting_text_to_the_console
      * for more details about how to use console.info style logging.
      */
-    info: function() {
+    info: function () {
         traceMessageAtLevel.call(this, TRACE_LEVEL_INFO, Array.prototype.slice.call(arguments));
     },
 
@@ -291,7 +291,7 @@ module.exports = {
      * @see https://developer.mozilla.org/en-US/docs/Web/API/console#Outputting_text_to_the_console
      * for more details about how to use console.debug style logging.
      */
-    debug: function() {
+    debug: function () {
         traceMessageAtLevel.call(this, TRACE_LEVEL_DEBUG, Array.prototype.slice.call(arguments));
      },
 
@@ -301,7 +301,7 @@ module.exports = {
      * @see https://developer.mozilla.org/en-US/docs/Web/API/console#Outputting_text_to_the_console
      * for more details about how to use console.debug style logging.
      */
-    verbose: function() {
+    verbose: function () {
         traceMessageAtLevel.call(this, TRACE_LEVEL_VERBOSE, Array.prototype.slice.call(arguments));
     },
 
@@ -314,7 +314,7 @@ module.exports = {
      *      - example 1:  debug("hello") ==> <timestamp> hello
      *      - example 2:  debug("hello", "TM") ==> <timestamp> TM>hello
      */
-    handleLogDebugLegacySupport: function(message, source) {
+    handleLogDebugLegacySupport: function (message, source) {
         /*
         var mainArguments = Array.prototype.slice.call(arguments);
         mainArguments.unshift("DEBUG");
@@ -328,7 +328,7 @@ module.exports = {
      * Sets debug level for logger
      * @param (string) level = Debug level to use
      */
-    setDebugLevel: function(newLevel) {
+    setDebugLevel: function (newLevel) {
         try {
             handleSetDebugLevel(newLevel);
         } catch (e) {}
@@ -338,7 +338,7 @@ module.exports = {
      * Checks if specified trace level will be emitted given the current trace level settings.
      * @param (Number) levelToCheck = Debug level to check
      */
-    isTraceLevelActive: function(levelToCheck) {
+    isTraceLevelActive: function (levelToCheck) {
         try {
             return okToLogMessage(levelToCheck);
         } catch (e) {
@@ -350,7 +350,7 @@ module.exports = {
      * Sets player id
      * @param (string) id = Brightcove Player Id
      */
-    setPlayerId: function(id) {
+    setPlayerId: function (id) {
         _playerId = id;
     },
 
