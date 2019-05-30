@@ -20,7 +20,7 @@ var LOCAL_STORAGE_KEY_NAME = 'Page_Debug_Log_Level';
 // not an actual debug level, but used as a shortcut so we always
 // know what the max debug level is
 var TRACE_LEVEL_ALL = TRACE_LEVEL_DEBUG;
-var TRACE_LEVEL_DEFAULT = TRACE_LEVEL_SILENT;
+var TRACE_LEVEL_DEFAULT = TRACE_LEVEL_ALWAYS;
 
 // the current debug level to use
 var _curDebugLevel = TRACE_LEVEL_DEFAULT;
@@ -332,6 +332,40 @@ module.exports = {
         try {
             handleSetDebugLevel(newLevel);
         } catch (e) {}
+    },
+
+    /**
+     * Sets debug level for logger
+     * @param (object/array) options = object or array which may contain debug level to use
+     */
+    setLoggerLevel: function (options) {
+        var getLoggerLevel = function (opts) {
+            if (opts && opts.hasOwnProperty('loggerLevel') && !isNaN(opts.loggerLevel)) {
+                return opts.loggerLevel;
+            }
+            return null;
+        };
+		var newLevel;
+		if (Array.isArray(options) || options.hasOwnProperty('0')) {
+			// get logger level
+			for (var i = 0; options.hasOwnProperty(i); i++) {
+				newLevel = getLoggerLevel(options[i]);
+				if (newLevel) {
+                    try {
+                        handleSetDebugLevel(newLevel);
+                    } catch (e) {}
+                    return;
+                }
+			}
+		}
+		else {
+			newLevel = getLoggerLevel(options);
+			if (newLevel) {
+                try {
+                    handleSetDebugLevel(newLevel);
+                } catch (e) {}
+            }
+		}
     },
 
     /**

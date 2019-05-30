@@ -73,7 +73,8 @@ function start () {
 
 			var runPlugin = function () {
 				var apiFunc = getLoadedPluginAPI(true);								// keep PluginAPI in que for future call
-                var _prebidPluginObj = apiFunc(_player);							// uses private closure var _player
+				var _prebidPluginObj = apiFunc(_player);							// uses private closure var _player
+				_logger.setLoggerLevel($$PREBID_GLOBAL$$.plugin_prebid_options);
                 _prebidPluginObj.run($$PREBID_GLOBAL$$.plugin_prebid_options);		// uses $$PREBID_GLOBAL$$.plugin_prebid_options (set from page)
 			};
 
@@ -211,6 +212,7 @@ function apiInit () {
 				var apiFunc = getLoadedPluginAPI();
 				_playerElID = player.el().id;
 				_prebidPluginObj = apiFunc(player);					// uses local var player
+				_logger.setLoggerLevel(options);
 				_prebidPluginObj.run(options);						// uses local var options
 			} else {
         		// Handle the error
