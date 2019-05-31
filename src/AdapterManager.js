@@ -6,11 +6,8 @@
 var _logger = require('./Logging.js');
 var _prefix = 'PrebidVast->AdapterManager';
 
-var _localPBJS = _prebidGlobal.getLocal();
-
-var adapterManager = function (prebidPlugin, options) {
+var adapterManager = function (options) {
     var _options = options;
-    var _plugin = prebidPlugin;
     var _pluginCallbacks;
     var _adapters = {};
     var _player;
@@ -59,7 +56,10 @@ var adapterManager = function (prebidPlugin, options) {
         var localCalbacks = {
             enablePrebid: function (enable) {
                 if (_pluginCallbacks.enablePrebid) {
-                    _pluginCallbacks.enablePrebid(enable);
+                    try {
+                        _pluginCallbacks.enablePrebid(enable);
+                    }
+                    catch (e) {}
                 }
             },
             doPrebid: function (opts, callback) {
@@ -73,8 +73,11 @@ var adapterManager = function (prebidPlugin, options) {
             }
         };
 
-        for (var adapter in adapters) {
-            adapters[adapter].start(_player, localCalbacks);
+        for (var adapter in _adapters) {
+            try {
+                _adapters[adapter].start(_player, localCalbacks);
+            }
+            catch (e) {}
         }
     };
 

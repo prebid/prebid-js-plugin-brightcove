@@ -10,6 +10,7 @@ var _vastManager = require('./VastManager.js');
 var _adListManager = require('./AdListManager.js');
 var _prebidCommunicator = require('./PrebidCommunicator.js');
 var _dfpUrlGenerator = require('./DfpUrlGenerator.js');
+var _adapterManager = require('./AdapterManager.js');
 var _logger = require('./Logging.js');
 
 var PLUGIN_VERSION = '0.6.1';
@@ -110,8 +111,14 @@ function writeAsyncScriptToFrame (targetFrame, jsPath, includeVJS, origin) {
 // the function does bidding and returns bids thru callback
 var BC_bidders_added = false;
 var _dfpUrlGeneratorObj;
+var _enablePrebid = true;
 
 function doPrebid (options, callback) {
+	if (!_enablePrebid) {
+		_logger.warn(_prefix, 'Prebid has been disabled by adapter');
+		callback(null);
+		return;
+	}
 	if (_localPBJS.bc_pbjs && options.biddersSpec) {
 		if (options.clearPrebid) {
 			_localPBJS.bc_pbjs.adUnits = [];
@@ -777,9 +784,19 @@ function setAdRenderer (options) {
 	return null;
 }
 
+var _adapterCallbacks = {
+	enablePrebid: function (enabled) {
+		_enablePrebid = enabled;
+	}
+};
+
 (function () {
 	// if bidders settings are present in the $$PREBID_GLOBAL$$.plugin_prebid_options variable load prebid.js and do the bidding
 	if ($$PREBID_GLOBAL$$.plugin_prebid_options && $$PREBID_GLOBAL$$.plugin_prebid_options.biddersSpec) {
+		_adapterManagerObj = new _adapterManager($$PREBID_GLOBAL$$.plugin_prebid_options);
+		_adapterManagerObj.init(function () {
+			_adapterManagerObj.run(_player, _adapterCallbacks);
+		});
 		setAdRenderer($$PREBID_GLOBAL$$.plugin_prebid_options);
 		if ($$PREBID_GLOBAL$$.plugin_prebid_options.biddersSpec) {
 			BC_prebid_in_progress = true;
@@ -798,6 +815,7 @@ var _player;
 var _vastManagerObj;
 var _adListManagerObj;
 var _prebidCommunicatorObj;
+var _adapterManagerObj;
 var _defaultAdCancelTimeout = 3000;
 var _adRenderer;
 
@@ -965,6 +983,14 @@ var prebidVastPlugin = function (player) {
 				// ignore call if player is not ready
 				return;
 			}
+
+			if (!_adapterManagerObj) {
+				_adapterManagerObj = new _adapterManager(options);
+				_adapterManagerObj.init(function () {
+					_adapterManagerObj.run(_player, _adapterCallbacks);
+				});
+			}
+
 			_adRenderer = setAdRenderer(options);
 			// get Brightcove Player Id
 			var playerId = '';
