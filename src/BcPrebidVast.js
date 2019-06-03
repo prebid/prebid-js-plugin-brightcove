@@ -12,7 +12,7 @@ var _prebidCommunicator = require('./PrebidCommunicator.js');
 var _dfpUrlGenerator = require('./DfpUrlGenerator.js');
 var _logger = require('./Logging.js');
 
-var PLUGIN_VERSION = '0.5.5';
+var PLUGIN_VERSION = '0.6.1';
 var _prefix = 'PrebidVast->';
 var _molIFrame = null;
 
@@ -965,6 +965,7 @@ var prebidVastPlugin = function (player) {
 				// ignore call if player is not ready
 				return;
 			}
+			_logger.setLoggerLevel(options);
 			_adRenderer = setAdRenderer(options);
 			// get Brightcove Player Id
 			var playerId = '';
