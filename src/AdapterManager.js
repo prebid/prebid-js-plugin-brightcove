@@ -86,6 +86,9 @@ var adapterManager = function (options) {
     // Gets stripped off in the actual build artifact
 	this.test = function () {
 		return {
+            setAdapter: function (name) {
+                _adapters[name] = window[name];
+            }
 		};
 	};
 	// @endexclude
