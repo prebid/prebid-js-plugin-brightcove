@@ -111,14 +111,8 @@ function writeAsyncScriptToFrame (targetFrame, jsPath, includeVJS, origin) {
 // the function does bidding and returns bids thru callback
 var BC_bidders_added = false;
 var _dfpUrlGeneratorObj;
-var _enablePrebid = true;
 
-function doPrebid (options, callback) {
-	if (!_enablePrebid) {
-		_logger.warn(_prefix, 'Prebid has been disabled by adapter');
-		callback(null);
-		return;
-	}
+function doPrebidStep2 (options, callback) {
 	if (_localPBJS.bc_pbjs && options.biddersSpec) {
 		if (options.clearPrebid) {
 			_localPBJS.bc_pbjs.adUnits = [];
@@ -191,6 +185,23 @@ function doPrebid (options, callback) {
 	}
 	else {
 		callback(null);
+	}
+}
+
+function doPrebid (options, callback) {
+	if (_adapterManagerObj && _adapterManagerObjReady) {
+		_adapterManagerObj.isPrebidPluginEnabled(function (enabled) {
+			if (enabled) {
+				doPrebidStep2(options, callback);
+			}
+			else {
+				_logger.warn(_prefix, 'Prebid has been disabled by adapter');
+				callback(null);
+			}
+		});
+	}
+	else {
+		doPrebidStep2(options, callback);
 	}
 }
 
@@ -784,18 +795,12 @@ function setAdRenderer (options) {
 	return null;
 }
 
-var _adapterCallbacks = {
-	enablePrebid: function (enabled) {
-		_enablePrebid = enabled;
-	}
-};
-
 (function () {
 	// if bidders settings are present in the $$PREBID_GLOBAL$$.plugin_prebid_options variable load prebid.js and do the bidding
 	if ($$PREBID_GLOBAL$$.plugin_prebid_options && $$PREBID_GLOBAL$$.plugin_prebid_options.biddersSpec) {
 		_adapterManagerObj = new _adapterManager($$PREBID_GLOBAL$$.plugin_prebid_options);
 		_adapterManagerObj.init(function () {
-			_adapterManagerObj.run(_player, _adapterCallbacks);
+			_adapterManagerObjReady = true;
 		});
 		setAdRenderer($$PREBID_GLOBAL$$.plugin_prebid_options);
 		if ($$PREBID_GLOBAL$$.plugin_prebid_options.biddersSpec) {
@@ -816,6 +821,7 @@ var _vastManagerObj;
 var _adListManagerObj;
 var _prebidCommunicatorObj;
 var _adapterManagerObj;
+var _adapterManagerObjReady = false;
 var _defaultAdCancelTimeout = 3000;
 var _adRenderer;
 
@@ -987,7 +993,7 @@ var prebidVastPlugin = function (player) {
 			if (!_adapterManagerObj) {
 				_adapterManagerObj = new _adapterManager(options);
 				_adapterManagerObj.init(function () {
-					_adapterManagerObj.run(_player, _adapterCallbacks);
+					_adapterManagerObjReady = true;
 				});
 			}
 

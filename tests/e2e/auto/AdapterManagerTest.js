@@ -4,20 +4,26 @@ describe('AdapterManager unit test', function () {
     var adapterManager, testObj;
 
     var adapter = {
-        start: function (player, callbacks) {
-            setTimeout(function () {
-                callbacks.enablePrebid(false);
-            }, 100);
+        enablePrebidPlugin: function () {
+            return false;
         }
     };
-    window.adapter1 = adapter;
+    window.test = {fake: {adapter: adapter}};
 
     beforeEach(function (done) {
         console.log(this.currentTest.title);
-        adapterManager = new _adapterManager({adapters: {fakeAdapter: '//video-demo.adnxs.com/fakeAdapter.js'}});
+        adapterManager = new _adapterManager({adapters: [
+            {id: 'test.fake.adapter', url: '//video-demo.adnxs.com/fakeAdapter.js'}
+        ]});
         testObj = adapterManager.test();
-        testObj.setAdapter('adapter1');
+        testObj.setAdapter('testAdapter', window.test.fake.adapter);
         done();
+    });
+
+    it('getWindowVarValue test - get adapter value', function () {
+        var title = this.test.title;
+        var adapter = testObj.getWindowVarValue('test_$_$_$fake_$_$_$adapter');
+        assert.isNotNull(adapter, title + ' failed. Expected - object');
     });
 
     it('init test - adapters initialization', function (done) {
@@ -28,13 +34,21 @@ describe('AdapterManager unit test', function () {
         });
     });
 
-    it('run test - test enablePrebid callback', function (done) {
+    it('init test - adapters initialization without url', function (done) {
         var title = this.test.title;
-        adapterManager.run(null, {
-            enablePrebid: function (enabled) {
-                assert.isFalse(enabled, title + ' failed. Expected - false');
-                done();
-            }
+        testObj.setOptions({adapters: [
+            {id: 'test.fake.adapter'}
+        ]});
+        adapterManager.init(function () {
+            assert.isTrue(true, title + ' success.');
+            done();
+        });
+    });
+
+    it('isPrebidPluginEnabled test - adapter should return false', function () {
+        var title = this.test.title;
+        adapterManager.isPrebidPluginEnabled(function (enabled) {
+            assert.isFalse(enabled, title + ' failed. Expected - false.');
         });
     });
 });
