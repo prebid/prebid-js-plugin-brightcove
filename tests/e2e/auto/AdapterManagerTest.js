@@ -27,6 +27,7 @@ describe('AdapterManager unit test', function () {
     });
 
     it('init test - adapters initialization', function (done) {
+        this.timeout(3000);
         var title = this.test.title;
         adapterManager.init(function () {
             assert.isTrue(true, title + ' success.');

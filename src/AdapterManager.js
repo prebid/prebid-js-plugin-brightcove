@@ -88,6 +88,9 @@ var adapterManager = function (options) {
                 }
             }
         }
+        else {
+            callback();
+        }
     };
 
     this.isPrebidPluginEnabled = function (callback) {
@@ -129,7 +132,7 @@ var adapterManager = function (options) {
                     }
                 }
                 if (typeof ret === 'object' &&
-                    ret.hasOwnProperty(timeout) &&
+                    ret.hasOwnProperty('timeout') &&
                     ret.hasOwnProperty('default') &&
                     ret.hasOwnProperty('poll')) {
                         checkPluginEnabledForAdapter(ret, function (enabled) {

@@ -111,6 +111,8 @@ function writeAsyncScriptToFrame (targetFrame, jsPath, includeVJS, origin) {
 // the function does bidding and returns bids thru callback
 var BC_bidders_added = false;
 var _dfpUrlGeneratorObj;
+var _firstPrebidCall = true;
+var _prebidEnabled = true;
 
 function doPrebidStep2 (options, callback) {
 	if (_localPBJS.bc_pbjs && options.biddersSpec) {
@@ -189,19 +191,39 @@ function doPrebidStep2 (options, callback) {
 }
 
 function doPrebid (options, callback) {
-	if (_adapterManagerObj && _adapterManagerObjReady) {
+	if (_firstPrebidCall && _adapterManagerObj && _adapterManagerObjReady) {
+		_firstPrebidCall = false;
 		_adapterManagerObj.isPrebidPluginEnabled(function (enabled) {
 			if (enabled) {
 				doPrebidStep2(options, callback);
 			}
 			else {
 				_logger.warn(_prefix, 'Prebid has been disabled by adapter');
+				_prebidEnabled = false;
+				// clean up data for prebid call
+				delete options.biddersSpec;
+				delete options.dfpParameters;
 				callback(null);
+				setTimeout(function () {
+					if (_vastManagerObj) {
+						_vastManagerObj.stop();
+					} else if (_adListManagerObj) {
+						_adListManagerObj.stop();
+					}
+				}, 1);
 			}
 		});
 	}
 	else {
-		doPrebidStep2(options, callback);
+		if (_prebidEnabled) {
+			doPrebidStep2(options, callback);
+		}
+		else {
+			// clean up data for prebid call
+			delete options.biddersSpec;
+			delete options.dfpParameters;
+			callback(null);
+		}
 	}
 }
 
@@ -801,18 +823,18 @@ function setAdRenderer (options) {
 		_adapterManagerObj = new _adapterManager($$PREBID_GLOBAL$$.plugin_prebid_options);
 		_adapterManagerObj.init(function () {
 			_adapterManagerObjReady = true;
+			setAdRenderer($$PREBID_GLOBAL$$.plugin_prebid_options);
+			if ($$PREBID_GLOBAL$$.plugin_prebid_options.biddersSpec) {
+				BC_prebid_in_progress = true;
+				loadPrebidScript($$PREBID_GLOBAL$$.plugin_prebid_options, true);
+			}
+			if ($$PREBID_GLOBAL$$.plugin_prebid_options.adRenderer === 'ima') {
+				loadImaPlugin(function () {});
+			}
+			else if ($$PREBID_GLOBAL$$.plugin_prebid_options.adRenderer === 'mailonline') {
+				loadMolPlugin(function () {});
+			}
 		});
-		setAdRenderer($$PREBID_GLOBAL$$.plugin_prebid_options);
-		if ($$PREBID_GLOBAL$$.plugin_prebid_options.biddersSpec) {
-			BC_prebid_in_progress = true;
-			loadPrebidScript($$PREBID_GLOBAL$$.plugin_prebid_options, true);
-		}
-		if ($$PREBID_GLOBAL$$.plugin_prebid_options.adRenderer === 'ima') {
-			loadImaPlugin(function () {});
-		}
-		else if ($$PREBID_GLOBAL$$.plugin_prebid_options.adRenderer === 'mailonline') {
-			loadMolPlugin(function () {});
-		}
 	}
 })();
 
@@ -946,6 +968,50 @@ function prepareRenderAd (options) {
 	renderAd(options);
 }
 
+function run (options) {
+	_adRenderer = setAdRenderer(options);
+	// get Brightcove Player Id
+	var playerId = '';
+	if (_player.bcinfo) {
+		playerId = _player.bcinfo.playerId;
+	}
+	else if (_player.options_ && _player.options_['data-player']) {
+		playerId = _player.options_['data-player'];
+	}
+	_logger.setPlayerId((playerId && playerId.length > 0 ? (playerId + '-') : '') + _player.el_.id);
+	if (!_localPBJS.bc_pbjs && !BC_prebid_in_progress && !options.creative) {
+		loadPrebidScript(options, false);
+	}
+	// Brightcove Player v5.28.1 issues alert on every tech() call
+	if (window.videojs && window.videojs.VERSION.substr(0, 2) <= '5.') {
+		_player.tech = function () {
+			return _player.tech_;
+		};
+	}
+	if (!options.onlyPrebid) {
+		var pluginLoader = loadMolPlugin;
+		if (_adRenderer === _rendererNames.IMA) {
+			pluginLoader = loadImaPlugin;
+		}
+		else if (_adRenderer === _rendererNames.CUSTOM) {
+			pluginLoader = null;	// HERE: developer can assign his/her own renderer loader if needed
+		}
+		if (pluginLoader) {
+			pluginLoader(function (succ) {
+				if (succ) {
+					prepareRenderAd(options);
+				}
+			});
+		}
+		else {
+			prepareRenderAd(options);
+		}
+	}
+	else {
+		prepareRenderAd(options);
+	}
+}
+
 var prebidVastPlugin = function (player) {
 	_player = player;
 	return {
@@ -991,52 +1057,20 @@ var prebidVastPlugin = function (player) {
 			}
 
 			if (!_adapterManagerObj) {
+				/* options.adapters = [
+					{
+						id: 'lefigaro.roadblock.adapter',
+						url: '//acdn.adnxs.com/video/plugins/bc/prebid/adapters/lefigaro_adapter.js'
+					}
+				]; */
 				_adapterManagerObj = new _adapterManager(options);
 				_adapterManagerObj.init(function () {
 					_adapterManagerObjReady = true;
+					run(options);
 				});
 			}
-
-			_adRenderer = setAdRenderer(options);
-			// get Brightcove Player Id
-			var playerId = '';
-			if (_player.bcinfo) {
-				playerId = _player.bcinfo.playerId;
-			}
-			else if (_player.options_ && _player.options_['data-player']) {
-				playerId = _player.options_['data-player'];
-			}
-			_logger.setPlayerId((playerId && playerId.length > 0 ? (playerId + '-') : '') + _player.el_.id);
-			if (!_localPBJS.bc_pbjs && !BC_prebid_in_progress && !options.creative) {
-				loadPrebidScript(options, false);
-			}
-			// Brightcove Player v5.28.1 issues alert on every tech() call
-			if (window.videojs && window.videojs.VERSION.substr(0, 2) <= '5.') {
-				_player.tech = function () {
-					return _player.tech_;
-				};
-			}
-			if (!options.onlyPrebid) {
-				var pluginLoader = loadMolPlugin;
-				if (_adRenderer === _rendererNames.IMA) {
-					pluginLoader = loadImaPlugin;
-				}
-				else if (_adRenderer === _rendererNames.CUSTOM) {
-					pluginLoader = null;	// HERE: developer can assign his/her own renderer loader if needed
-				}
-				if (pluginLoader) {
-					pluginLoader(function (succ) {
-						if (succ) {
-							prepareRenderAd(options);
-						}
-					});
-				}
-				else {
-					prepareRenderAd(options);
-				}
-			}
 			else {
-				prepareRenderAd(options);
+				run(options);
 			}
 		},
 
