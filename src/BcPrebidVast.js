@@ -1055,6 +1055,7 @@ var prebidVastPlugin = function (player) {
 				// ignore call if player is not ready
 				return;
 			}
+			_logger.setLoggerLevel(options);
 
 			if (!_adapterManagerObj) {
 				/* options.adapters = [
