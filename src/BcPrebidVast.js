@@ -111,10 +111,8 @@ function writeAsyncScriptToFrame (targetFrame, jsPath, includeVJS, origin) {
 // the function does bidding and returns bids thru callback
 var BC_bidders_added = false;
 var _dfpUrlGeneratorObj;
-var _firstPrebidCall = true;
-var _prebidEnabled = true;
 
-function doPrebidStep2 (options, callback) {
+function doPrebid (options, callback) {
 	if (_localPBJS.bc_pbjs && options.biddersSpec) {
 		if (options.clearPrebid) {
 			_localPBJS.bc_pbjs.adUnits = [];
@@ -190,40 +188,14 @@ function doPrebidStep2 (options, callback) {
 	}
 }
 
-function doPrebid (options, callback) {
-	if (_firstPrebidCall && _adapterManagerObj && _adapterManagerObjReady) {
-		_firstPrebidCall = false;
+function isPrebidPluginEnabled (callback) {
+	if (_adapterManagerObj && _adapterManagerObjReady) {
 		_adapterManagerObj.isPrebidPluginEnabled(function (enabled) {
-			if (enabled) {
-				doPrebidStep2(options, callback);
-			}
-			else {
+			if (!enabled) {
 				_logger.warn(_prefix, 'Prebid has been disabled by adapter');
-				_prebidEnabled = false;
-				// clean up data for prebid call
-				delete options.biddersSpec;
-				delete options.dfpParameters;
-				callback(null);
-				setTimeout(function () {
-					if (_vastManagerObj) {
-						_vastManagerObj.stop();
-					} else if (_adListManagerObj) {
-						_adListManagerObj.stop();
-					}
-				}, 1);
 			}
+			callback(enabled);
 		});
-	}
-	else {
-		if (_prebidEnabled) {
-			doPrebidStep2(options, callback);
-		}
-		else {
-			// clean up data for prebid call
-			delete options.biddersSpec;
-			delete options.dfpParameters;
-			callback(null);
-		}
 	}
 }
 
@@ -1055,7 +1027,8 @@ var prebidVastPlugin = function (player) {
 				// ignore call if player is not ready
 				return;
 			}
-			_logger.setLoggerLevel(options);
+			// options[0].loggerLevel = 6;
+			// _logger.setLoggerLevel(options);
 
 			if (!_adapterManagerObj) {
 				/* options.adapters = [
@@ -1065,9 +1038,24 @@ var prebidVastPlugin = function (player) {
 					}
 				]; */
 				_adapterManagerObj = new _adapterManager(options);
-				_adapterManagerObj.init(function () {
+				_adapterManagerObj.init(function (count) {
 					_adapterManagerObjReady = true;
-					run(options);
+					if (count > 0) {
+						isPrebidPluginEnabled(function (enabled) {
+							if (enabled) {
+								run(options);
+							}
+							else {
+								var cover = document.getElementById('plugin-break-cover' + _player.el_.id);
+								if (cover) {
+									_player.el().removeChild(cover);
+								}
+							}
+						})
+					}
+					else {
+						run(options);
+					}
 				});
 			}
 			else {

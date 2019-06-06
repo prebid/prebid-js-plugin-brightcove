@@ -16,7 +16,7 @@ var adapterManager = function (options) {
     function checkInitDone (callback) {
         _initCount--;
         if (_initCount <= 0) {
-            callback();
+            callback(_adapterCount);
         }
     }
 
@@ -89,7 +89,7 @@ var adapterManager = function (options) {
             }
         }
         else {
-            callback();
+            callback(0);
         }
     };
 
