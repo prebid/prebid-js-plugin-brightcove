@@ -1031,12 +1031,6 @@ var prebidVastPlugin = function (player) {
 			// _logger.setLoggerLevel(options);
 
 			if (!_adapterManagerObj) {
-				/* options.adapters = [
-					{
-						id: 'lefigaro.roadblock.adapter',
-						url: '//acdn.adnxs.com/video/plugins/bc/prebid/adapters/lefigaro_adapter.js'
-					}
-				]; */
 				_adapterManagerObj = new _adapterManager(options);
 				_adapterManagerObj.init(function (count) {
 					_adapterManagerObjReady = true;
