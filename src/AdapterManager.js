@@ -12,6 +12,7 @@ var adapterManager = function (options) {
     var _adapters = {};
     var _adapterCount = 0;
     var _initCount = 0;
+    var _timers = [];
 
     function checkInitDone (callback) {
         _initCount--;
@@ -22,7 +23,7 @@ var adapterManager = function (options) {
 
     // process adapter namespacing
     function getWindowVarValue (name) {
-        var arr = name.split('_$_$_$');
+        var arr = name.split('.');
         if (arr.length > 0) {
             var value = window;
             for (var i = 0; i < arr.length; i++) {
@@ -36,44 +37,45 @@ var adapterManager = function (options) {
         return null;
     }
 
-    function loadAdapter (name, url, callback) {
-        if (!name) {
+    function addAdapterToArray (adapter, callback) {
+        var adapterValue = getWindowVarValue(adapter.id);
+        if (adapterValue) {
+            _adapters[adapter.updatedName] = adapterValue;
+            _adapterCount++;
+        }
+        else {
+            _logger.error(_prefix, 'Failed to find adapter:' + adapter.id);
+        }
+        checkInitDone(callback);
+    }
+
+    function loadAdapter (adapter, callback) {
+        if (!adapter || !adapter.updatedName) {
             checkInitDone(callback);
             return;
         }
-        var adapterValue;
-        if (url) {
+        if (adapter.url) {
             // add adapter script to the document body
             var script = document.createElement('script');
-            script.src = url;
+            script.src = adapter.url;
             script.onerror = function (e) {
-                _logger.error(_prefix, 'Failed to load adapter: ', name.replace(/_\$_\$_\$/g, '.'));
+                _logger.error(_prefix, 'Failed to load adapter: ' + adapter.id);
                 checkInitDone(callback);
             };
             script.onload = function () {
-                _logger.log(_prefix, 'Adapter ' + name.replace(/_\$_\$_\$/g, '.') + ' loaded successfully');
-                adapterValue = getWindowVarValue(name);
-                if (adapterValue) {
-                    _adapters[name] = adapterValue;
-                    _adapterCount++;
-                }
-                else {
-                    _logger.error(_prefix, 'Failed to found adapter: ', name.replace(/_\$_\$_\$/g, '.'));
-                }
-                checkInitDone(callback);
+                _logger.log(_prefix, 'Adapter ' + adapter.id + ' loaded successfully');
+                addAdapterToArray(adapter, callback);
             };
             document.body.appendChild(script);
         }
         else {
-            adapterValue = getWindowVarValue(name);
-            if (adapterValue) {
-                _adapters[name] = adapterValue;
-                _adapterCount++;
-            }
-            else {
-                _logger.error(_prefix, 'Failed to found adapter: ', name.replace(/_\$_\$_\$/g, '.'));
-            }
-            checkInitDone(callback);
+            addAdapterToArray(adapter, callback);
+        }
+    }
+
+    function clearTimers () {
+        for (var i = 0; i < _timers.length; i++) {
+            clearInterval(_timers[i]);
         }
     }
 
@@ -84,7 +86,8 @@ var adapterManager = function (options) {
                 if (_options.adapters[i].id) {
                     // replace '.' to '_$_$_$' because '.' is not allowed character in variable name
                     var name = _options.adapters[i].id.replace(/\./g, '_$_$_$');
-                    loadAdapter(name, _options.adapters[i].url, callback);
+                    _options.adapters[i].updatedName = name;
+                    loadAdapter(_options.adapters[i], callback);
                 }
             }
         }
@@ -100,48 +103,51 @@ var adapterManager = function (options) {
         }
         _pluginCallback = callback;
 
-        var checkPluginEnabledForAdapter = function (obj, callback) {
-            var endTime = Date.now() + obj.timeout;
+        var checkPluginEnabledForAdapter = function (adpterResponse, callback) {
+            var endTime = Date.now() + (adpterResponse.timeout >= 1000 && adpterResponse.timeout <= 10000 ? adpterResponse.timeout : 5000);
             var timer = setInterval(function () {
                 if (Date.now() > endTime) {
-                    clearInterval(timer);
-                    callback(obj.default);
+                    callback(adpterResponse.default);
                 }
                 else {
-                    var enabled = obj.poll();
+                    var enabled = adpterResponse.poll();
                     if (enabled === true || enabled === false) {
-                        clearInterval(timer);
                         callback(enabled);
                     }
                 }
             }, 200);
+            _timers.push(timer);
         };
 
         var processedCount = 0;
         for (var adapter in _adapters) {
             if (typeof _adapters[adapter].enablePrebidPlugin === 'function') {
-                var ret = _adapters[adapter].enablePrebidPlugin();
-                if (ret === false) {
+                var adpterResponse = _adapters[adapter].enablePrebidPlugin();
+                if (adpterResponse === false) {
                     _pluginCallback(false);
                     return;
                 }
-                if (ret === true) {
+                if (adpterResponse === true) {
                     processedCount++;
                     if (processedCount === _adapterCount) {
                         _pluginCallback(true);
                     }
                 }
-                if (typeof ret === 'object' &&
-                    ret.hasOwnProperty('timeout') &&
-                    ret.hasOwnProperty('default') &&
-                    ret.hasOwnProperty('poll')) {
-                        checkPluginEnabledForAdapter(ret, function (enabled) {
+                if (typeof adpterResponse === 'object' &&
+                    adpterResponse.hasOwnProperty('timeout') &&
+                    adpterResponse.hasOwnProperty('default') &&
+                    adpterResponse.hasOwnProperty('poll')) {
+                        checkPluginEnabledForAdapter(adpterResponse, function (enabled) {
+                            // If any adapter returns false, then we return false,
+                            // but only if all adapters return true to do we return true.
                             if (!enabled) {
+                                clearTimers();
                                 _pluginCallback(false);
                             }
                             else {
                                 processedCount++;
                                 if (processedCount === _adapterCount) {
+                                    clearTimers();
                                     _pluginCallback(true);
                                 }
                             }
@@ -151,6 +157,7 @@ var adapterManager = function (options) {
             else {
                 processedCount++;
                 if (processedCount === _adapterCount) {
+                    clearTimers();
                     _pluginCallback(true);
                 }
             }

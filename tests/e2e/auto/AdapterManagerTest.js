@@ -22,7 +22,7 @@ describe('AdapterManager unit test', function () {
 
     it('getWindowVarValue test - get adapter value', function () {
         var title = this.test.title;
-        var adapter = testObj.getWindowVarValue('test_$_$_$fake_$_$_$adapter');
+        var adapter = testObj.getWindowVarValue('test.fake.adapter');
         assert.isNotNull(adapter, title + ' failed. Expected - object');
     });
 

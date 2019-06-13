@@ -189,14 +189,12 @@ function doPrebid (options, callback) {
 }
 
 function isPrebidPluginEnabled (callback) {
-	if (_adapterManagerObj && _adapterManagerObjReady) {
-		_adapterManagerObj.isPrebidPluginEnabled(function (enabled) {
-			if (!enabled) {
-				_logger.warn(_prefix, 'Prebid has been disabled by adapter');
-			}
-			callback(enabled);
-		});
-	}
+	_adapterManagerObj.isPrebidPluginEnabled(function (enabled) {
+		if (!enabled) {
+			_logger.warn(_prefix, 'Prebid has been disabled by adapter');
+		}
+		callback(enabled);
+	});
 }
 
 // This function enumerates all aliases for bidder adapters and defines them in prebid.js.
