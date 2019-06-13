@@ -145,7 +145,7 @@ describe('BcPrebidVast unit test', function () {
 	});
 
 	it('loadImaPlugin test - loads IMA Plugin on a page', function (done) {
-		this.timeout(3000);
+		this.timeout(4000);
 		BcPrebidVast.test().loadImaPlugin(function (succ) {
 			assert.isTrue(succ);
 			done();
