@@ -103,14 +103,14 @@ var adapterManager = function (options) {
         }
         _pluginCallback = callback;
 
-        var checkPluginEnabledForAdapter = function (adpterResponse, callback) {
-            var endTime = Date.now() + (adpterResponse.timeout >= 1000 && adpterResponse.timeout <= 10000 ? adpterResponse.timeout : 5000);
+        var checkPluginEnabledForAdapter = function (adapterResponse, callback) {
+            var endTime = Date.now() + (adapterResponse.timeout >= 1000 && adapterResponse.timeout <= 10000 ? adapterResponse.timeout : 5000);
             var timer = setInterval(function () {
                 if (Date.now() > endTime) {
-                    callback(adpterResponse.default);
+                    callback(adapterResponse.default);
                 }
                 else {
-                    var enabled = adpterResponse.poll();
+                    var enabled = adapterResponse.poll();
                     if (enabled === true || enabled === false) {
                         callback(enabled);
                     }
@@ -122,22 +122,22 @@ var adapterManager = function (options) {
         var processedCount = 0;
         for (var adapter in _adapters) {
             if (typeof _adapters[adapter].enablePrebidPlugin === 'function') {
-                var adpterResponse = _adapters[adapter].enablePrebidPlugin();
-                if (adpterResponse === false) {
+                var adapterResponse = _adapters[adapter].enablePrebidPlugin();
+                if (adapterResponse === false) {
                     _pluginCallback(false);
                     return;
                 }
-                if (adpterResponse === true) {
+                if (adapterResponse === true) {
                     processedCount++;
                     if (processedCount === _adapterCount) {
                         _pluginCallback(true);
                     }
                 }
-                if (typeof adpterResponse === 'object' &&
-                    adpterResponse.hasOwnProperty('timeout') &&
-                    adpterResponse.hasOwnProperty('default') &&
-                    adpterResponse.hasOwnProperty('poll')) {
-                        checkPluginEnabledForAdapter(adpterResponse, function (enabled) {
+                if (typeof adapterResponse === 'object' &&
+                    adapterResponse.hasOwnProperty('timeout') &&
+                    adapterResponse.hasOwnProperty('default') &&
+                    adapterResponse.hasOwnProperty('poll')) {
+                        checkPluginEnabledForAdapter(adapterResponse, function (enabled) {
                             // If any adapter returns false, then we return false,
                             // but only if all adapters return true to do we return true.
                             if (!enabled) {
