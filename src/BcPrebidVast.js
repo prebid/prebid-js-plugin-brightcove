@@ -13,7 +13,7 @@ var _dfpUrlGenerator = require('./DfpUrlGenerator.js');
 var _adapterManager = require('./AdapterManager.js');
 var _logger = require('./Logging.js');
 
-var PLUGIN_VERSION = '0.6.1';
+var PLUGIN_VERSION = '0.6.2';
 var _prefix = 'PrebidVast->';
 var _molIFrame = null;
 
@@ -189,9 +189,20 @@ function doPrebid (options, callback) {
 }
 
 function isPrebidPluginEnabled (callback) {
+	var playerPausedWhenWaiting = false;
+	var handlePlaying = function () {
+		// make sure main video is not playing when we are waiting response from adapter
+		playerPausedWhenWaiting = true;
+		_player.pause();
+	};
+	_player.one('playing', handlePlaying);
 	_adapterManagerObj.isPrebidPluginEnabled(function (enabled) {
+		_player.off('playing', handlePlaying);
 		if (!enabled) {
 			_logger.warn(_prefix, 'Prebid has been disabled by adapter');
+		}
+		if (playerPausedWhenWaiting) {
+			_player.play();
 		}
 		callback(enabled);
 	});
