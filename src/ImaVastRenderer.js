@@ -349,6 +349,7 @@ var imaVastRenderer = function (player) {
             _player.ima3.adsManager.stop();
             // notify caller
             closeEvent({type: 'vast.adsCancel', data: {}});
+            activateImaAdControlBar(false);
         }
     };
 
