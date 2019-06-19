@@ -13,7 +13,7 @@ var _dfpUrlGenerator = require('./DfpUrlGenerator.js');
 var _adapterManager = require('./AdapterManager.js');
 var _logger = require('./Logging.js');
 
-var PLUGIN_VERSION = '0.6.2';
+var PLUGIN_VERSION = '0.6.3';
 var _prefix = 'PrebidVast->';
 var _molIFrame = null;
 
@@ -1036,8 +1036,7 @@ var prebidVastPlugin = function (player) {
 				// ignore call if player is not ready
 				return;
 			}
-			// options[0].loggerLevel = 6;
-			// _logger.setLoggerLevel(options);
+			_logger.setLoggerLevel(options);
 
 			if (!_adapterManagerObj) {
 				_adapterManagerObj = new _adapterManager(options);
