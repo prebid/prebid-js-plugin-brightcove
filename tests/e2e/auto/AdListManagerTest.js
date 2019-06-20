@@ -198,6 +198,7 @@ describe('AdListManager unit test', function () {
         });
 
         it('play test - prepares data to render array of Ads', function (done) {
+            this.timeout(3000);
             var adList = [];
             testObj.setArrAdList(adList);
             spy = sinon.spy(player, 'on');
@@ -206,7 +207,7 @@ describe('AdListManager unit test', function () {
             setTimeout(function () {
                 assert.equal(spy.callCount, 1);
                 done();
-            }, 1000);
+            }, 2000);
         });
     });
 });

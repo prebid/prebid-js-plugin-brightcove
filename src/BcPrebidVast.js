@@ -10,9 +10,10 @@ var _vastManager = require('./VastManager.js');
 var _adListManager = require('./AdListManager.js');
 var _prebidCommunicator = require('./PrebidCommunicator.js');
 var _dfpUrlGenerator = require('./DfpUrlGenerator.js');
+var _adapterManager = require('./AdapterManager.js');
 var _logger = require('./Logging.js');
 
-var PLUGIN_VERSION = '0.5.5';
+var PLUGIN_VERSION = '0.6.3';
 var _prefix = 'PrebidVast->';
 var _molIFrame = null;
 
@@ -185,6 +186,26 @@ function doPrebid (options, callback) {
 	else {
 		callback(null);
 	}
+}
+
+function isPrebidPluginEnabled (callback) {
+	var playerPausedWhenWaiting = false;
+	var handlePlaying = function () {
+		// make sure main video is not playing when we are waiting response from adapter
+		playerPausedWhenWaiting = true;
+		_player.pause();
+	};
+	_player.one('playing', handlePlaying);
+	_adapterManagerObj.isPrebidPluginEnabled(function (enabled) {
+		_player.off('playing', handlePlaying);
+		if (!enabled) {
+			_logger.warn(_prefix, 'Prebid has been disabled by adapter');
+		}
+		if (playerPausedWhenWaiting) {
+			_player.play();
+		}
+		callback(enabled);
+	});
 }
 
 // This function enumerates all aliases for bidder adapters and defines them in prebid.js.
@@ -780,17 +801,21 @@ function setAdRenderer (options) {
 (function () {
 	// if bidders settings are present in the $$PREBID_GLOBAL$$.plugin_prebid_options variable load prebid.js and do the bidding
 	if ($$PREBID_GLOBAL$$.plugin_prebid_options && $$PREBID_GLOBAL$$.plugin_prebid_options.biddersSpec) {
-		setAdRenderer($$PREBID_GLOBAL$$.plugin_prebid_options);
-		if ($$PREBID_GLOBAL$$.plugin_prebid_options.biddersSpec) {
-			BC_prebid_in_progress = true;
-			loadPrebidScript($$PREBID_GLOBAL$$.plugin_prebid_options, true);
-		}
-		if ($$PREBID_GLOBAL$$.plugin_prebid_options.adRenderer === 'ima') {
-			loadImaPlugin(function () {});
-		}
-		else if ($$PREBID_GLOBAL$$.plugin_prebid_options.adRenderer === 'mailonline') {
-			loadMolPlugin(function () {});
-		}
+		_adapterManagerObj = new _adapterManager($$PREBID_GLOBAL$$.plugin_prebid_options);
+		_adapterManagerObj.init(function () {
+			_adapterManagerObjReady = true;
+			setAdRenderer($$PREBID_GLOBAL$$.plugin_prebid_options);
+			if ($$PREBID_GLOBAL$$.plugin_prebid_options.biddersSpec) {
+				BC_prebid_in_progress = true;
+				loadPrebidScript($$PREBID_GLOBAL$$.plugin_prebid_options, true);
+			}
+			if ($$PREBID_GLOBAL$$.plugin_prebid_options.adRenderer === 'ima') {
+				loadImaPlugin(function () {});
+			}
+			else if ($$PREBID_GLOBAL$$.plugin_prebid_options.adRenderer === 'mailonline') {
+				loadMolPlugin(function () {});
+			}
+		});
 	}
 })();
 
@@ -798,6 +823,8 @@ var _player;
 var _vastManagerObj;
 var _adListManagerObj;
 var _prebidCommunicatorObj;
+var _adapterManagerObj;
+var _adapterManagerObjReady = false;
 var _defaultAdCancelTimeout = 3000;
 var _adRenderer;
 
@@ -922,6 +949,50 @@ function prepareRenderAd (options) {
 	renderAd(options);
 }
 
+function run (options) {
+	_adRenderer = setAdRenderer(options);
+	// get Brightcove Player Id
+	var playerId = '';
+	if (_player.bcinfo) {
+		playerId = _player.bcinfo.playerId;
+	}
+	else if (_player.options_ && _player.options_['data-player']) {
+		playerId = _player.options_['data-player'];
+	}
+	_logger.setPlayerId((playerId && playerId.length > 0 ? (playerId + '-') : '') + _player.el_.id);
+	if (!_localPBJS.bc_pbjs && !BC_prebid_in_progress && !options.creative) {
+		loadPrebidScript(options, false);
+	}
+	// Brightcove Player v5.28.1 issues alert on every tech() call
+	if (window.videojs && window.videojs.VERSION.substr(0, 2) <= '5.') {
+		_player.tech = function () {
+			return _player.tech_;
+		};
+	}
+	if (!options.onlyPrebid) {
+		var pluginLoader = loadMolPlugin;
+		if (_adRenderer === _rendererNames.IMA) {
+			pluginLoader = loadImaPlugin;
+		}
+		else if (_adRenderer === _rendererNames.CUSTOM) {
+			pluginLoader = null;	// HERE: developer can assign his/her own renderer loader if needed
+		}
+		if (pluginLoader) {
+			pluginLoader(function (succ) {
+				if (succ) {
+					prepareRenderAd(options);
+				}
+			});
+		}
+		else {
+			prepareRenderAd(options);
+		}
+	}
+	else {
+		prepareRenderAd(options);
+	}
+}
+
 var prebidVastPlugin = function (player) {
 	_player = player;
 	return {
@@ -965,46 +1036,32 @@ var prebidVastPlugin = function (player) {
 				// ignore call if player is not ready
 				return;
 			}
-			_adRenderer = setAdRenderer(options);
-			// get Brightcove Player Id
-			var playerId = '';
-			if (_player.bcinfo) {
-				playerId = _player.bcinfo.playerId;
-			}
-			else if (_player.options_ && _player.options_['data-player']) {
-				playerId = _player.options_['data-player'];
-			}
-			_logger.setPlayerId((playerId && playerId.length > 0 ? (playerId + '-') : '') + _player.el_.id);
-			if (!_localPBJS.bc_pbjs && !BC_prebid_in_progress && !options.creative) {
-				loadPrebidScript(options, false);
-			}
-			// Brightcove Player v5.28.1 issues alert on every tech() call
-			if (window.videojs && window.videojs.VERSION.substr(0, 2) <= '5.') {
-				_player.tech = function () {
-					return _player.tech_;
-				};
-			}
-			if (!options.onlyPrebid) {
-				var pluginLoader = loadMolPlugin;
-				if (_adRenderer === _rendererNames.IMA) {
-					pluginLoader = loadImaPlugin;
-				}
-				else if (_adRenderer === _rendererNames.CUSTOM) {
-					pluginLoader = null;	// HERE: developer can assign his/her own renderer loader if needed
-				}
-				if (pluginLoader) {
-					pluginLoader(function (succ) {
-						if (succ) {
-							prepareRenderAd(options);
-						}
-					});
-				}
-				else {
-					prepareRenderAd(options);
-				}
+			_logger.setLoggerLevel(options);
+
+			if (!_adapterManagerObj) {
+				_adapterManagerObj = new _adapterManager(options);
+				_adapterManagerObj.init(function (count) {
+					_adapterManagerObjReady = true;
+					if (count > 0) {
+						isPrebidPluginEnabled(function (enabled) {
+							if (enabled) {
+								run(options);
+							}
+							else {
+								var cover = document.getElementById('plugin-break-cover' + _player.el_.id);
+								if (cover) {
+									_player.el().removeChild(cover);
+								}
+							}
+						})
+					}
+					else {
+						run(options);
+					}
+				});
 			}
 			else {
-				prepareRenderAd(options);
+				run(options);
 			}
 		},
 
