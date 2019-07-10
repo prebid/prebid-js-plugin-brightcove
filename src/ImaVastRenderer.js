@@ -91,6 +91,7 @@ var imaVastRenderer = function (player) {
             break;
             case 'ads-click':
                 str += 'A viewer clicked on the playing ad.';
+                _player.ima3.adsManager.pause();
             break;
             case 'ads-volumechange':
                 str += 'The volume of the playing ad has been changed. Volume: ';
