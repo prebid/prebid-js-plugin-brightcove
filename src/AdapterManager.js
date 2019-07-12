@@ -80,15 +80,29 @@ var adapterManager = function (options) {
     }
 
     this.init = function (callback) {
-        if (Array.isArray(_options.adapters) && _options.adapters.length > 0) {
-            _initCount = _options.adapters.length;
-            for (var i = 0; i < _options.adapters.length; i++) {
-                if (_options.adapters[i].id) {
-                    // replace '.' to '_$_$_$' because '.' is not allowed character in variable name
-                    var name = _options.adapters[i].id.replace(/\./g, '_$_$_$');
-                    _options.adapters[i].updatedName = name;
-                    loadAdapter(_options.adapters[i], callback);
+        if (_options && Array.isArray(_options) && _options.length > 0) {
+            var bFound = false;
+            for (var j = 0; j < _options.length; j++) {
+                var options = _options[j];
+                if (Array.isArray(options.adapters) && options.adapters.length > 0) {
+                    _initCount = options.adapters.length;
+                    for (var i = 0; i < options.adapters.length; i++) {
+                        if (options.adapters[i].id) {
+                            bFound = true;
+                            // replace '.' to '_$_$_$' because '.' is not allowed character in variable name
+                            var name = options.adapters[i].id.replace(/\./g, '_$_$_$');
+                            options.adapters[i].updatedName = name;
+                            loadAdapter(options.adapters[i], callback);
+                        }
+                        else {
+                            checkInitDone(callback);
+                        }
+                    }
+                    break;
                 }
+            }
+            if (!bFound) {
+                callback(0);
             }
         }
         else {
