@@ -13,7 +13,7 @@ var _dfpUrlGenerator = require('./DfpUrlGenerator.js');
 var _adapterManager = require('./AdapterManager.js');
 var _logger = require('./Logging.js');
 
-var PLUGIN_VERSION = '0.6.4';
+var PLUGIN_VERSION = '0.7.1';
 var _prefix = 'PrebidVast->';
 var _molIFrame = null;
 
@@ -1036,32 +1036,35 @@ var prebidVastPlugin = function (player) {
 				// ignore call if player is not ready
 				return;
 			}
-			_logger.setLoggerLevel(options);
+			// execute only request with correct options
+			if (options && (options.biddersSpec || options.dfpParameters)) {
+				_logger.setLoggerLevel(options);
 
-			if (!_adapterManagerObj) {
-				_adapterManagerObj = new _adapterManager(convertOptionsToArray(options));
-				_adapterManagerObj.init(function (count) {
-					_adapterManagerObjReady = true;
-					if (count > 0) {
-						isPrebidPluginEnabled(function (enabled) {
-							if (enabled) {
-								run(options);
-							}
-							else {
-								var cover = document.getElementById('plugin-break-cover' + _player.el_.id);
-								if (cover) {
-									_player.el().removeChild(cover);
+				if (!_adapterManagerObj) {
+					_adapterManagerObj = new _adapterManager(convertOptionsToArray(options));
+					_adapterManagerObj.init(function (count) {
+						_adapterManagerObjReady = true;
+						if (count > 0) {
+							isPrebidPluginEnabled(function (enabled) {
+								if (enabled) {
+									run(options);
 								}
-							}
-						})
-					}
-					else {
-						run(options);
-					}
-				});
-			}
-			else {
-				run(options);
+								else {
+									var cover = document.getElementById('plugin-break-cover' + _player.el_.id);
+									if (cover) {
+										_player.el().removeChild(cover);
+									}
+								}
+							})
+						}
+						else {
+							run(options);
+						}
+					});
+				}
+				else {
+					run(options);
+				}
 			}
 		},
 
