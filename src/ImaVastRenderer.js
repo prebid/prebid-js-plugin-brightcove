@@ -66,9 +66,9 @@ var imaVastRenderer = function (player) {
         };
         _logger.log(_prefix, 'IMA3 plugin event: ' + event.type + '. ', event);
 
-        var adFinished = function () {
+        var adFinished = function (evt) {
             _player.trigger({type: 'internal', data: {name: 'cover', cover: false}});
-            closeEvent({type: 'vast.adError', data: {}});
+            closeEvent({type: evt, data: {}});
             // for iPhone force main content to play
             if (isIPhone()) {
                 setTimeout(function () {
@@ -125,7 +125,7 @@ var imaVastRenderer = function (player) {
                     if (!_adDone) {
                         _adDone = true;
                         console.log('****** player start playing after ima3-ads-manager-loaded event');
-                        adFinished();
+                        adFinished('vast.adError');
                     }
                 });
             break;
@@ -159,7 +159,7 @@ var imaVastRenderer = function (player) {
         _player.trigger({type: 'trace.message', data: {message: str}});
         if (mapCloseEvents[event.type]) {
             _adDone = true;
-            adFinished();
+            adFinished(mapCloseEvents[event.type]);
         }
     }
 
