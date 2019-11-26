@@ -11,6 +11,7 @@ var imaVastRenderer = function (player) {
     var _player = player;
     var _cbStyleDisplay;
     var _cdStyleDisplayChanged = false;
+    var _adDone = false;
 
     var isMobile = function isMobile () {
     	return /iP(hone|ad|od)|Android|Windows Phone/.test(navigator.userAgent);
@@ -65,6 +66,18 @@ var imaVastRenderer = function (player) {
         };
         _logger.log(_prefix, 'IMA3 plugin event: ' + event.type + '. ', event);
 
+        var adFinished = function () {
+            _player.trigger({type: 'internal', data: {name: 'cover', cover: false}});
+            closeEvent({type: 'vast.adError', data: {}});
+            // for iPhone force main content to play
+            if (isIPhone()) {
+                setTimeout(function () {
+                    _player.play();
+                }, 0);
+            }
+            activateImaAdControlBar(false);
+        };
+
         // make sure big play button not visible when ad is playing
         _player.bigPlayButton.el_.style.display = 'none';
 
@@ -81,6 +94,7 @@ var imaVastRenderer = function (player) {
             break;
             case 'ads-started':
                 str += 'An ad has started playing.';
+                str += ' Main content playing: ' + (!_player.paused());
                 _player.trigger({type: 'internal', data: {name: 'cover', cover: false}});
             break;
             case 'ads-ended':
@@ -106,6 +120,14 @@ var imaVastRenderer = function (player) {
             break;
             case 'ima3-ads-manager-loaded':
                 str += 'Ads have been loaded and an AdsManager is available.';
+                str += ' Main content playing: ' + (!_player.paused());
+                _player.one('playing', function () {
+                    if (!_adDone) {
+                        _adDone = true;
+                        console.log('****** player start playing after ima3-ads-manager-loaded event');
+                        adFinished();
+                    }
+                });
             break;
             case 'ima3-click':
                 str += 'An ad is clicked.';
@@ -136,15 +158,8 @@ var imaVastRenderer = function (player) {
         }
         _player.trigger({type: 'trace.message', data: {message: str}});
         if (mapCloseEvents[event.type]) {
-            _player.trigger({type: 'internal', data: {name: 'cover', cover: false}});
-            closeEvent({type: mapCloseEvents[event.type], data: {}});
-            // for iPhone force main content to play
-            if (isIPhone()) {
-                setTimeout(function () {
-                    _player.play();
-                }, 0);
-            }
-            activateImaAdControlBar(false);
+            _adDone = true;
+            adFinished();
         }
     }
 
@@ -213,6 +228,7 @@ var imaVastRenderer = function (player) {
             }
             return;
         }
+        _adDone = false;
 
         // IMA plugin can play ONLY vast tag
         var creativeIsVast = xml.indexOf('<VAST') >= 0;

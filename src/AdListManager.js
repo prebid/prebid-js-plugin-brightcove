@@ -622,16 +622,32 @@ var adListManager = function () {
 							playAd(adData);
 						}
 						else {
-							var muted = _player.muted();
-							_player.muted(true);
-							_player.play();
-							setTimeout(function () {
-								_logger.log(_prefix, 'play preroll by timeout');
-								_player.pause();
-								_player.muted(muted);
-								adData.status = AD_STATUS_PLAYING;
-								playAd(adData);
-							}, 500);
+							if (_player.tech_ && _player.tech_.el_ && !_player.tech_.el_.autoplay) {
+								showCover(false);
+								// show play button if brightcove player is configured for not autoplay
+								_prerollNeedClickToPlay = true;
+								_player.bigPlayButton.el_.style.display = 'block';
+								_player.bigPlayButton.el_.style.opacity = 1;
+								_player.one('playing', function () {
+									_logger.log(_prefix, 'play preroll by click play button');
+									_player.pause();
+									_player.tech_.el_.autoplay = true;
+									adData.status = AD_STATUS_PLAYING;
+									playAd(adData);
+								});
+							}
+							else {
+								var muted = _player.muted();
+								_player.muted(true);
+								_player.play();
+								setTimeout(function () {
+									_logger.log(_prefix, 'play preroll by timeout');
+									_player.pause();
+									_player.muted(muted);
+									adData.status = AD_STATUS_PLAYING;
+									playAd(adData);
+								}, 500);
+							}
 						}
 					}
 					else {
@@ -780,6 +796,10 @@ var adListManager = function () {
 	// checks if list of ad options has preroll option
 	function optionsHavePreroll () {
 		for (var i = 0; i < _arrOptions.length; i++) {
+			if (!_arrOptions[i].hasOwnProperty('timeOffset')) {
+				_arrOptions[i].timeOffset = 'start';
+				return true;	// if timeOffset is not present default is 'start'
+			}
 			if (_arrOptions[i].timeOffset &&
 				(_arrOptions[i].timeOffset === 'start' ||
 				 _arrOptions[i].timeOffset === '0%' ||

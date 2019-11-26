@@ -993,6 +993,23 @@ function run (options) {
 	}
 }
 
+function isOptionsValid (options) {
+	if (Array.isArray(options) || options.hasOwnProperty('0')) {
+		// get logger level
+		for (var i = 0; options.hasOwnProperty(i); i++) {
+			if (!options[i].biddersSpec && !options[i].dfpParameters) {
+				return false;
+			}
+		}
+	}
+	else {
+		if (!options.biddersSpec && !options.dfpParameters) {
+			return false;
+		}
+	}
+	return true;
+}
+
 var prebidVastPlugin = function (player) {
 	_player = player;
 	return {
@@ -1037,7 +1054,7 @@ var prebidVastPlugin = function (player) {
 				return;
 			}
 			// execute only request with correct options
-			if (options && (options.biddersSpec || options.dfpParameters)) {
+			if (options && isOptionsValid(options)) {
 				_logger.setLoggerLevel(options);
 
 				if (!_adapterManagerObj) {
