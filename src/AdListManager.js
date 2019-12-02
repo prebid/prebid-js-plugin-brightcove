@@ -526,6 +526,7 @@ var adListManager = function () {
 			if (!_vastRendererObj) {
 				_vastRendererObj = new _vastRenderer(_player);
 			}
+			_options.adTime = adData.adTime;
 			_vastRendererObj.playAd(adData.adTag, _options, firstVideoPreroll, _mobilePrerollNeedClick, _prerollNeedClickToPlay, eventCallback);
 		}
 		else if (_options.adRenderer === _rendererNames.CUSTOM) {
