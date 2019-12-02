@@ -186,6 +186,12 @@ var vastRenderer = function (player) {
                             // start MailOnline plugin for render the ad
                             _player.vastClient(clientParams);
                             _player.trigger({type: 'trace.message', data: {message: 'Video main content - play()'}});
+                            _player.one('playing', function () {
+                                // force to play not first preroll in playlist
+                                if (!firstVideoPreroll && _options.adTime === 0) {
+                                    _player.trigger('vast.firstPlay');
+                                }
+                            });
                             _player.play();
                         }
                         else {
