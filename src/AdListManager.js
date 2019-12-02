@@ -624,6 +624,10 @@ var adListManager = function () {
 						}
 						else {
 							if (_player.tech_ && _player.tech_.el_ && !_player.tech_.el_.autoplay) {
+								// if player configured for not-autoplay force player to pause for first preroll
+								if (!_player.paused()) {
+									_player.pause();
+								}
 								showCover(false);
 								// show play button if brightcove player is configured for not autoplay
 								_prerollNeedClickToPlay = true;
