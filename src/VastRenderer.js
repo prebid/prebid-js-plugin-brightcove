@@ -48,6 +48,9 @@ var vastRenderer = function (player) {
 	// show/hide brightcove controls activated for next clip within playlist
 	var showNextOverlay = function showNextOverlay (show) {
 		var nextOverlays = document.getElementsByClassName('vjs-next-overlay');
+		if (!nextOverlays || nextOverlays.length === 0) {
+			nextOverlays = document.getElementsByClassName('vjs-next-button');
+		}
 		if (nextOverlays && nextOverlays.length > 0) {
 			nextOverlays[0].style.display = show ? '' : 'none';
 		}
