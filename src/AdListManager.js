@@ -598,7 +598,7 @@ var adListManager = function () {
 							// android
 							traceMessage({data: {message: 'It is Android device'}});
 							if (_player.paused()) {
-								if (_player.tech_ && _player.tech_.el_ && !_player.tech_.el_.autoplay) {
+								if (_player.tech_ && _player.tech_.el_ && !_player.tech_.el_.autoplay && _player.autoplay() === false) {
 									showCover(false);
 									// show play button if brightcove player is configured for not autoplay
 									_prerollNeedClickToPlay = true;
@@ -623,7 +623,7 @@ var adListManager = function () {
 							playAd(adData);
 						}
 						else {
-							if (_player.tech_ && _player.tech_.el_ && !_player.tech_.el_.autoplay) {
+							if (_player.tech_ && _player.tech_.el_ && !_player.tech_.el_.autoplay && _player.autoplay() === false) {
 								// if player configured for not-autoplay force player to pause for first preroll
 								if (!_player.paused()) {
 									_player.pause();
@@ -637,6 +637,7 @@ var adListManager = function () {
 									_logger.log(_prefix, 'play preroll by click play button');
 									_player.pause();
 									_player.tech_.el_.autoplay = true;
+									_player.autoplay(true);
 									adData.status = AD_STATUS_PLAYING;
 									playAd(adData);
 								});
@@ -718,7 +719,7 @@ var adListManager = function () {
 					else {
 						// android
 						if (_player.paused()) {
-							if (_player.tech_ && _player.tech_.el_ && !_player.tech_.el_.autoplay) {
+							if (_player.tech_ && _player.tech_.el_ && !_player.tech_.el_.autoplay && _player.autoplay() === false) {
 								showCover(false);
 								// show play button if brightcove player is configured for not autoplay
 								_prerollNeedClickToPlay = true;
@@ -738,7 +739,7 @@ var adListManager = function () {
 				}
 				else {
 					if (marker.time === 0 && _player.paused()) {
-						if (_player.tech_ && _player.tech_.el_ && !_player.tech_.el_.autoplay) {
+						if (_player.tech_ && _player.tech_.el_ && !_player.tech_.el_.autoplay && _player.autoplay() === false) {
 							showCover(false);
 							// show play button if brightcove player is configured for not autoplay
 							_prerollNeedClickToPlay = true;
