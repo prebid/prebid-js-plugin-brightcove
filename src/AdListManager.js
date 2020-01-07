@@ -766,7 +766,7 @@ var adListManager = function () {
 					var playPromise = _player.play();
 					_adTime = adTime;
 
-					if (playPromise !== undefined) {
+					if (playPromise !== undefined && typeof playPromise.catch === 'function') {
 						// Add catch handler to prevent "Uncaught (in promise) DOM Exception" Error in console
 						playPromise.catch(function (err) {});
 					}
