@@ -13,7 +13,7 @@ var _dfpUrlGenerator = require('./DfpUrlGenerator.js');
 var _adapterManager = require('./AdapterManager.js');
 var _logger = require('./Logging.js');
 
-var PLUGIN_VERSION = '0.7.1';
+var PLUGIN_VERSION = '0.7.2';
 var _prefix = 'PrebidVast->';
 var _molIFrame = null;
 
