@@ -315,41 +315,58 @@ var imaVastRenderer = function (player) {
                 renderAd(false);
             }
             else {
-                try {
-                    var playPromise = _player.play();
-                    if (playPromise !== undefined && typeof playPromise.then === 'function') {
-                        playPromise.then(function () {
-                            _player.pause();
-                            _logger.log(_prefix, 'Video can play with sound (allowed by browser)');
-                            _player.trigger({type: 'trace.message', data: {message: 'Video can play with sound (allowed by browser)'}});
-                            renderAd(true);
-                        }).catch(function () {
-                            setTimeout(function () {
+                var valAutoplay = _player.autoplay();
+                if (valAutoplay === false) {
+                    // do not autoplay
+                    _logger.log(_prefix, 'Player cofigured for not-autoplay');
+                    _player.trigger({type: 'trace.message', data: {message: 'Player cofigured for not-autoplay'}});
+                    renderAd(false);
+                }
+                else if (valAutoplay === 'muted') {
+                    _logger.log(_prefix, 'Player cofigured for autoplay-muted');
+                    _player.trigger({type: 'trace.message', data: {message: 'Player cofigured for autoplay-muted'}});
+                    // _player.pause();
+                    renderAd(true);
+                }
+                else {
+                    _logger.log(_prefix, 'Player cofigured for autoplay');
+                    _player.trigger({type: 'trace.message', data: {message: 'Player cofigured for autoplay'}});
+                    try {
+                        var playPromise = _player.play();
+                        if (playPromise !== undefined && typeof playPromise.then === 'function') {
+                            playPromise.then(function () {
                                 _player.pause();
-                                _logger.log(_prefix, 'Video cannot play with sound (browser restriction)');
-                                _player.trigger({type: 'trace.message', data: {message: 'Video cannot play with sound (browser restriction)'}});
-                                renderAd(false);
-                            }, 200);
-                        });
-                    }
-                    else {
-                        _logger.log(_prefix, 'Video can play with sound (promise undefined)');
-                        traceMessage({data: {message: 'Video can play with sound (promise undefined)'}});
-                        if (_player.paused()) {
-                            _player.trigger({type: 'trace.message', data: {message: 'Main video paused before preroll'}});
-                            renderAd(false);
+                                _logger.log(_prefix, 'Video can play with sound (allowed by browser)');
+                                _player.trigger({type: 'trace.message', data: {message: 'Video can play with sound (allowed by browser)'}});
+                                renderAd(true);
+                            }).catch(function () {
+                                setTimeout(function () {
+                                    _player.pause();
+                                    _logger.log(_prefix, 'Video cannot play with sound (browser restriction)');
+                                    _player.trigger({type: 'trace.message', data: {message: 'Video cannot play with sound (browser restriction)'}});
+                                    renderAd(false);
+                                }, 200);
+                            });
                         }
                         else {
-                            _player.trigger({type: 'trace.message', data: {message: 'Main video is auto-playing. Pause it.'}});
-                            _player.pause();
-                            renderAd(true);
+                            _logger.log(_prefix, 'Video can play with sound (promise undefined)');
+                            traceMessage({data: {message: 'Video can play with sound (promise undefined)'}});
+                            if (_player.paused()) {
+                                _player.trigger({type: 'trace.message', data: {message: 'Main video paused before preroll'}});
+                                renderAd(false);
+                            }
+                            else {
+                                _player.trigger({type: 'trace.message', data: {message: 'Main video is auto-playing. Pause it.'}});
+                                _player.pause();
+                                renderAd(true);
+                            }
                         }
                     }
-                }
-                catch (ex) {
-                    _logger.log(_prefix, 'Video can play with sound (exception)');
-                    _player.trigger({type: 'trace.message', data: {message: 'Video can play with sound (exception)'}});
-                    renderAd(false);
+                    catch (ex) {
+                        _logger.log(_prefix, 'Video can play with sound (exception)');
+                        _player.trigger({type: 'trace.message', data: {message: 'Video can play with sound (exception)'}});
+                        renderAd(false);
+                    }
                 }
             }
         }

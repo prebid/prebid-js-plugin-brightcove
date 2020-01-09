@@ -1083,6 +1083,12 @@ var prebidVastPlugin = function (player) {
 					run(options);
 				}
 			}
+			else {
+				var cover = document.getElementById('plugin-break-cover' + _player.el_.id);
+				if (cover) {
+					_player.el().removeChild(cover);
+				}
+			}
 		},
 
 		stop: function () {
