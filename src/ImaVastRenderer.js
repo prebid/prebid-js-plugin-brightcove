@@ -276,8 +276,8 @@ var imaVastRenderer = function (player) {
                     }
                 };
                 if (canAutoplay) {
-                    requestImaPlayAd();
                     _player.play();
+                    requestImaPlayAd();
                 }
                 else {
                     // make short delay to make sure we can pause main content
@@ -325,7 +325,7 @@ var imaVastRenderer = function (player) {
                 else if (valAutoplay === 'muted') {
                     _logger.log(_prefix, 'Player cofigured for autoplay-muted');
                     _player.trigger({type: 'trace.message', data: {message: 'Player cofigured for autoplay-muted'}});
-                    // _player.pause();
+                    _player.muted(true);
                     renderAd(true);
                 }
                 else {
