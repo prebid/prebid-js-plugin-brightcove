@@ -190,8 +190,9 @@ var vastRenderer = function (player) {
                             _player.vastClient(clientParams);
                             _player.trigger({type: 'trace.message', data: {message: 'Video main content - play()'}});
                             _player.one('playing', function () {
-                                // force to play not first preroll in playlist
-                                if (!firstVideoPreroll && _options.adTime === 0) {
+                                _logger.log(_prefix, 'Main content playing event fired');
+                                // force to play ad
+                                if (_options.adTime === 0) {
                                     _player.trigger('vast.firstPlay');
                                 }
                             });
@@ -259,9 +260,9 @@ var vastRenderer = function (player) {
                 else if (valAutoplay === 'muted') {
                     _logger.log(_prefix, 'Player cofigured for autoplay-muted');
                     _player.trigger({type: 'trace.message', data: {message: 'Player cofigured for autoplay-muted'}});
-                    _player.pause();
                     clientParams.initialPlayback = 'auto';
                     clientParams.initialAudio = 'off';
+                    _player.pause();
                     renderAd(clientParams, true);
                 }
                 else {
