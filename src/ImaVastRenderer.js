@@ -311,8 +311,13 @@ var imaVastRenderer = function (player) {
 
         if (firstVideoPreroll) {
             if ((isIDevice() && !_player.muted()) || isIPhone()) {
-                // no ad autoplay for iPhone and not muted main content on iOS
-                renderAd(false);
+                if (_player.autoplay() === 'muted') {
+                    _player.muted(true);
+                    renderAd(true);
+                }
+                else {
+                    renderAd(false);
+                }
             }
             else {
                 var valAutoplay = _player.autoplay();
