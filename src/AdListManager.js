@@ -675,14 +675,23 @@ var adListManager = function () {
 						// iOS
 						if (isIPhone()) {
 							// iPhone
-							showCover(false);
-							_player.one('play', function () {
+							if (_player.autoplay() === 'muted') {
+								// autoplay-muted
+								_player.muted(true);
 								_mobilePrerollNeedClick = false;	// don't need more click for preroll on iPhone
 								adData.status = AD_STATUS_PLAYING;
-								// force player to autoplay after user click play button
-								_player.autoplay(true);
 								playAd(adData);
-							});
+							}
+							else {
+								showCover(false);
+								_player.one('play', function () {
+									_mobilePrerollNeedClick = false;	// don't need more click for preroll on iPhone
+									adData.status = AD_STATUS_PLAYING;
+									// force player to autoplay after user click play button
+									_player.autoplay(true);
+									playAd(adData);
+								});
+							}
 						}
 						else {
 							// iPad
