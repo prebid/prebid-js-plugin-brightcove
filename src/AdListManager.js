@@ -962,6 +962,10 @@ var adListManager = function () {
 			_player.el().appendChild(_spinnerDiv);
 		}
 		_hasPreroll = optionsHavePreroll();
+		// force playsinline for preroll on iPhone when player configured for autoplay-muted
+		if (_hasPreroll && isIPhone() && _player.autoplay() === 'muted') {
+			_player.playsinline(true);
+		}
 		showCover(_hasPreroll);
 
 		_player.on('playlistitem', nextListItemHandlerAuto);
