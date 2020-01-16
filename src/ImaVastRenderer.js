@@ -11,6 +11,7 @@ var imaVastRenderer = function (player) {
     var _player = player;
     var _cbStyleDisplay;
     var _cdStyleDisplayChanged = false;
+    var _adDone = false;
 
     var isMobile = function isMobile () {
     	return /iP(hone|ad|od)|Android|Windows Phone/.test(navigator.userAgent);
@@ -65,6 +66,18 @@ var imaVastRenderer = function (player) {
         };
         _logger.log(_prefix, 'IMA3 plugin event: ' + event.type + '. ', event);
 
+        var adFinished = function (evt) {
+            _player.trigger({type: 'internal', data: {name: 'cover', cover: false}});
+            closeEvent({type: evt, data: {}});
+            // for iPhone force main content to play
+            if (isIPhone()) {
+                setTimeout(function () {
+                    _player.play();
+                }, 0);
+            }
+            activateImaAdControlBar(false);
+        };
+
         // make sure big play button not visible when ad is playing
         _player.bigPlayButton.el_.style.display = 'none';
 
@@ -81,6 +94,7 @@ var imaVastRenderer = function (player) {
             break;
             case 'ads-started':
                 str += 'An ad has started playing.';
+                str += ' Main content playing: ' + (!_player.paused());
                 _player.trigger({type: 'internal', data: {name: 'cover', cover: false}});
             break;
             case 'ads-ended':
@@ -106,6 +120,14 @@ var imaVastRenderer = function (player) {
             break;
             case 'ima3-ads-manager-loaded':
                 str += 'Ads have been loaded and an AdsManager is available.';
+                str += ' Main content playing: ' + (!_player.paused());
+                _player.one('playing', function () {
+                    if (!_adDone) {
+                        _adDone = true;
+                        console.log('****** player start playing after ima3-ads-manager-loaded event');
+                        adFinished('vast.adError');
+                    }
+                });
             break;
             case 'ima3-click':
                 str += 'An ad is clicked.';
@@ -136,15 +158,8 @@ var imaVastRenderer = function (player) {
         }
         _player.trigger({type: 'trace.message', data: {message: str}});
         if (mapCloseEvents[event.type]) {
-            _player.trigger({type: 'internal', data: {name: 'cover', cover: false}});
-            closeEvent({type: mapCloseEvents[event.type], data: {}});
-            // for iPhone force main content to play
-            if (isIPhone()) {
-                setTimeout(function () {
-                    _player.play();
-                }, 0);
-            }
-            activateImaAdControlBar(false);
+            _adDone = true;
+            adFinished(mapCloseEvents[event.type]);
         }
     }
 
@@ -213,6 +228,7 @@ var imaVastRenderer = function (player) {
             }
             return;
         }
+        _adDone = false;
 
         // IMA plugin can play ONLY vast tag
         var creativeIsVast = xml.indexOf('<VAST') >= 0;
@@ -260,8 +276,8 @@ var imaVastRenderer = function (player) {
                     }
                 };
                 if (canAutoplay) {
-                    requestImaPlayAd();
                     _player.play();
+                    requestImaPlayAd();
                 }
                 else {
                     // make short delay to make sure we can pause main content
@@ -295,45 +311,67 @@ var imaVastRenderer = function (player) {
 
         if (firstVideoPreroll) {
             if ((isIDevice() && !_player.muted()) || isIPhone()) {
-                // no ad autoplay for iPhone and not muted main content on iOS
-                renderAd(false);
+                if (_player.autoplay() === 'muted') {
+                    _player.muted(true);
+                    renderAd(true);
+                }
+                else {
+                    renderAd(false);
+                }
             }
             else {
-                try {
-                    var playPromise = _player.play();
-                    if (playPromise !== undefined && typeof playPromise.then === 'function') {
-                        playPromise.then(function () {
-                            _player.pause();
-                            _logger.log(_prefix, 'Video can play with sound (allowed by browser)');
-                            _player.trigger({type: 'trace.message', data: {message: 'Video can play with sound (allowed by browser)'}});
-                            renderAd(true);
-                        }).catch(function () {
-                            setTimeout(function () {
+                var valAutoplay = _player.autoplay();
+                if (valAutoplay === false) {
+                    // do not autoplay
+                    _logger.log(_prefix, 'Player cofigured for not-autoplay');
+                    _player.trigger({type: 'trace.message', data: {message: 'Player cofigured for not-autoplay'}});
+                    renderAd(false);
+                }
+                else if (valAutoplay === 'muted') {
+                    _logger.log(_prefix, 'Player cofigured for autoplay-muted');
+                    _player.trigger({type: 'trace.message', data: {message: 'Player cofigured for autoplay-muted'}});
+                    _player.muted(true);
+                    renderAd(true);
+                }
+                else {
+                    _logger.log(_prefix, 'Player cofigured for autoplay');
+                    _player.trigger({type: 'trace.message', data: {message: 'Player cofigured for autoplay'}});
+                    try {
+                        var playPromise = _player.play();
+                        if (playPromise !== undefined && typeof playPromise.then === 'function') {
+                            playPromise.then(function () {
                                 _player.pause();
-                                _logger.log(_prefix, 'Video cannot play with sound (browser restriction)');
-                                _player.trigger({type: 'trace.message', data: {message: 'Video cannot play with sound (browser restriction)'}});
-                                renderAd(false);
-                            }, 200);
-                        });
-                    }
-                    else {
-                        _logger.log(_prefix, 'Video can play with sound (promise undefined)');
-                        traceMessage({data: {message: 'Video can play with sound (promise undefined)'}});
-                        if (_player.paused()) {
-                            _player.trigger({type: 'trace.message', data: {message: 'Main video paused before preroll'}});
-                            renderAd(false);
+                                _logger.log(_prefix, 'Video can play with sound (allowed by browser)');
+                                _player.trigger({type: 'trace.message', data: {message: 'Video can play with sound (allowed by browser)'}});
+                                renderAd(true);
+                            }).catch(function () {
+                                setTimeout(function () {
+                                    _player.pause();
+                                    _logger.log(_prefix, 'Video cannot play with sound (browser restriction)');
+                                    _player.trigger({type: 'trace.message', data: {message: 'Video cannot play with sound (browser restriction)'}});
+                                    renderAd(false);
+                                }, 200);
+                            });
                         }
                         else {
-                            _player.trigger({type: 'trace.message', data: {message: 'Main video is auto-playing. Pause it.'}});
-                            _player.pause();
-                            renderAd(true);
+                            _logger.log(_prefix, 'Video can play with sound (promise undefined)');
+                            traceMessage({data: {message: 'Video can play with sound (promise undefined)'}});
+                            if (_player.paused()) {
+                                _player.trigger({type: 'trace.message', data: {message: 'Main video paused before preroll'}});
+                                renderAd(false);
+                            }
+                            else {
+                                _player.trigger({type: 'trace.message', data: {message: 'Main video is auto-playing. Pause it.'}});
+                                _player.pause();
+                                renderAd(true);
+                            }
                         }
                     }
-                }
-                catch (ex) {
-                    _logger.log(_prefix, 'Video can play with sound (exception)');
-                    _player.trigger({type: 'trace.message', data: {message: 'Video can play with sound (exception)'}});
-                    renderAd(false);
+                    catch (ex) {
+                        _logger.log(_prefix, 'Video can play with sound (exception)');
+                        _player.trigger({type: 'trace.message', data: {message: 'Video can play with sound (exception)'}});
+                        renderAd(false);
+                    }
                 }
             }
         }

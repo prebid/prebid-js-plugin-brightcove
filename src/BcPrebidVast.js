@@ -13,7 +13,7 @@ var _dfpUrlGenerator = require('./DfpUrlGenerator.js');
 var _adapterManager = require('./AdapterManager.js');
 var _logger = require('./Logging.js');
 
-var PLUGIN_VERSION = '0.6.4';
+var PLUGIN_VERSION = '0.7.4';
 var _prefix = 'PrebidVast->';
 var _molIFrame = null;
 
@@ -993,6 +993,23 @@ function run (options) {
 	}
 }
 
+function isOptionsValid (options) {
+	if (Array.isArray(options) || options.hasOwnProperty('0')) {
+		// get logger level
+		for (var i = 0; options.hasOwnProperty(i); i++) {
+			if (!options[i].biddersSpec && !options[i].dfpParameters) {
+				return false;
+			}
+		}
+	}
+	else {
+		if (!options.biddersSpec && !options.dfpParameters) {
+			return false;
+		}
+	}
+	return true;
+}
+
 var prebidVastPlugin = function (player) {
 	_player = player;
 	return {
@@ -1036,32 +1053,41 @@ var prebidVastPlugin = function (player) {
 				// ignore call if player is not ready
 				return;
 			}
-			_logger.setLoggerLevel(options);
+			// execute only request with correct options
+			if (options && isOptionsValid(options)) {
+				_logger.setLoggerLevel(options);
 
-			if (!_adapterManagerObj) {
-				_adapterManagerObj = new _adapterManager(convertOptionsToArray(options));
-				_adapterManagerObj.init(function (count) {
-					_adapterManagerObjReady = true;
-					if (count > 0) {
-						isPrebidPluginEnabled(function (enabled) {
-							if (enabled) {
-								run(options);
-							}
-							else {
-								var cover = document.getElementById('plugin-break-cover' + _player.el_.id);
-								if (cover) {
-									_player.el().removeChild(cover);
+				if (!_adapterManagerObj) {
+					_adapterManagerObj = new _adapterManager(convertOptionsToArray(options));
+					_adapterManagerObj.init(function (count) {
+						_adapterManagerObjReady = true;
+						if (count > 0) {
+							isPrebidPluginEnabled(function (enabled) {
+								if (enabled) {
+									run(options);
 								}
-							}
-						})
-					}
-					else {
-						run(options);
-					}
-				});
+								else {
+									var cover = document.getElementById('plugin-break-cover' + _player.el_.id);
+									if (cover) {
+										_player.el().removeChild(cover);
+									}
+								}
+							})
+						}
+						else {
+							run(options);
+						}
+					});
+				}
+				else {
+					run(options);
+				}
 			}
 			else {
-				run(options);
+				var cover = document.getElementById('plugin-break-cover' + _player.el_.id);
+				if (cover) {
+					_player.el().removeChild(cover);
+				}
 			}
 		},
 

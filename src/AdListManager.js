@@ -526,6 +526,7 @@ var adListManager = function () {
 			if (!_vastRendererObj) {
 				_vastRendererObj = new _vastRenderer(_player);
 			}
+			_options.adTime = adData.adTime;
 			_vastRendererObj.playAd(adData.adTag, _options, firstVideoPreroll, _mobilePrerollNeedClick, _prerollNeedClickToPlay, eventCallback);
 		}
 		else if (_options.adRenderer === _rendererNames.CUSTOM) {
@@ -597,7 +598,7 @@ var adListManager = function () {
 							// android
 							traceMessage({data: {message: 'It is Android device'}});
 							if (_player.paused()) {
-								if (_player.tech_ && _player.tech_.el_ && !_player.tech_.el_.autoplay) {
+								if (_player.tech_ && _player.tech_.el_ && !_player.tech_.el_.autoplay && _player.autoplay() === false) {
 									showCover(false);
 									// show play button if brightcove player is configured for not autoplay
 									_prerollNeedClickToPlay = true;
@@ -622,16 +623,37 @@ var adListManager = function () {
 							playAd(adData);
 						}
 						else {
-							var muted = _player.muted();
-							_player.muted(true);
-							_player.play();
-							setTimeout(function () {
-								_logger.log(_prefix, 'play preroll by timeout');
-								_player.pause();
-								_player.muted(muted);
-								adData.status = AD_STATUS_PLAYING;
-								playAd(adData);
-							}, 500);
+							if (_player.tech_ && _player.tech_.el_ && !_player.tech_.el_.autoplay && _player.autoplay() === false) {
+								// if player configured for not-autoplay force player to pause for first preroll
+								if (!_player.paused()) {
+									_player.pause();
+								}
+								showCover(false);
+								// show play button if brightcove player is configured for not autoplay
+								_prerollNeedClickToPlay = true;
+								_player.bigPlayButton.el_.style.display = 'block';
+								_player.bigPlayButton.el_.style.opacity = 1;
+								_player.one('playing', function () {
+									_logger.log(_prefix, 'play preroll by click play button');
+									_player.pause();
+									_player.tech_.el_.autoplay = true;
+									_player.autoplay(true);
+									adData.status = AD_STATUS_PLAYING;
+									playAd(adData);
+								});
+							}
+							else {
+								var muted = _player.muted();
+								_player.muted(true);
+								_player.play();
+								setTimeout(function () {
+									_logger.log(_prefix, 'play preroll by timeout');
+									_player.pause();
+									_player.muted(muted);
+									adData.status = AD_STATUS_PLAYING;
+									playAd(adData);
+								}, 500);
+							}
 						}
 					}
 					else {
@@ -653,14 +675,23 @@ var adListManager = function () {
 						// iOS
 						if (isIPhone()) {
 							// iPhone
-							showCover(false);
-							_player.one('play', function () {
+							if (_player.autoplay() === 'muted') {
+								// autoplay-muted
+								_player.muted(true);
 								_mobilePrerollNeedClick = false;	// don't need more click for preroll on iPhone
 								adData.status = AD_STATUS_PLAYING;
-								// force player to autoplay after user click play button
-								_player.autoplay(true);
 								playAd(adData);
-							});
+							}
+							else {
+								showCover(false);
+								_player.one('play', function () {
+									_mobilePrerollNeedClick = false;	// don't need more click for preroll on iPhone
+									adData.status = AD_STATUS_PLAYING;
+									// force player to autoplay after user click play button
+									_player.autoplay(true);
+									playAd(adData);
+								});
+							}
 						}
 						else {
 							// iPad
@@ -697,7 +728,7 @@ var adListManager = function () {
 					else {
 						// android
 						if (_player.paused()) {
-							if (_player.tech_ && _player.tech_.el_ && !_player.tech_.el_.autoplay) {
+							if (_player.tech_ && _player.tech_.el_ && !_player.tech_.el_.autoplay && _player.autoplay() === false) {
 								showCover(false);
 								// show play button if brightcove player is configured for not autoplay
 								_prerollNeedClickToPlay = true;
@@ -717,7 +748,7 @@ var adListManager = function () {
 				}
 				else {
 					if (marker.time === 0 && _player.paused()) {
-						if (_player.tech_ && _player.tech_.el_ && !_player.tech_.el_.autoplay) {
+						if (_player.tech_ && _player.tech_.el_ && !_player.tech_.el_.autoplay && _player.autoplay() === false) {
 							showCover(false);
 							// show play button if brightcove player is configured for not autoplay
 							_prerollNeedClickToPlay = true;
@@ -744,7 +775,7 @@ var adListManager = function () {
 					var playPromise = _player.play();
 					_adTime = adTime;
 
-					if (playPromise !== undefined) {
+					if (playPromise !== undefined && typeof playPromise.catch === 'function') {
 						// Add catch handler to prevent "Uncaught (in promise) DOM Exception" Error in console
 						playPromise.catch(function (err) {});
 					}
@@ -780,6 +811,10 @@ var adListManager = function () {
 	// checks if list of ad options has preroll option
 	function optionsHavePreroll () {
 		for (var i = 0; i < _arrOptions.length; i++) {
+			if (!_arrOptions[i].hasOwnProperty('timeOffset')) {
+				_arrOptions[i].timeOffset = 'start';
+				return true;	// if timeOffset is not present default is 'start'
+			}
 			if (_arrOptions[i].timeOffset &&
 				(_arrOptions[i].timeOffset === 'start' ||
 				 _arrOptions[i].timeOffset === '0%' ||
@@ -927,6 +962,10 @@ var adListManager = function () {
 			_player.el().appendChild(_spinnerDiv);
 		}
 		_hasPreroll = optionsHavePreroll();
+		// force playsinline for preroll on iPhone when player configured for autoplay-muted
+		if (_hasPreroll && isIPhone() && _player.autoplay() === 'muted') {
+			_player.playsinline(true);
+		}
 		showCover(_hasPreroll);
 
 		_player.on('playlistitem', nextListItemHandlerAuto);

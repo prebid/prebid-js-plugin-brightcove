@@ -48,6 +48,9 @@ var vastRenderer = function (player) {
 	// show/hide brightcove controls activated for next clip within playlist
 	var showNextOverlay = function showNextOverlay (show) {
 		var nextOverlays = document.getElementsByClassName('vjs-next-overlay');
+		if (!nextOverlays || nextOverlays.length === 0) {
+			nextOverlays = document.getElementsByClassName('vjs-next-button');
+		}
 		if (nextOverlays && nextOverlays.length > 0) {
 			nextOverlays[0].style.display = show ? '' : 'none';
 		}
@@ -179,13 +182,20 @@ var vastRenderer = function (player) {
         }
 
         var renderAd = function (clientParams, canAutoplay) {
-            if (_options.initialPlayback !== 'click' || mobilePrerollNeedClick) {
+            if (clientParams.initialPlayback !== 'click' || mobilePrerollNeedClick) {
                 if (!prerollNeedClickToPlay) {
                     setTimeout(function () {
                         if (canAutoplay) {
                             // start MailOnline plugin for render the ad
                             _player.vastClient(clientParams);
                             _player.trigger({type: 'trace.message', data: {message: 'Video main content - play()'}});
+                            _player.one('playing', function () {
+                                _logger.log(_prefix, 'Main content playing event fired');
+                                // force to play ad
+                                if (_options.adTime === 0) {
+                                    _player.trigger('vast.firstPlay');
+                                }
+                            });
                             _player.play();
                         }
                         else {
@@ -239,45 +249,65 @@ var vastRenderer = function (player) {
                 }
             }
             try {
-                var playPromise = _player.tech().el().play();
-                if (playPromise !== undefined && typeof playPromise.then === 'function') {
-                    playPromise.then(function () {
-                        _player.pause();
-                        _logger.log(_prefix, 'Video can play with sound (allowed by browser)');
-                        _player.trigger({type: 'trace.message', data: {message: 'Video can play with sound (allowed by browser)'}});
-                        renderAd(clientParams, true);
-                    }).catch(function () {
-                        setTimeout(function () {
-                            _player.pause();
-                            _logger.log(_prefix, 'Video cannot play with sound (browser restriction)');
-                            _player.trigger({type: 'trace.message', data: {message: 'Video cannot play with sound (browser restriction)'}});
-                            renderAd(clientParams, false);
-                        }, 200);
-                    });
+                var valAutoplay = _player.autoplay();
+                if (valAutoplay === false) {
+                    // do not autoplay
+                    _logger.log(_prefix, 'Player cofigured for not-autoplay');
+                    _player.trigger({type: 'trace.message', data: {message: 'Player cofigured for not-autoplay'}});
+                    clientParams.initialPlayback = 'click';
+                    renderAd(clientParams, false);
+                }
+                else if (valAutoplay === 'muted') {
+                    _logger.log(_prefix, 'Player cofigured for autoplay-muted');
+                    _player.trigger({type: 'trace.message', data: {message: 'Player cofigured for autoplay-muted'}});
+                    clientParams.initialPlayback = 'auto';
+                    clientParams.initialAudio = 'off';
+                    _player.pause();
+                    renderAd(clientParams, true);
                 }
                 else {
-                    _logger.log(_prefix, 'Video can play with sound (promise undefined)');
-                    traceMessage({data: {message: 'Video can play with sound (promise undefined)'}});
-                    if (_player.paused()) {
-                        _player.trigger({type: 'trace.message', data: {message: 'Main video paused before preroll'}});
-                        renderAd(clientParams, false);
+                    _logger.log(_prefix, 'Player cofigured for autoplay');
+                    _player.trigger({type: 'trace.message', data: {message: 'Player cofigured for autoplay'}});
+                    var playPromise = _player.tech().el().play();
+                    if (playPromise !== undefined && typeof playPromise.then === 'function') {
+                        playPromise.then(function () {
+                            _player.pause();
+                            _logger.log(_prefix, 'Video can play with sound (allowed by browser)');
+                            _player.trigger({type: 'trace.message', data: {message: 'Video can play with sound (allowed by browser)'}});
+                            renderAd(clientParams, true);
+                        }).catch(function () {
+                            setTimeout(function () {
+                                _player.pause();
+                                _logger.log(_prefix, 'Video cannot play with sound (browser restriction)');
+                                _player.trigger({type: 'trace.message', data: {message: 'Video cannot play with sound (browser restriction)'}});
+                                renderAd(clientParams, false);
+                            }, 200);
+                        });
                     }
                     else {
-                        _player.trigger({type: 'trace.message', data: {message: 'Main video is auto-playing. Pause it.'}});
-                        _player.pause();
-                        if (_options.initialPlayback === 'click') {
-                            setTimeout(function () {
-                                _player.one('play', function () {
-                                    // we already did click, now we can play automatically.
-                                    _options.initialPlayback = 'auto';
-                                    prerollNeedClickToPlay = false;
-                                    _player.pause();
-                                    renderAd(clientParams, true);
-                                });
-                            }, 0);
+                        _logger.log(_prefix, 'Video can play with sound (promise undefined)');
+                        traceMessage({data: {message: 'Video can play with sound (promise undefined)'}});
+                        if (_player.paused()) {
+                            _player.trigger({type: 'trace.message', data: {message: 'Main video paused before preroll'}});
+                            renderAd(clientParams, false);
                         }
                         else {
-                            renderAd(clientParams, true);
+                            _player.trigger({type: 'trace.message', data: {message: 'Main video is auto-playing. Pause it.'}});
+                            _player.pause();
+                            if (_options.initialPlayback === 'click') {
+                                setTimeout(function () {
+                                    _player.one('play', function () {
+                                        // we already did click, now we can play automatically.
+                                        _options.initialPlayback = 'auto';
+                                        prerollNeedClickToPlay = false;
+                                        _player.pause();
+                                        renderAd(clientParams, true);
+                                    });
+                                }, 0);
+                            }
+                            else {
+                                renderAd(clientParams, true);
+                            }
                         }
                     }
                 }
