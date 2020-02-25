@@ -8,7 +8,7 @@ var _prebidGlobal = require('./PrebidGlobal.js');
 var _logger = require('./Logging.js');
 
 // CONSTANTS
-var LOADER_VERSION = '0.4.7';
+var LOADER_VERSION = '0.7.5';
 var PREBID_PLUGIN_ID = 'bcPrebidVastPlugin';
 var COMMAND_PLUGIN_ID = 'bcPrebidVastPluginCommand';
 var DEFAULT_PLUGIN_JS_URL = '//acdn.adnxs.com/video/plugins/bc/prebid/bc_prebid_vast_plugin.min.js';
