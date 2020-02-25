@@ -8,7 +8,7 @@ var _prebidGlobal = require('./PrebidGlobal.js');
 var _logger = require('./Logging.js');
 
 // CONSTANTS
-var LOADER_VERSION = '0.4.6';
+var LOADER_VERSION = '0.4.7';
 var PREBID_PLUGIN_ID = 'bcPrebidVastPlugin';
 var COMMAND_PLUGIN_ID = 'bcPrebidVastPluginCommand';
 var DEFAULT_PLUGIN_JS_URL = '//acdn.adnxs.com/video/plugins/bc/prebid/bc_prebid_vast_plugin.min.js';
@@ -200,7 +200,9 @@ function apiInit () {
     		cover.style.height = '100%';
     		cover.style.backgroundColor = 'black';
     		cover.style.position = 'absolute';
-    		cover.style.zIndex = 101;
+			cover.style.zIndex = 101;
+			cover.style.left = '0px';
+			cover.style.top = '0px';
     		_player.el().appendChild(cover);
 		}
 
