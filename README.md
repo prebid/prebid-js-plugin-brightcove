@@ -3,7 +3,7 @@
 > A free and open source library for publishers to quickly implement a plugin for a videoJS player, such as Brightcove Player.  This plugin may be used to invoke prebid.js to execute the prebidding process.  It may also be used to render the "selected" video ad within the player.
 
 This README is for developers who want to use and/or contribute to bc_prebid_vast.
-Additional documentation can be found at [the Brightcove Prebid Plugin homepage](http://prebid.org/dev-docs/plugins/brightcove-prebid-plugin/About-BC-Prebid-Plugin.html).
+Additional documentation can be found at [the Brightcove Prebid Plugin homepage](http://prebid.org/dev-docs/plugins/#brightcove-plugin).
 Sample integrations can be found under "Samples" in the "Brightcove Plugin" section of [Prebid.js External Plugins](http://prebid.org/dev-docs/plugins/).
 **Table of Contents**
 
